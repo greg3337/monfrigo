@@ -1,43 +1,47 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
-import  useAuth  from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 
-export default function SuccessPage() {
+function SuccessContent() {
 const router = useRouter();
-const searchParams = useSearchParams();
+const searchParams = useSearchParams(); // on le garde si Stripe renvoie des params
 const user = useAuth();
 
 useEffect(() => {
 const run = async () => {
 try {
-// 1) On récupère l'uid prioritairement depuis Stripe (client_reference_id),
-// sinon on utilise l'utilisateur connecté.
-const uidFromStripe = searchParams.get('client_reference_id');
-const uid = uidFromStripe || (user && user.uid);
+if (!user || !user.uid) return; // attendre l'auth
+// Marquer l’abonnement comme actif
+const userRef = doc(db, 'users', user.uid);
+await updateDoc(userRef, { isSubscribed: true });
+// Optionnel : lire des params si besoin
+// const sessionId = searchParams.get('session_id');
 
-if (!uid) return; // on attend que l'info arrive (Stripe ou auth)
-
-// 2) Mise à jour Firestore
-await updateDoc(doc(db, 'users', uid), { isSubscribed: true });
-
-// 3) Redirection vers le tableau de bord
+// Redirection vers le dashboard
 router.replace('/app');
 } catch (err) {
 console.error('Erreur lors de la MAJ abonnement :', err);
 }
 };
-
 run();
-}, [searchParams, user, router]);
+}, [user, router, searchParams]);
 
 return (
-<div style={{ textAlign: 'center', marginTop: 60 }}>
+<div style={{ textAlign: 'center', marginTop: '60px' }}>
 <h1>Merci pour votre abonnement 🎉</h1>
-<p>Nous finalisons la configuration… redirection en cours.</p>
+<p>Nous finalisons la configuration... redirection en cours.</p>
 </div>
+);
+}
+
+export default function SuccessPage() {
+return (
+<Suspense fallback={<div style={{ textAlign: 'center', marginTop: '60px' }}>Chargement...</div>}>
+<SuccessContent />
+</Suspense>
 );
 }
