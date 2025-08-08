@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { auth, db } from './app/firebase/firebase-config';
+import { auth, db } from '../app/firebase/firebase-config';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 
 const CATEGORIES = [
