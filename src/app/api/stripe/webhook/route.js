@@ -1,39 +1,37 @@
-import Stripe from 'stripe';
-import { buffer } from 'micro';
+import Stripe from "stripe";
+import { NextResponse } from "next/server";
 
-export const config = {
-api: {
-bodyParser: false, // Important pour Stripe
-},
-};
+export const runtime = "nodejs"; // important pour lire le raw body dans l'App Router
 
+export async function POST(req) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export default async function handler(req, res) {
-if (req.method !== 'POST') {
-return res.status(405).send('Method Not Allowed');
-}
-
-const buf = await buffer(req);
-const sig = req.headers['stripe-signature'];
+const sig = req.headers.get("stripe-signature");
+const rawBody = await req.text();
 
 let event;
-
 try {
 event = stripe.webhooks.constructEvent(
-buf,
+rawBody,
 sig,
-process.env.STRIPE_WEBHOOK_SECRET
+process.env.STRIPE_WEBHOOK_SECRET // whsec_...
 );
 } catch (err) {
-console.error('❌ Erreur de vérification webhook Stripe:', err.message);
-return res.status(400).send(`Webhook Error: ${err.message}`);
+console.error("[WEBHOOK] Signature invalide:", err.message);
+return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
 }
 
-// 📌 Ici, on gère les événements Stripe
-if (event.type === 'checkout.session.completed') {
-console.log('✅ Paiement réussi :', event.data.object);
+// Traite les events utiles
+switch (event.type) {
+case "checkout.session.completed": {
+const session = event.data.object;
+console.log("✅ checkout.session.completed", session.id);
+// TODO: mise à jour Firestore ici (isSubscribed: true)
+break;
+}
+default:
+console.log("ℹ️ Event non géré:", event.type);
 }
 
-res.json({ received: true });
+return NextResponse.json({ received: true });
 }
