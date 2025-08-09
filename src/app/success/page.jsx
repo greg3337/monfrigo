@@ -22,7 +22,7 @@ await updateDoc(userRef, { isSubscribed: true });
 // const sessionId = searchParams.get('session_id');
 
 // Redirection vers le dashboard
-router.replace('/app');
+router.replace('/fridge');
 } catch (err) {
 console.error('Erreur lors de la MAJ abonnement :', err);
 }
