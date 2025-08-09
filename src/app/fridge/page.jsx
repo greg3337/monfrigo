@@ -50,11 +50,14 @@ return (
 <div style={{ padding: "20px" }}>
 <h1>Mon Frigo</h1>
 
-{/* Bloc debug, pour vérifier isSubscribed */}
+{process.env.NODE_ENV === "development" && (
+<>
 <h3 style={{ marginTop: 12 }}>Debug utilisateur</h3>
-<pre style={{ background: "#111", color: "#0f0", padding: 12 }}>
+<pre style={{ background:"#111", color:"#0f0", padding: 12 }}>
 {JSON.stringify(userDoc, null, 2)}
 </pre>
+</>
+)}
 
 {userDoc && !userDoc.isSubscribed && (
 <p style={{ color: "orange" }}>
