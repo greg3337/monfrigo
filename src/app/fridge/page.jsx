@@ -2,78 +2,127 @@
 import React, { useEffect, useState } from "react";
 import AddProductModal from "./AddProductModal";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase/firebase-config"; // ajuste le chemin si besoin
+import { auth, db } from "../firebase/firebase-config";
+import {
+collection,
+addDoc,
+onSnapshot,
+query,
+where,
+orderBy,
+doc,
+getDoc,
+serverTimestamp,
+} from "firebase/firestore";
 
 export default function FridgePage() {
-// ton état existant
-const [products, setProducts] = useState([]);
-const [isModalOpen, setIsModalOpen] = useState(false);
-
-// debug abonnement
+const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
-const [loadingUser, setLoadingUser] = useState(true);
+const [loading, setLoading] = useState(true);
 
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [products, setProducts] = useState([]);
+
+// Auth + doc utilisateur
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
+setUser(u || null);
 if (!u) {
-console.log("[FRIDGE] Utilisateur non connecté.");
 setUserDoc(null);
-setLoadingUser(false);
+setProducts([]);
+setLoading(false);
 return;
 }
 try {
 const ref = doc(db, "users", u.uid);
 const snap = await getDoc(ref);
-console.log("[FRIDGE] Doc user existe ?", snap.exists());
-if (snap.exists()) {
-console.log("[FRIDGE] Données user:", snap.data());
-setUserDoc(snap.data());
-}
+setUserDoc(snap.exists() ? snap.data() : null);
 } catch (e) {
-console.error("[FRIDGE] Erreur lecture doc user:", e);
+console.error("[FRIDGE] Erreur doc user:", e);
 } finally {
-setLoadingUser(false);
+setLoading(false);
 }
 });
 return () => unsub();
 }, []);
 
-const addProduct = (product) => {
-setProducts([...products, product]);
+// Lecture live des produits de l’utilisateur
+useEffect(() => {
+if (!user) return;
+const q = query(
+collection(db, "products"),
+where("uid", "==", user.uid),
+orderBy("createdAt", "desc")
+);
+const unsub = onSnapshot(q, (snap) => {
+const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+setProducts(list);
+});
+return () => unsub();
+}, [user]);
+
+// Ajout produit (écriture Firestore ici)
+const addProduct = async (product) => {
+try {
+if (!user) return;
+await addDoc(collection(db, "products"), {
+...product,
+uid: user.uid,
+createdAt: serverTimestamp(),
+});
 setIsModalOpen(false);
+} catch (e) {
+console.error("[FRIDGE] Erreur add product:", e);
+alert("Impossible d’ajouter le produit.");
+}
 };
 
-if (loadingUser) return <div style={{ padding: 20 }}>Chargement…</div>;
+if (loading) return <div style={{ padding: 20 }}>Chargement…</div>;
+
+if (!user) {
+return (
+<div style={{ padding: 20 }}>
+<h1>Mon Frigo</h1>
+<p>Tu n’es pas connecté.</p>
+</div>
+);
+}
+
+if (!userDoc?.isSubscribed) {
+return (
+<div style={{ padding: 20 }}>
+<h1>Mon Frigo</h1>
+<p style={{ color: "orange" }}>
+Abonnement non détecté. Si tu viens de payer, attends 5–10 secondes et
+rafraîchis la page.
+</p>
+</div>
+);
+}
 
 return (
-<div style={{ padding: "20px" }}>
+<div style={{ padding: 20 }}>
 <h1>Mon Frigo</h1>
-
-{process.env.NODE_ENV === "development" && (
-<>
-<h3 style={{ marginTop: 12 }}>Debug utilisateur</h3>
-<pre style={{ background:"#111", color:"#0f0", padding: 12 }}>
-{JSON.stringify(userDoc, null, 2)}
-</pre>
-</>
-)}
-
-{userDoc && !userDoc.isSubscribed && (
-<p style={{ color: "orange" }}>
-Abonnement non détecté. Si tu viens de payer, attends 5–10 s et rafraîchis.
-</p>
-)}
 
 <button onClick={() => setIsModalOpen(true)}>Ajouter un produit</button>
 
 <ul>
-{products.map((p, index) => (
-<li key={index}>
-{p.name} - {p.expiration}
+{products.map((p) => (
+<li key={p.id}>
+{p.name} {p.expiration ? `– ${p.expiration}` : ""}
+{p.category ? ` · ${p.category}` : ""}
 </li>
 ))}
 </ul>
+
+{process.env.NODE_ENV === "development" && (
+<>
+<h3 style={{ marginTop: 12 }}>Debug utilisateur</h3>
+<pre style={{ background: "#111", color: "#0f0", padding: 12 }}>
+{JSON.stringify(userDoc, null, 2)}
+</pre>
+</>
+)}
 
 {isModalOpen && (
 <AddProductModal
