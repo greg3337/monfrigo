@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import AddProductModal from "./AddProductModal";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../firebase/firebase-config";
+import { auth, db } from "../firebase/firebase-config";
 import {
 collection,
 doc,
