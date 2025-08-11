@@ -4,14 +4,8 @@ import React, { useEffect, useState } from "react";
 import AddProductModal from "./AddProductModal";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase/firebase-config";
-import {
-collection,
-doc,
-getDoc,
-onSnapshot,
-orderBy,
-query
-} from "firebase/firestore";
+import {collection,doc,getDoc,onSnapshot,orderBy,query} from "firebase/firestore";
+import "./fridge.css";
 
 export default function FridgePage() {
 // Auth + doc utilisateur
