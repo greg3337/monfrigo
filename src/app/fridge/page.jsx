@@ -14,7 +14,7 @@ query,
 } from "firebase/firestore";
 
 export default function FridgePage() {
-// Auth + user doc
+// Auth + doc utilisateur
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ const [loading, setLoading] = useState(true);
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [products, setProducts] = useState([]);
 
-// Abonnement à l’auth + chargement du doc utilisateur
+// Abonnement auth + chargement doc user
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -49,7 +49,7 @@ setLoading(false);
 return () => unsub();
 }, []);
 
-// Écoute des produits de l’utilisateur
+// Écoute des produits
 useEffect(() => {
 if (!user) return;
 
@@ -70,15 +70,13 @@ setProducts(list);
 return () => unsub();
 }, [user]);
 
-// Petites métriques (simple pour l’instant)
+// Petites métriques (à améliorer plus tard)
 const total = products.length;
-const urgent = 0; // tu pourras calculer selon une date d’expiration
-const expired = 0; // idem
+const urgent = 0;
+const expired = 0;
 
 if (loading) {
-return (
-<div style={{ padding: 24, fontFamily: "system-ui" }}>Chargement…</div>
-);
+return <div style={{ padding: 24 }}>Chargement…</div>;
 }
 
 return (
@@ -90,7 +88,7 @@ return (
 <div>
 <div className="brandTitle">Mon Frigo</div>
 <div className="brandSub">
-Salut {userDoc?.firstName || "!"} 👋
+Salut {userDoc?.firstName || ""} 👋
 </div>
 </div>
 </div>
@@ -118,11 +116,7 @@ Salut {userDoc?.firstName || "!"} 👋
 
 {/* Barre d’actions */}
 <section className="actions">
-<input
-className="search"
-placeholder="Rechercher un produit…"
-// TODO: brancher la recherche
-/>
+<input className="search" placeholder="Rechercher un produit…" />
 <div className="filters">
 <select defaultValue="">
 <option value="">Toutes les catégories</option>
@@ -172,209 +166,6 @@ intelligentes.
 {isModalOpen && (
 <AddProductModal onClose={() => setIsModalOpen(false)} user={user} />
 )}
-
-{/* Styles */}
-<style jsx>{`
-.wrap {
---bg: #f6f7fb;
---panel: #ffffff;
---text: #0f172a;
---muted: #6b7280;
---border: #e5e7eb;
---green: #10b981;
---orange: #f59e0b;
---red: #ef4444;
-min-height: 100dvh;
-background: radial-gradient(1200px 600px at 20% -10%, #e8efff 0, #f6f7fb 60%, #f6f7fb 100%);
-color: var(--text);
-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
-
-.header {
-max-width: 1100px;
-margin: 24px auto 8px;
-padding: 16px 20px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-}
-
-.brand {
-display: flex;
-gap: 12px;
-align-items: center;
-}
-.logo {
-width: 36px;
-height: 36px;
-display: grid;
-place-items: center;
-border-radius: 10px;
-background: #e8f2ff;
-}
-.brandTitle {
-font-weight: 700;
-}
-.brandSub {
-font-size: 13px;
-color: var(--muted);
-}
-
-.stats {
-max-width: 1100px;
-margin: 0 auto;
-padding: 0 20px;
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 12px;
-}
-.card {
-background: var(--panel);
-border: 1px solid var(--border);
-border-radius: 14px;
-padding: 16px;
-}
-.cardValue {
-font-size: 28px;
-font-weight: 800;
-line-height: 1;
-}
-.cardLabel {
-margin-top: 6px;
-color: var(--muted);
-font-size: 13px;
-}
-.card.green .cardValue {
-color: var(--green);
-}
-.card.orange .cardValue {
-color: var(--orange);
-}
-.card.red .cardValue {
-color: var(--red);
-}
-
-.actions {
-max-width: 1100px;
-margin: 16px auto;
-padding: 0 20px;
-display: grid;
-grid-template-columns: 1fr auto auto;
-gap: 10px;
-}
-.search {
-background: var(--panel);
-border: 1px solid var(--border);
-border-radius: 12px;
-padding: 12px 14px;
-outline: none;
-}
-.filters {
-display: flex;
-gap: 8px;
-}
-select {
-background: var(--panel);
-border: 1px solid var(--border);
-border-radius: 12px;
-padding: 12px 14px;
-outline: none;
-}
-.primary {
-background: #2563eb;
-color: #fff;
-border: none;
-border-radius: 12px;
-padding: 12px 16px;
-cursor: pointer;
-}
-.ghostBtn {
-background: transparent;
-border: 1px solid var(--border);
-border-radius: 12px;
-padding: 10px 14px;
-cursor: pointer;
-}
-
-.content {
-max-width: 1100px;
-margin: 8px auto 40px;
-padding: 0 20px 20px;
-}
-
-.empty {
-background: var(--panel);
-border: 1px solid var(--border);
-border-radius: 16px;
-padding: 28px;
-display: grid;
-place-items: center;
-text-align: center;
-color: var(--muted);
-}
-.emptyIcon {
-font-size: 34px;
-margin-bottom: 8px;
-}
-.emptyTitle {
-color: var(--text);
-font-weight: 700;
-margin-bottom: 6px;
-}
-.tip {
-margin-top: 10px;
-font-size: 13px;
-background: #fff8e1;
-border: 1px solid #fde68a;
-color: #92400e;
-padding: 8px 12px;
-border-radius: 10px;
-}
-
-.grid {
-list-style: none;
-margin: 0;
-padding: 0;
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-gap: 12px;
-}
-.item {
-background: var(--panel);
-border: 1px solid var(--border);
-border-radius: 14px;
-padding: 14px;
-}
-.itemHead {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 8px;
-}
-.itemName {
-font-weight: 700;
-}
-.pill {
-font-size: 12px;
-background: #eef2ff;
-color: #3730a3;
-border: 1px solid #c7d2fe;
-padding: 4px 8px;
-border-radius: 999px;
-white-space: nowrap;
-}
-.muted {
-margin-top: 6px;
-color: var(--muted);
-font-size: 13px;
-}
-
-@media (max-width: 720px) {
-.actions {
-grid-template-columns: 1fr;
-}
-}
-`}</style>
 </div>
 );
 }
