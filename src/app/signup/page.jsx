@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 // chemin depuis app/signup → app/firebase
 import { auth, db } from '../firebase/firebase-config';
+import './signup.css';
 
 export default function SignupPage() {
 const router = useRouter();
