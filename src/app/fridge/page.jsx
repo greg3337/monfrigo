@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from "react";
 import AddProductModal from "./AddProductModal";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase/firebase-config";
+import { auth, db } from "../../firebase/firebase-config";
 import {
 collection,
 doc,
 getDoc,
 onSnapshot,
 orderBy,
-query,
+query
 } from "firebase/firestore";
 
 export default function FridgePage() {
@@ -23,18 +23,16 @@ const [loading, setLoading] = useState(true);
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [products, setProducts] = useState([]);
 
-// Abonnement auth + chargement doc user
+// Auth + chargement doc user
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
-
 if (!u) {
 setUserDoc(null);
 setProducts([]);
 setLoading(false);
 return;
 }
-
 try {
 const ref = doc(db, "users", u.uid);
 const snap = await getDoc(ref);
@@ -45,124 +43,88 @@ console.error("[FRIDGE] Erreur doc user:", e);
 setLoading(false);
 }
 });
-
 return () => unsub();
 }, []);
 
-// Écoute des produits
+// Récupération produits
 useEffect(() => {
 if (!user) return;
-
 const q = query(
-collection(db, "users", user.uid, "fridge"),
+collection(db, "users", user.uid, "products"),
 orderBy("createdAt", "desc")
 );
-
-const unsub = onSnapshot(
-q,
-(snap) => {
-const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setProducts(list);
-},
-(err) => console.error("[FRIDGE] onSnapshot produits:", err)
-);
-
+const unsub = onSnapshot(q, (snapshot) => {
+const items = snapshot.docs.map((doc) => ({
+id: doc.id,
+...doc.data(),
+}));
+setProducts(items);
+});
 return () => unsub();
 }, [user]);
 
-// Petites métriques (à améliorer plus tard)
-const total = products.length;
-const urgent = 0;
-const expired = 0;
-
-if (loading) {
-return <div style={{ padding: 24 }}>Chargement…</div>;
-}
+if (loading) return <div className="loading">Chargement...</div>;
 
 return (
-<div className="wrap">
-{/* Header */}
+<div className="fridge-container">
 <header className="header">
 <div className="brand">
-<div className="logo">🧊</div>
-<div>
-<div className="brandTitle">Mon Frigo</div>
-<div className="brandSub">
-Salut {userDoc?.firstName || ""} 👋
+<span role="img" aria-label="box">📦</span>
+<h1>Mon Frigo</h1>
 </div>
-</div>
-</div>
-
-<button className="ghostBtn" onClick={() => setIsModalOpen(true)}>
-+ Ajouter un produit
-</button>
+{user && <p>Salut {user.displayName || "utilisateur"} 👋</p>}
 </header>
 
-{/* Stats */}
 <section className="stats">
-<div className="card green">
-<div className="cardValue">{total}</div>
-<div className="cardLabel">Total</div>
+<div className="stat green">
+<span>{products.length}</span>
+<p>Total</p>
 </div>
-<div className="card orange">
-<div className="cardValue">{urgent}</div>
-<div className="cardLabel">Urgent</div>
+<div className="stat orange">
+<span>{products.filter(p => p.isUrgent).length}</span>
+<p>Urgent</p>
 </div>
-<div className="card red">
-<div className="cardValue">{expired}</div>
-<div className="cardLabel">Expirés</div>
+<div className="stat red">
+<span>{products.filter(p => p.isExpired).length}</span>
+<p>Expirés</p>
 </div>
 </section>
 
-{/* Barre d’actions */}
-<section className="actions">
-<input className="search" placeholder="Rechercher un produit…" />
-<div className="filters">
-<select defaultValue="">
-<option value="">Toutes les catégories</option>
+<section className="controls">
+<input
+type="text"
+placeholder="Rechercher un produit..."
+className="search-input"
+/>
+<select>
+<option>Toutes les catégories</option>
 </select>
-<select defaultValue="">
-<option value="">Tous les lieux</option>
+<select>
+<option>Tous les lieux</option>
 </select>
-</div>
-<button className="primary" onClick={() => setIsModalOpen(true)}>
+<button className="add-btn" onClick={() => setIsModalOpen(true)}>
 + Ajouter un produit
 </button>
 </section>
 
-{/* Liste / état vide */}
-<section className="content">
+<section className="products-list">
 {products.length === 0 ? (
 <div className="empty">
-<div className="emptyIcon">📦</div>
-<div className="emptyTitle">Votre frigo est vide</div>
-<div className="emptyText">
-Commencez par ajouter vos premiers produits.
-</div>
-<div className="tip">
-Astuce : ajoutez les dates d’expiration pour recevoir des alertes
-intelligentes.
-</div>
+<p>Votre frigo est vide</p>
+<small>
+Commencez par ajouter vos premiers produits.<br/>
+Astuce : ajoutez les dates d’expiration pour recevoir des alertes intelligentes.
+</small>
 </div>
 ) : (
-<ul className="grid">
+<ul>
 {products.map((p) => (
-<li key={p.id} className="item">
-<div className="itemHead">
-<div className="itemName">{p.name || "Sans nom"}</div>
-{p.category && <div className="pill">{p.category}</div>}
-</div>
-{p.expiryDate && (
-<div className="muted">DLUO : {p.expiryDate}</div>
-)}
-{p.place && <div className="muted">Lieu : {p.place}</div>}
-</li>
+<li key={p.id}>{p.name}</li>
 ))}
 </ul>
 )}
 </section>
 
-{/* Modal d’ajout */}
 {isModalOpen && (
 <AddProductModal onClose={() => setIsModalOpen(false)} user={user} />
 )}
