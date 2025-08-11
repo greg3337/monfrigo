@@ -73,7 +73,7 @@ setLoading(false);
 };
 
 return (
-<main className="min-h-screen bg-white flex items-center justify-center px-4">
+<main className="signup-page">
 <form
 onSubmit={onSubmit}
 className="w-full max-w-xl bg-white border border-gray-200 rounded-2xl shadow-sm p-6"
