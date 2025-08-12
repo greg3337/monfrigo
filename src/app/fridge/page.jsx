@@ -6,7 +6,7 @@ import { useAuth } from "@/context/use-auth";
 import AddProductModal from "./AddProductModal";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import "../..styles/tabbar.css"
+import "../../styles/tabbar.css"
 
 export default function FridgePage() {
 const { user } = useAuth();
