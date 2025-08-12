@@ -14,7 +14,7 @@ query,
 } from "firebase/firestore";
 
 export default function FridgePage() {
-// Auth + doc utilisateur
+// Auth + user doc
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ const [loading, setLoading] = useState(true);
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [products, setProducts] = useState([]);
 
-// Abonnement auth + chargement doc user
+// Abonnement à l’auth + chargement du doc utilisateur
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -49,7 +49,7 @@ setLoading(false);
 return () => unsub();
 }, []);
 
-// Écoute des produits
+// Écoute des produits de l’utilisateur
 useEffect(() => {
 if (!user) return;
 
@@ -70,13 +70,15 @@ setProducts(list);
 return () => unsub();
 }, [user]);
 
-// Petites métriques (à améliorer plus tard)
+// Petites métriques (simple pour l’instant)
 const total = products.length;
 const urgent = 0;
 const expired = 0;
 
 if (loading) {
-return <div style={{ padding: 24 }}>Chargement…</div>;
+return (
+<div style={{ padding: 24, fontFamily: "system-ui" }}>Chargement…</div>
+);
 }
 
 return (
@@ -88,7 +90,7 @@ return (
 <div>
 <div className="brandTitle">Mon Frigo</div>
 <div className="brandSub">
-Salut {userDoc?.firstName || ""} 👋
+Salut {userDoc?.firstName || "!"} 👋
 </div>
 </div>
 </div>
@@ -116,7 +118,10 @@ Salut {userDoc?.firstName || ""} 👋
 
 {/* Barre d’actions */}
 <section className="actions">
-<input className="search" placeholder="Rechercher un produit…" />
+<input
+className="search"
+placeholder="Rechercher un produit…"
+/>
 <div className="filters">
 <select defaultValue="">
 <option value="">Toutes les catégories</option>
