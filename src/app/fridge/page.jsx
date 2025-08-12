@@ -13,7 +13,7 @@ onSnapshot,
 orderBy,
 query,
 } from "firebase/firestore";
-import "../../styles/tabbar.css"; // TabBar styles
+import "../styles/tabbar.css"; // TabBar styles
 
 export default function FridgePage() {
 // Auth + user doc
