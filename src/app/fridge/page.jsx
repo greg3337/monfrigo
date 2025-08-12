@@ -1,137 +1,144 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/firebase";
-import { useAuth } from "@/context/use-auth";
+
+import React, { useEffect, useState } from "react";
 import AddProductModal from "./AddProductModal";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import "../../styles/tabbar.css"
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../firebase/firebase-config";
+import {
+collection,
+deleteDoc,
+doc,
+getDoc,
+onSnapshot,
+orderBy,
+query,
+} from "firebase/firestore";
+import "../../styles/tabbar.css"; // TabBar styles
 
 export default function FridgePage() {
-const { user } = useAuth();
+// Auth + user doc
+const [user, setUser] = useState(null);
+const [userDoc, setUserDoc] = useState(null);
+const [loading, setLoading] = useState(true);
+
+// UI / données
+const [isModalOpen, setIsModalOpen] = useState(false);
 const [products, setProducts] = useState([]);
-const [showModal, setShowModal] = useState(false);
 
-const pathname = usePathname();
-const tabs = [
-{ href: "/fridge", label: "Frigo", icon: "🧊" },
-{ href: "/repas", label: "Repas", icon: "🍽️" },
-{ href: "/settings", label: "Paramètres", icon: "⚙️" },
-];
-
+// Abonnement à l'auth + chargement doc utilisateur
 useEffect(() => {
-if (!user) return;
-const q = query(collection(db, "products"), where("uid", "==", user.uid));
-const unsubscribe = onSnapshot(q, (snapshot) => {
-const items = [];
-snapshot.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
+const unsub = onAuthStateChanged(auth, async (u) => {
+setUser(u || null);
+
+if (!u) {
+setUserDoc(null);
+setProducts([]);
+setLoading(false);
+return;
+}
+
+try {
+const docRef = doc(db, "users", u.uid);
+const snap = await getDoc(docRef);
+
+if (snap.exists()) {
+setUserDoc(snap.data());
+
+// Récupérer les produits en temps réel
+const productsRef = collection(db, "users", u.uid, "products");
+const q = query(productsRef, orderBy("expiryDate", "asc"));
+
+onSnapshot(q, (snapshot) => {
+const items = snapshot.docs.map((d) => ({
+id: d.id,
+...d.data(),
+}));
 setProducts(items);
 });
-return () => unsubscribe();
-}, [user]);
+}
+} catch (error) {
+console.error("Erreur récupération utilisateur :", error);
+}
 
-const total = products.length;
-const urgent = products.filter((p) => {
-if (!p.expiration) return false;
-const diff =
-(new Date(p.expiration).getTime() - new Date().getTime()) /
-(1000 * 60 * 60 * 24);
-return diff <= 3 && diff > 0;
+setLoading(false);
+});
+
+return () => unsub();
+}, []);
+
+// Suppression produit
+const handleDelete = async (id) => {
+if (!user) return;
+try {
+await deleteDoc(doc(db, "users", user.uid, "products", id));
+} catch (error) {
+console.error("Erreur suppression produit :", error);
+}
+};
+
+// Calcul compteurs
+const totalCount = products.length;
+const urgentCount = products.filter((p) => {
+const days = (new Date(p.expiryDate) - new Date()) / (1000 * 60 * 60 * 24);
+return days <= 3 && days > 0;
 }).length;
-const expired = products.filter((p) => {
-if (!p.expiration) return false;
-return new Date(p.expiration) < new Date();
-}).length;
+const expiredCount = products.filter(
+(p) => new Date(p.expiryDate) < new Date()
+).length;
+
+if (loading) return <p>Chargement...</p>;
 
 return (
-<div className="wrap">
-<h1>Salut {user?.displayName || "!"} 👋</h1>
+<div className="fridge-container">
+<h2>Mes Produits</h2>
+<p>Gérez vos aliments intelligemment</p>
 
-{/* Stats */}
-<div className="stats">
-<div className="stat total">
-<span>{total}</span>
-<p>Total</p>
-</div>
-<div className="stat urgent">
-<span>{urgent}</span>
-<p>Urgent</p>
-</div>
-<div className="stat expired">
-<span>{expired}</span>
-<p>Expirés</p>
-</div>
+{/* Compteurs */}
+<div className="counters">
+<div className="counter total">{totalCount} Total</div>
+<div className="counter urgent">{urgentCount} Urgent</div>
+<div className="counter expired">{expiredCount} Expirés</div>
 </div>
 
-{/* Barre recherche + filtre + bouton */}
-<div className="controls">
-<input
-type="text"
-placeholder="Rechercher un produit..."
-className="search"
-/>
-<select>
-<option>Toutes les catégories</option>
-</select>
-<select>
-<option>Tous les lieux</option>
-</select>
-<button className="add-btn" onClick={() => setShowModal(true)}>
+{/* Bouton ajout produit */}
+<button onClick={() => setIsModalOpen(true)} className="add-btn">
 + Ajouter un produit
 </button>
-</div>
 
 {/* Liste produits */}
-<div className="product-list">
-{products.map((p) => (
-<div key={p.id} className="product-item">
-<div>
-<strong>{p.name}</strong>
-{p.expiration && (
-<div>DLUO : {p.expiration}</div>
-)}
+<div className="products-list">
+{products.length === 0 ? (
+<p>Votre frigo est vide.</p>
+) : (
+products.map((p) => (
+<div key={p.id} className="product-card">
+<span>{p.name}</span>
+<span>{p.expiryDate}</span>
+<button onClick={() => handleDelete(p.id)}>Supprimer</button>
 </div>
-{p.category && (
-<span className="category">{p.category}</span>
-)}
-</div>
-))}
-
-{products.length === 0 && (
-<div className="empty">
-<p>Votre frigo est vide</p>
-<small>Ajoutez vos premiers produits</small>
-</div>
+))
 )}
 </div>
 
-{showModal && (
+{/* Modal ajout */}
+{isModalOpen && (
 <AddProductModal
-onClose={() => setShowModal(false)}
-onAdd={(prod) => {
-// l’écriture Firestore est gérée dans FridgeInventory ou ici si besoin
-}}
+onClose={() => setIsModalOpen(false)}
+onAdd={() => {}}
 />
 )}
 
-{/* Barre d’onglets bas */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<div className="tabs">
-{tabs.map((t) => {
-const active = pathname.startsWith(t.href);
-return (
-<Link
-key={t.href}
-href={t.href}
-className={`tablink ${active ? "active" : ""}`}
->
-<span className="tabicon" aria-hidden>{t.icon}</span>
-<span className="tablabel">{t.label}</span>
-</Link>
-);
-})}
-</div>
+{/* TabBar */}
+<nav className="tabbar">
+<a href="/fridge" className="tablink active">
+🧊 Frigo
+</a>
+<a href="/repas" className="tablink">
+🍽️ Repas
+</a>
+<a href="/settings" className="tablink">
+⚙️ Paramètres
+</a>
 </nav>
 </div>
 );
