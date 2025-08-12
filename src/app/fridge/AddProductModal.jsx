@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 
 export default function AddProductModal({ onClose, onAdd }) {
@@ -8,13 +9,25 @@ const [category, setCategory] = useState("");
 
 const handleSubmit = async (e) => {
 e.preventDefault();
-if (!name.trim()) return alert("Nom du produit requis.");
+if (!name.trim()) {
+return alert("Nom du produit requis.");
+}
+
 const product = {
 name: name.trim(),
-expiration: expiration || null, // string (yyyy-mm-dd) ok
+expiration: expiration || null, // format yyyy-mm-dd
 category: category || null,
 };
-await onAdd(product); // la page s’occupe d’écrire dans Firestore
+
+try {
+await onAdd(product); // appelle la fonction transmise par la page
+setName("");
+setExpiration("");
+setCategory("");
+} catch (err) {
+console.error("Erreur lors de l'ajout du produit :", err);
+alert("Erreur lors de l'ajout du produit.");
+}
 };
 
 return (
@@ -23,7 +36,7 @@ return (
 <h3>Ajouter un produit</h3>
 <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
 <label>
-Nom *
+Nom
 <input
 type="text"
 value={name}
