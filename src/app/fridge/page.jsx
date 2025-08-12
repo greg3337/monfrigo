@@ -11,19 +11,20 @@ getDoc,
 onSnapshot,
 orderBy,
 query,
-addDoc,
-serverTimestamp
+deleteDoc, // 👈 ajouté pour la suppression
 } from "firebase/firestore";
 
 export default function FridgePage() {
+// Auth + user doc
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
 
+// UI / données
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [products, setProducts] = useState([]);
 
-// Auth
+// Abonnement à l’auth + chargement du doc utilisateur
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -49,7 +50,7 @@ setLoading(false);
 return () => unsub();
 }, []);
 
-// Écoute des produits
+// Écoute des produits de l’utilisateur
 useEffect(() => {
 if (!user) return;
 
@@ -70,22 +71,21 @@ setProducts(list);
 return () => unsub();
 }, [user]);
 
-// Fonction d'ajout
-const handleAddProduct = async (product) => {
-if (!user) return alert("Vous devez être connecté");
+// Suppression d'un produit
+const handleDelete = async (productId) => {
+if (!user) return;
+const confirmDelete = window.confirm("Voulez-vous vraiment supprimer ce produit ?");
+if (!confirmDelete) return;
 
 try {
-await addDoc(collection(db, "users", user.uid, "fridge"), {
-...product,
-createdAt: serverTimestamp(),
-});
-setIsModalOpen(false); // ferme le modal après ajout
-} catch (err) {
-console.error("Erreur lors de l'ajout du produit :", err);
-alert("Erreur lors de l'ajout du produit");
+await deleteDoc(doc(db, "users", user.uid, "fridge", productId));
+console.log("Produit supprimé :", productId);
+} catch (error) {
+console.error("Erreur lors de la suppression :", error);
 }
 };
 
+// Petites métriques
 const total = products.length;
 const urgent = 0;
 const expired = 0;
@@ -146,7 +146,7 @@ placeholder="Rechercher un produit…"
 </button>
 </section>
 
-{/* Liste */}
+{/* Liste / état vide */}
 <section className="content">
 {products.length === 0 ? (
 <div className="empty">
@@ -168,22 +168,25 @@ intelligentes.
 <div className="itemName">{p.name || "Sans nom"}</div>
 {p.category && <div className="pill">{p.category}</div>}
 </div>
-{p.expiration && (
-<div className="muted">DLUO : {p.expiration}</div>
+{p.expiryDate && (
+<div className="muted">DLUO : {p.expiryDate}</div>
 )}
 {p.place && <div className="muted">Lieu : {p.place}</div>}
+<button
+className="deleteBtn"
+onClick={() => handleDelete(p.id)}
+>
+❌ Supprimer
+</button>
 </li>
 ))}
 </ul>
 )}
 </section>
 
-{/* Modal */}
+{/* Modal d’ajout */}
 {isModalOpen && (
-<AddProductModal
-onClose={() => setIsModalOpen(false)}
-onAdd={handleAddProduct}
-/>
+<AddProductModal onClose={() => setIsModalOpen(false)} user={user} />
 )}
 </div>
 );
