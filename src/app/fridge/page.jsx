@@ -14,7 +14,6 @@ orderBy,
 query,
 } from "firebase/firestore";
 import "../styles/tabbar.css"; // ✅ Chemin corrigé
-import Link fom "next/link";
 
 export default function FridgePage() {
 // Auth + user doc
