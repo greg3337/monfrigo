@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -23,13 +23,17 @@ const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
 
-// UI / données
-const [isModalOpen, setIsModalOpen] = useState(false);
+// Données
 const [products, setProducts] = useState([]);
+
+// UI (barre d’actions)
+const [q, setQ] = useState('');
+const [category, setCategory] = useState('all');
+const [place, setPlace] = useState('all');
+const [isModalOpen, setIsModalOpen] = useState(false);
 
 const pathname = usePathname();
 
-// Auth + données
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -42,17 +46,15 @@ return;
 }
 
 try {
-// Doc utilisateur
 const userRef = doc(db, 'users', u.uid);
 const snap = await getDoc(userRef);
 if (snap.exists()) setUserDoc(snap.data());
 
-// Produits (temps réel)
-const q = query(
+const qRef = query(
 collection(db, 'users', u.uid, 'products'),
 orderBy('expirationDate')
 );
-onSnapshot(q, (snapshot) => {
+onSnapshot(qRef, (snapshot) => {
 const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 setProducts(list);
 });
@@ -66,11 +68,22 @@ setLoading(false);
 return () => unsub();
 }, []);
 
-// Suppression produit
 const deleteProduct = async (id) => {
 if (!user) return;
 await deleteDoc(doc(db, 'users', user.uid, 'products', id));
 };
+
+// Filtrage affiché (pour coller à la barre d’actions)
+const visible = useMemo(() => {
+return products.filter((p) => {
+const okQ =
+!q ||
+(p.name || '').toLowerCase().includes(q.trim().toLowerCase());
+const okCat = category === 'all' || (p.category || 'autre') === category;
+const okPlace = place === 'all' || (p.place || 'autre') === place;
+return okQ && okCat && okPlace;
+});
+}, [products, q, category, place]);
 
 if (loading) return <p>Chargement...</p>;
 
@@ -87,19 +100,19 @@ return (
 </div>
 </div>
 
-{/* Cartes stats */}
+{/* Cartes stats (vert / orange / rouge) */}
 <div className="stats">
-<div className="card card_green">
+<div className="card green">
 <div className="cardLabel">Total</div>
 <div className="cardValue">{products.length}</div>
 </div>
-<div className="card card_orange">
+<div className="card orange">
 <div className="cardLabel">Urgent</div>
 <div className="cardValue">
 {products.filter((p) => p.status === 'urgent').length}
 </div>
 </div>
-<div className="card card_red">
+<div className="card red">
 <div className="cardLabel">Expirés</div>
 <div className="cardValue">
 {products.filter((p) => p.status === 'expired' || p.status === 'expiré').length}
@@ -107,22 +120,49 @@ return (
 </div>
 </div>
 
-{/* Bouton haut (uniquement si on a déjà des produits) */}
-{products.length > 0 && (
+{/* Barre d’actions : recherche + 2 filtres + bouton bleu */}
 <div className="actions">
+<input
+className="search"
+placeholder="Rechercher un produit…"
+value={q}
+onChange={(e) => setQ(e.target.value)}
+/>
+
+<div className="filters">
+<select value={category} onChange={(e) => setCategory(e.target.value)}>
+<option value="all">Toutes les catégories</option>
+<option value="viande">Viande</option>
+<option value="poisson">Poisson</option>
+<option value="légume">Légume</option>
+<option value="fruit">Fruit</option>
+<option value="laitier">Laitier</option>
+<option value="autre">Autre</option>
+</select>
+
+<select value={place} onChange={(e) => setPlace(e.target.value)}>
+<option value="all">Tous les lieux</option>
+<option value="frigo">Frigo</option>
+<option value="congélo">Congélo</option>
+<option value="placard">Placard</option>
+</select>
+</div>
+
 <button className="primary" onClick={() => setIsModalOpen(true)}>
 + Ajouter un produit
 </button>
 </div>
-)}
 
 {/* Liste produits */}
 <div className="content">
 <ul className="grid">
-{products.map((p) => (
+{visible.map((p) => (
 <li key={p.id} className="item">
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
+{p.expirationDate && (
+<span className="pill">{p.expirationDate}</span>
+)}
 </div>
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
 Supprimer
@@ -131,8 +171,8 @@ Supprimer
 ))}
 </ul>
 
-{/* État vide */}
-{products.length === 0 && (
+{/* État vide (avec bouton bleu centré) */}
+{visible.length === 0 && products.length === 0 && (
 <div className="empty">
 <div className="emptyIcon">🧺</div>
 <div className="emptyTitle">Votre frigo est vide</div>
@@ -145,32 +185,19 @@ Ajouter un produit
 </div>
 
 {/* Modal d’ajout */}
-{isModalOpen && (
-<AddProductModal closeModal={() => setIsModalOpen(false)} />
-)}
+{isModalOpen && <AddProductModal closeModal={() => setIsModalOpen(false)} />}
 
-{/* Barre d’onglets */}
+{/* Tabbar en bas */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link
-href="/fridge"
-className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}
->
+<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
 <span className="tab__icon">❄️</span>
 <span className="tab__label">Frigo</span>
 </Link>
-
-<Link
-href="/repas"
-className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}
->
+<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
 <span className="tab__icon">🍽️</span>
 <span className="tab__label">Repas</span>
 </Link>
-
-<Link
-href="/settings"
-className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}
->
+<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
 <span className="tab__icon">⚙️</span>
 <span className="tab__label">Paramètres</span>
 </Link>
