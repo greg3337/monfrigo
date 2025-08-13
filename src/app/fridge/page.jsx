@@ -1,12 +1,21 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import AddProductModal from "./AddProductModal.jsx";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase/firebase-config";
-import {collection,deleteDoc,doc,getDoc,onSnapshot,orderBy,query,} from "firebase/firestore";
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import AddProductModal from './AddProductModal.jsx';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebase/firebase-config';
+import {
+collection,
+deleteDoc,
+doc,
+getDoc,
+onSnapshot,
+orderBy,
+query,
+} from 'firebase/firestore';
 
 export default function FridgePage() {
 // Auth + user doc
@@ -20,7 +29,7 @@ const [products, setProducts] = useState([]);
 
 const pathname = usePathname();
 
-// Abonnement à l'auth + chargement des données
+// Auth + données
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -33,20 +42,22 @@ return;
 }
 
 try {
-const userRef = doc(db, "users", u.uid);
+// Doc utilisateur
+const userRef = doc(db, 'users', u.uid);
 const snap = await getDoc(userRef);
 if (snap.exists()) setUserDoc(snap.data());
 
+// Produits (temps réel)
 const q = query(
-collection(db, "users", u.uid, "products"),
-orderBy("expirationDate")
+collection(db, 'users', u.uid, 'products'),
+orderBy('expirationDate')
 );
 onSnapshot(q, (snapshot) => {
 const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 setProducts(list);
 });
 } catch (err) {
-console.error("Erreur Firestore :", err);
+console.error('Erreur Firestore :', err);
 } finally {
 setLoading(false);
 }
@@ -58,64 +69,83 @@ return () => unsub();
 // Suppression produit
 const deleteProduct = async (id) => {
 if (!user) return;
-await deleteDoc(doc(db, "users", user.uid, "products", id));
+await deleteDoc(doc(db, 'users', user.uid, 'products', id));
 };
 
 if (loading) return <p>Chargement...</p>;
 
 return (
-<div className="fridge-container">
-<h1>Salut {userDoc?.name || "utilisateur"} 👋</h1>
+<div className="wrap">
+{/* Header simple (tes classes viennent de globals.css) */}
+<div className="header">
+<div className="brand">
+<div className="logo">🧊</div>
+<div>
+<div className="brandTitle">Mon Frigo</div>
+<div className="brandSub">Salut {userDoc?.name || 'utilisateur'} 👋</div>
+</div>
+</div>
+</div>
 
+{/* Stats (tes classes .stats / .card / .cardValue sont dans globals.css) */}
 <div className="stats">
-<div className="counter total">Total: {products.length}</div>
-<div className="counter urgent">
-Urgent: {products.filter((p) => p.status === "urgent").length}
+<div className="card card_green">
+<div className="cardLabel">Total</div>
+<div className="cardValue">{products.length}</div>
 </div>
-<div className="counter expired">
-Expirés: {products.filter((p) => p.status === "expired" || p.status === "expiré").length}
+<div className="card card_orange">
+<div className="cardLabel">Urgent</div>
+<div className="cardValue">{products.filter(p => p.status === 'urgent').length}</div>
+</div>
+<div className="card card_red">
+<div className="cardLabel">Expirés</div>
+<div className="cardValue">{products.filter(p => p.status === 'expired' || p.status === 'expiré').length}</div>
 </div>
 </div>
 
-<button className="add-btn" onClick={() => setIsModalOpen(true)}>
-+ Ajouter un produit
-</button>
+{/* Actions */}
+<div className="actions">
+<button className="primary" onClick={() => setIsModalOpen(true)}>+ Ajouter un produit</button>
+</div>
 
-<div className="products-list">
+{/* Liste produits */}
+<div className="content">
+<ul className="grid">
 {products.map((p) => (
-<div key={p.id} className="product-card">
-<span>{p.name}</span>
-<button onClick={() => deleteProduct(p.id)}>❌</button>
+<li key={p.id} className="item">
+<div className="itemMeta">
+<span className="itemName">{p.name}</span>
 </div>
+<button className="deleteBtn" onClick={() => deleteProduct(p.id)}>Supprimer</button>
+</li>
 ))}
+</ul>
+
+{products.length === 0 && (
+<div className="empty">
+<div className="emptyIcon">🧺</div>
+<div className="emptyTitle">Votre frigo est vide</div>
+<div className="emptyText">Ajoutez vos premiers produits pour commencer.</div>
+<button className="primary" onClick={() => setIsModalOpen(true)}>Ajouter un produit</button>
+</div>
+)}
 </div>
 
 {isModalOpen && (
 <AddProductModal closeModal={() => setIsModalOpen(false)} />
 )}
 
-{/* --- Barre d’onglets (navigation client avec Next Link) --- */}
+{/* Barre d’onglets (Link = navigation instantanée) */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link
-href="/fridge"
-className={`tab ${pathname.includes("/fridge") ? "is-active" : ""}`}
->
+<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
 <span className="tab__icon">❄️</span>
 <span className="tab__label">Frigo</span>
 </Link>
-
-<Link
-href="/repas"
-className={`tab ${pathname.includes("/repas") ? "is-active" : ""}`}
->
+<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
 <span className="tab__icon">🍽️</span>
 <span className="tab__label">Repas</span>
 </Link>
-
-<Link
-href="/settings"
-className={`tab ${pathname.includes("/settings") ? "is-active" : ""}`}
->
+<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
 <span className="tab__icon">⚙️</span>
 <span className="tab__label">Paramètres</span>
 </Link>
