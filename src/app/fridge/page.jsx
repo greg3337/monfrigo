@@ -76,7 +76,7 @@ if (loading) return <p>Chargement...</p>;
 
 return (
 <div className="wrap">
-{/* Header simple (tes classes viennent de globals.css) */}
+{/* Header */}
 <div className="header">
 <div className="brand">
 <div className="logo">🧊</div>
@@ -87,7 +87,7 @@ return (
 </div>
 </div>
 
-{/* Stats (tes classes .stats / .card / .cardValue sont dans globals.css) */}
+{/* Cartes stats */}
 <div className="stats">
 <div className="card card_green">
 <div className="cardLabel">Total</div>
@@ -95,18 +95,26 @@ return (
 </div>
 <div className="card card_orange">
 <div className="cardLabel">Urgent</div>
-<div className="cardValue">{products.filter(p => p.status === 'urgent').length}</div>
+<div className="cardValue">
+{products.filter((p) => p.status === 'urgent').length}
+</div>
 </div>
 <div className="card card_red">
 <div className="cardLabel">Expirés</div>
-<div className="cardValue">{products.filter(p => p.status === 'expired' || p.status === 'expiré').length}</div>
+<div className="cardValue">
+{products.filter((p) => p.status === 'expired' || p.status === 'expiré').length}
+</div>
 </div>
 </div>
 
-{/* Actions */}
+{/* Bouton haut (uniquement si on a déjà des produits) */}
+{products.length > 0 && (
 <div className="actions">
-<button className="primary" onClick={() => setIsModalOpen(true)}>+ Ajouter un produit</button>
+<button className="primary" onClick={() => setIsModalOpen(true)}>
++ Ajouter un produit
+</button>
 </div>
+)}
 
 {/* Liste produits */}
 <div className="content">
@@ -116,36 +124,53 @@ return (
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
 </div>
-<button className="deleteBtn" onClick={() => deleteProduct(p.id)}>Supprimer</button>
+<button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
+Supprimer
+</button>
 </li>
 ))}
 </ul>
 
+{/* État vide */}
 {products.length === 0 && (
 <div className="empty">
 <div className="emptyIcon">🧺</div>
 <div className="emptyTitle">Votre frigo est vide</div>
 <div className="emptyText">Ajoutez vos premiers produits pour commencer.</div>
-<button className="primary" onClick={() => setIsModalOpen(true)}>Ajouter un produit</button>
+<button className="primary" onClick={() => setIsModalOpen(true)}>
+Ajouter un produit
+</button>
 </div>
 )}
 </div>
 
+{/* Modal d’ajout */}
 {isModalOpen && (
 <AddProductModal closeModal={() => setIsModalOpen(false)} />
 )}
 
-{/* Barre d’onglets (Link = navigation instantanée) */}
+{/* Barre d’onglets */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
+<Link
+href="/fridge"
+className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}
+>
 <span className="tab__icon">❄️</span>
 <span className="tab__label">Frigo</span>
 </Link>
-<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
+
+<Link
+href="/repas"
+className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}
+>
 <span className="tab__icon">🍽️</span>
 <span className="tab__label">Repas</span>
 </Link>
-<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
+
+<Link
+href="/settings"
+className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}
+>
 <span className="tab__icon">⚙️</span>
 <span className="tab__label">Paramètres</span>
 </Link>
