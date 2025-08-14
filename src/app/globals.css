@@ -1,56 +1,119 @@
-html, body { height: 100%; }
-body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-
-.tabbar {
-position: fixed;
-left: 0; right: 0; bottom: 0;
-height: 64px;
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-align-items: center;
-background: #ffffff;
-border-top: 1px solid rgba(0,0,0,0.08);
-box-shadow: 0 -8px 20px rgba(0,0,0,0.06);
-z-index: 1000;
-padding-bottom: env(safe-area-inset-bottom);
+body {
+font-family: Arial, sans-serif;
+background: #f8f9fa;
+margin: 0;
+padding: 0;
+color: #333;
 }
 
-.tabbar .tab {
-height: 100%;
+.wrap {
+padding: 1rem;
+padding-bottom: 4rem; /* espace pour la tabbar */
+}
+
+.header {
+margin-bottom: 1rem;
+}
+
+.brandTitle {
+font-size: 1.4rem;
+font-weight: bold;
+}
+
+.brandSub {
+color: #666;
+font-size: 0.9rem;
+}
+
+.stats {
+display: flex;
+gap: 1rem;
+margin-bottom: 1rem;
+}
+
+.card {
+flex: 1;
+padding: 1rem;
+border-radius: 8px;
+color: white;
+text-align: center;
+}
+
+.card.green { background: #28a745; }
+.card.orange { background: #fd7e14; }
+.card.red { background: #dc3545; }
+
+.cardLabel { font-size: 0.9rem; }
+.cardValue { font-size: 1.5rem; font-weight: bold; }
+
+.actions {
+display: flex;
+flex-wrap: wrap;
+gap: 0.5rem;
+margin-bottom: 1rem;
+}
+
+.search {
+flex: 1;
+padding: 0.5rem;
+}
+
+.filters select {
+padding: 0.5rem;
+}
+
+.primary {
+background: #007bff;
+color: white;
+border: none;
+padding: 0.5rem 0.8rem;
+border-radius: 4px;
+cursor: pointer;
+}
+
+.grid {
+list-style: none;
+padding: 0;
+}
+
+.item {
+background: white;
+border-radius: 8px;
+padding: 0.8rem;
+margin-bottom: 0.5rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.itemMeta {
 display: flex;
 flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 4px;
-text-decoration: none;
-color: #555;
-font-size: 12px;
--webkit-tap-highlight-color: transparent;
-user-select: none;
 }
 
-.tab__icon { font-size: 18px; line-height: 1; }
-
-.tab.is-active { color: #0a66ff; font-weight: 600; }
-.tab.is-active .tab__icon { transform: translateY(-1px); }
-
-.tabbar .tab:active { background: rgba(0,0,0,0.05); }
-@media (hover:hover) { .tabbar .tab:hover { background: rgba(0,0,0,0.04); } }
-
-.tabbar .tab:focus-visible {
-outline: 2px solid #0a66ff;
-outline-offset: -4px;
-border-radius: 8px;
+.itemName { font-weight: bold; }
+.pill {
+background: #eee;
+border-radius: 12px;
+padding: 0.2rem 0.5rem;
+font-size: 0.8rem;
+margin-top: 0.2rem;
 }
 
-@media (prefers-color-scheme: dark) {
-.tabbar {
-background: #0e0f12;
-border-top-color: rgba(255,255,255,0.08);
-box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+.deleteBtn {
+background: #dc3545;
+color: white;
+border: none;
+padding: 0.4rem 0.6rem;
+border-radius: 4px;
+cursor: pointer;
 }
-.tabbar .tab { color: #c9c9c9; }
-.tab.is-active { color: #6aa6ff; }
-.tabbar .tab:active,
-.tabbar .tab:hover { background: rgba(255,255,255,0.06); }
+
+.empty {
+text-align: center;
+padding: 2rem 0;
 }
+
+.emptyIcon { font-size: 2rem; }
+.emptyTitle { font-size: 1.2rem; font-weight: bold; margin-top: 0.5rem; }
+.emptyText { color: #666; margin: 0.5rem 0 1rem; }
