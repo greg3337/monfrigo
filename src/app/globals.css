@@ -1,223 +1,76 @@
-* Reset de base */
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-}
-
+/* --- Réserve de l’espace en bas pour la barre --- */
+html, body { height: 100%; }
 body {
-font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-background: #f4f6f8;
-color: #333;
-padding: 0;
-margin: 0;
+/* hauteur de la barre + safe area iOS */
+padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 
-/* Wrapper global */
-.wrap {
-display: flex;
-flex-direction: column;
-min-height: 100vh;
-padding: 15px;
-padding-bottom: 70px; /* espace pour la tabbar */
-}
-
-/* Header */
-.header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 20px;
-}
-
-.brandTitle {
-font-size: 1.6rem;
-font-weight: bold;
-}
-
-.brandSub {
-font-size: 1rem;
-color: #666;
-}
-
-/* Cartes stats */
-.stats {
-display: flex;
-gap: 10px;
-margin-bottom: 20px;
-}
-
-.card {
-flex: 1;
-padding: 12px;
-border-radius: 8px;
-text-align: center;
-color: white;
-}
-
-.card.green {
-background: #28a745;
-}
-.card.orange {
-background: #ff9800;
-}
-.card.red {
-background: #dc3545;
-}
-
-.cardLabel {
-font-size: 0.9rem;
-opacity: 0.8;
-}
-
-.cardValue {
-font-size: 1.4rem;
-font-weight: bold;
-}
-
-/* Barre d'actions */
-.actions {
-display: flex;
-flex-wrap: wrap;
-gap: 8px;
-margin-bottom: 15px;
-}
-
-.search,
-select {
-padding: 8px;
-border: 1px solid #ccc;
-border-radius: 6px;
-flex: 1;
-min-width: 150px;
-}
-
-button.primary {
-background: #007bff;
-color: white;
-border: none;
-padding: 8px 14px;
-border-radius: 6px;
-cursor: pointer;
-transition: background 0.2s;
-}
-
-button.primary:hover {
-background: #0056b3;
-}
-
-/* Liste produits */
-.content {
-flex: 1;
-}
-
-.grid {
-list-style: none;
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-gap: 12px;
-}
-
-.item {
-background: white;
-padding: 12px;
-border-radius: 8px;
-box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-display: flex;
-flex-direction: column;
-justify-content: space-between;
-}
-
-.itemMeta {
-display: flex;
-justify-content: space-between;
-align-items: center;
-}
-
-.itemName {
-font-weight: bold;
-}
-
-.pill {
-padding: 3px 8px;
-border-radius: 12px;
-font-size: 0.8rem;
-color: white;
-}
-
-.pillGreen {
-background: #28a745;
-}
-.pillOrange {
-background: #ff9800;
-}
-.pillRed {
-background: #dc3545;
-}
-
-/* Bouton suppression */
-.deleteBtn {
-background: #dc3545;
-color: white;
-border: none;
-padding: 6px 10px;
-border-radius: 6px;
-cursor: pointer;
-margin-top: 10px;
-}
-
-.deleteBtn:hover {
-background: #b02a37;
-}
-
-/* État vide */
-.empty {
-text-align: center;
-padding: 40px 10px;
-}
-
-.emptyIcon {
-font-size: 2rem;
-margin-bottom: 10px;
-}
-
-.emptyTitle {
-font-weight: bold;
-margin-bottom: 5px;
-}
-
-.emptyText {
-color: #777;
-font-size: 0.9rem;
-margin-bottom: 15px;
-}
-
-/* Tabbar */
+/* --- Barre d’onglets fixe --- */
 .tabbar {
 position: fixed;
-bottom: 0;
-left: 0;
-width: 100%;
-background: white;
+left: 0; right: 0; bottom: 0;
+height: 64px;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+align-items: center;
+background: #ffffff;
+border-top: 1px solid rgba(0,0,0,0.08);
+box-shadow: 0 -8px 20px rgba(0,0,0,0.06);
+z-index: 1000;
+padding-bottom: env(safe-area-inset-bottom); /* iPhone notch */
+}
+
+/* --- Boutons d’onglet --- */
+.tabbar .tab {
+height: 100%;
 display: flex;
-justify-content: space-around;
-border-top: 1px solid #ddd;
-padding: 8px 0;
-}
-
-.tab {
-text-align: center;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 4px;
 text-decoration: none;
-color: #666;
-font-size: 0.9rem;
+color: #555; /* état par défaut */
+font-size: 12px; /* label */
+-webkit-tap-highlight-color: transparent;
+user-select: none;
 }
 
-.tab_icon {
-display: block;
-font-size: 1.4rem;
+.tab__icon { /* icône (emoji/SVG) */
+font-size: 18px;
+line-height: 1;
 }
 
+/* --- État actif --- */
 .tab.is-active {
-color: #007bff;
-font-weight: bold;
+color: #0a66ff;
+font-weight: 600;
+}
+.tab.is-active .tab__icon {
+transform: translateY(-1px);
+}
+
+/* --- Feedback tactile / hover --- */
+.tabbar .tab:active { background: rgba(0,0,0,0.05); }
+@media (hover:hover) {
+.tabbar .tab:hover { background: rgba(0,0,0,0.04); }
+}
+
+/* --- Accessibilité: focus visible --- */
+.tabbar .tab:focus-visible {
+outline: 2px solid #0a66ff;
+outline-offset: -4px;
+border-radius: 8px;
+}
+
+/* --- Dark mode --- */
+@media (prefers-color-scheme: dark) {
+.tabbar {
+background: #0e0f12;
+border-top-color: rgba(255,255,255,0.08);
+box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+}
+.tabbar .tab { color: #c9c9c9; }
+.tab.is-active { color: #6aa6ff; }
+.tabbar .tab:active,
+.tabbar .tab:hover { background: rgba(255,255,255,0.06); }
 }
