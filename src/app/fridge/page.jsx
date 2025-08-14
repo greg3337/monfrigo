@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 import AddProductModal from "./AddProductModal.jsx";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/firebase/firebase-config";
+import { auth, db } from "../firebase/firebase-config";
 import {
 collection,
 deleteDoc,
