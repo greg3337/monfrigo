@@ -1,81 +1,223 @@
-/* --- Pills --- */
-.pill {
-display: inline-block;
-padding: 4px 8px;
-margin-left: 6px;
-font-size: 0.8rem;
-font-weight: 500;
-border-radius: 12px;
-background-color: #f0f0f0;
+* Reset de base */
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+body {
+font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+background: #f4f6f8;
 color: #333;
-white-space: nowrap;
+padding: 0;
+margin: 0;
 }
 
-.pill:first-of-type {
-margin-left: 0;
-}
-
-/* Couleurs par type si besoin */
-.pill.frigo {
-background-color: #cce5ff;
-color: #004085;
-}
-
-.pill.congel {
-background-color: #d1ecf1;
-color: #0c5460;
-}
-
-.pill.placard {
-background-color: #fff3cd;
-color: #856404;
-}
-
-.pill.urgent {
-background-color: #ffe5e5;
-color: #a00;
-}
-
-.pill.expired {
-background-color: #f8d7da;
-color: #721c24;
-}
-
-/* --- Items --- */
-.item {
+/* Wrapper global */
+.wrap {
 display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 12px;
-margin-bottom: 10px;
-border-radius: 8px;
-background: #fff;
-box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+flex-direction: column;
+min-height: 100vh;
+padding: 15px;
+padding-bottom: 70px; /* espace pour la tabbar */
 }
 
-.itemMeta {
+/* Header */
+.header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 20px;
+}
+
+.brandTitle {
+font-size: 1.6rem;
+font-weight: bold;
+}
+
+.brandSub {
+font-size: 1rem;
+color: #666;
+}
+
+/* Cartes stats */
+.stats {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+
+.card {
+flex: 1;
+padding: 12px;
+border-radius: 8px;
+text-align: center;
+color: white;
+}
+
+.card.green {
+background: #28a745;
+}
+.card.orange {
+background: #ff9800;
+}
+.card.red {
+background: #dc3545;
+}
+
+.cardLabel {
+font-size: 0.9rem;
+opacity: 0.8;
+}
+
+.cardValue {
+font-size: 1.4rem;
+font-weight: bold;
+}
+
+/* Barre d'actions */
+.actions {
 display: flex;
 flex-wrap: wrap;
-align-items: center;
+gap: 8px;
+margin-bottom: 15px;
 }
 
-.itemName {
-font-weight: 600;
-font-size: 1rem;
-}
-
-/* --- Bouton Supprimer --- */
-.deleteBtn {
-background: #ff4d4f;
-border: none;
-padding: 6px 10px;
-color: white;
+.search,
+select {
+padding: 8px;
+border: 1px solid #ccc;
 border-radius: 6px;
-font-size: 0.85rem;
+flex: 1;
+min-width: 150px;
+}
+
+button.primary {
+background: #007bff;
+color: white;
+border: none;
+padding: 8px 14px;
+border-radius: 6px;
 cursor: pointer;
 transition: background 0.2s;
 }
 
+button.primary:hover {
+background: #0056b3;
+}
+
+/* Liste produits */
+.content {
+flex: 1;
+}
+
+.grid {
+list-style: none;
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+gap: 12px;
+}
+
+.item {
+background: white;
+padding: 12px;
+border-radius: 8px;
+box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+}
+
+.itemMeta {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.itemName {
+font-weight: bold;
+}
+
+.pill {
+padding: 3px 8px;
+border-radius: 12px;
+font-size: 0.8rem;
+color: white;
+}
+
+.pillGreen {
+background: #28a745;
+}
+.pillOrange {
+background: #ff9800;
+}
+.pillRed {
+background: #dc3545;
+}
+
+/* Bouton suppression */
+.deleteBtn {
+background: #dc3545;
+color: white;
+border: none;
+padding: 6px 10px;
+border-radius: 6px;
+cursor: pointer;
+margin-top: 10px;
+}
+
 .deleteBtn:hover {
-background: #d9363e;
+background: #b02a37;
+}
+
+/* État vide */
+.empty {
+text-align: center;
+padding: 40px 10px;
+}
+
+.emptyIcon {
+font-size: 2rem;
+margin-bottom: 10px;
+}
+
+.emptyTitle {
+font-weight: bold;
+margin-bottom: 5px;
+}
+
+.emptyText {
+color: #777;
+font-size: 0.9rem;
+margin-bottom: 15px;
+}
+
+/* Tabbar */
+.tabbar {
+position: fixed;
+bottom: 0;
+left: 0;
+width: 100%;
+background: white;
+display: flex;
+justify-content: space-around;
+border-top: 1px solid #ddd;
+padding: 8px 0;
+}
+
+.tab {
+text-align: center;
+text-decoration: none;
+color: #666;
+font-size: 0.9rem;
+}
+
+.tab_icon {
+display: block;
+font-size: 1.4rem;
+}
+
+.tab.is-active {
+color: #007bff;
+font-weight: bold;
 }
