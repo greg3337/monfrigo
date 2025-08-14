@@ -18,22 +18,23 @@ query,
 } from 'firebase/firestore';
 
 export default function FridgePage() {
-// Auth + user doc
+// Auth + user
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
 
-// Données
+// Données produits
 const [products, setProducts] = useState([]);
 
-// UI (barre d’actions)
+// UI
+const [isModalOpen, setIsModalOpen] = useState(false);
 const [q, setQ] = useState('');
 const [category, setCategory] = useState('all');
 const [place, setPlace] = useState('all');
-const [isModalOpen, setIsModalOpen] = useState(false);
 
 const pathname = usePathname();
 
+// Auth + chargement données
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -58,8 +59,8 @@ onSnapshot(qRef, (snapshot) => {
 const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 setProducts(list);
 });
-} catch (err) {
-console.error('Erreur Firestore :', err);
+} catch (e) {
+console.error('Firestore error:', e);
 } finally {
 setLoading(false);
 }
@@ -68,22 +69,27 @@ setLoading(false);
 return () => unsub();
 }, []);
 
+// Suppression
 const deleteProduct = async (id) => {
 if (!user) return;
 await deleteDoc(doc(db, 'users', user.uid, 'products', id));
 };
 
-// Filtrage affiché (pour coller à la barre d’actions)
+// Filtrage affiché
 const visible = useMemo(() => {
 return products.filter((p) => {
 const okQ =
-!q ||
-(p.name || '').toLowerCase().includes(q.trim().toLowerCase());
+!q || (p.name || '').toLowerCase().includes(q.trim().toLowerCase());
 const okCat = category === 'all' || (p.category || 'autre') === category;
-const okPlace = place === 'all' || (p.place || 'autre') === place;
+const okPlace = place === 'all' || (p.place || 'frigo') === place;
 return okQ && okCat && okPlace;
 });
 }, [products, q, category, place]);
+
+// Compteurs
+const total = products.length;
+const urgent = products.filter((p) => p.status === 'urgent').length;
+const expired = products.filter((p) => p.status === 'expired' || p.status === 'expiré').length;
 
 if (loading) return <p>Chargement...</p>;
 
@@ -100,27 +106,23 @@ return (
 </div>
 </div>
 
-{/* Cartes stats (vert / orange / rouge) */}
+{/* Cartes stats */}
 <div className="stats">
 <div className="card green">
 <div className="cardLabel">Total</div>
-<div className="cardValue">{products.length}</div>
+<div className="cardValue">{total}</div>
 </div>
 <div className="card orange">
 <div className="cardLabel">Urgent</div>
-<div className="cardValue">
-{products.filter((p) => p.status === 'urgent').length}
-</div>
+<div className="cardValue">{urgent}</div>
 </div>
 <div className="card red">
 <div className="cardLabel">Expirés</div>
-<div className="cardValue">
-{products.filter((p) => p.status === 'expired' || p.status === 'expiré').length}
-</div>
+<div className="cardValue">{expired}</div>
 </div>
 </div>
 
-{/* Barre d’actions : recherche + 2 filtres + bouton bleu */}
+{/* Barre d’actions */}
 <div className="actions">
 <input
 className="search"
@@ -160,9 +162,7 @@ onChange={(e) => setQ(e.target.value)}
 <li key={p.id} className="item">
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
-{p.expirationDate && (
-<span className="pill">{p.expirationDate}</span>
-)}
+{p.expirationDate && <span className="pill">{p.expirationDate}</span>}
 </div>
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
 Supprimer
@@ -171,8 +171,8 @@ Supprimer
 ))}
 </ul>
 
-{/* État vide (avec bouton bleu centré) */}
-{visible.length === 0 && products.length === 0 && (
+{/* État vide */}
+{products.length === 0 && (
 <div className="empty">
 <div className="emptyIcon">🧺</div>
 <div className="emptyTitle">Votre frigo est vide</div>
@@ -187,7 +187,7 @@ Ajouter un produit
 {/* Modal d’ajout */}
 {isModalOpen && <AddProductModal closeModal={() => setIsModalOpen(false)} />}
 
-{/* Tabbar en bas */}
+{/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
 <span className="tab__icon">❄️</span>
