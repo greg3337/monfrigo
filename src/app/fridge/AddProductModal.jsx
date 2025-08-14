@@ -1,97 +1,101 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { auth, db } from '../firebase/firebase-config';
+import { addDoc, collection } from 'firebase/firestore';
 
-export default function AddProductModal({ onClose, onAdd }) {
-const [name, setName] = useState("");
-const [expiration, setExpiration] = useState("");
-const [category, setCategory] = useState("");
+export default function AddProductModal({ closeModal }) {
+const [name, setName] = useState('');
+const [expirationDate, setExpirationDate] = useState(''); // input type="date" => YYYY-MM-DD
+const [category, setCategory] = useState('autre');
+const [place, setPlace] = useState('frigo');
+const [saving, setSaving] = useState(false);
 
-const handleSubmit = async (e) => {
+function normalizeDate(d) {
+// Accepte "YYYY-MM-DD" ou "DD/MM/YYYY" et renvoie "YYYY-MM-DD"
+if (!d) return '';
+if (d.includes('/')) {
+const [dd, mm, yyyy] = d.split('/');
+return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+}
+return d;
+}
+
+function computeStatus(dateStr) {
+if (!dateStr) return 'ok';
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(dateStr); d.setHours(0,0,0,0);
+const diffDays = Math.ceil((d - today) / (1000*60*60*24));
+if (diffDays < 0) return 'expired';
+if (diffDays <= 2) return 'urgent';
+return 'ok';
+}
+
+async function onSubmit(e) {
 e.preventDefault();
-if (!name.trim()) {
-return alert("Nom du produit requis.");
-}
+const user = auth.currentUser;
+if (!user) { alert("Tu n'es pas connecté."); return; }
+if (!name.trim()) { alert('Nom obligatoire'); return; }
+if (!expirationDate) { alert("Date d'expiration obligatoire"); return; }
 
-const product = {
-name: name.trim(),
-expiration: expiration || null, // format yyyy-mm-dd
-category: category || null,
-};
+const isoDate = normalizeDate(expirationDate);
+const status = computeStatus(isoDate);
 
+setSaving(true);
 try {
-await onAdd(product); // appelle la fonction transmise par la page
-setName("");
-setExpiration("");
-setCategory("");
+await addDoc(collection(db, 'users', user.uid, 'products'), {
+name: name.trim(),
+expirationDate: isoDate, // toujours YYYY-MM-DD
+category,
+place,
+status,
+createdAt: new Date().toISOString(),
+});
+// reset + fermer
+setName(''); setExpirationDate(''); setCategory('autre'); setPlace('frigo');
+closeModal();
 } catch (err) {
-console.error("Erreur lors de l'ajout du produit :", err);
-alert("Erreur lors de l'ajout du produit.");
+console.error('addDoc error:', err); // <= vois la vraie erreur dans la console
+alert(`Erreur lors de l'ajout du produit: ${err.code || ''} ${err.message || ''}`); // <= message utile
+} finally {
+setSaving(false);
 }
-};
+}
 
 return (
-<div style={backdropStyle}>
-<div style={modalStyle}>
+<div className="modal-backdrop">
+<div className="modal">
 <h3>Ajouter un produit</h3>
-<form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-<label>
-Nom
-<input
-type="text"
-value={name}
-onChange={(e) => setName(e.target.value)}
-autoFocus
-/>
-</label>
+<form onSubmit={onSubmit}>
+<label>Nom</label>
+<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="ex : Poulet" />
 
-<label>
-Date d’expiration
-<input
-type="date"
-value={expiration}
-onChange={(e) => setExpiration(e.target.value)}
-/>
-</label>
+<label>Date d'expiration</label>
+<input type="date" value={expirationDate} onChange={e=>setExpirationDate(e.target.value)} />
 
-<label>
-Catégorie
-<input
-type="text"
-value={category}
-onChange={(e) => setCategory(e.target.value)}
-placeholder="Fruits, Viandes…"
-/>
-</label>
+<label>Catégorie</label>
+<select value={category} onChange={e=>setCategory(e.target.value)}>
+<option value="viande">Viande</option>
+<option value="poisson">Poisson</option>
+<option value="légume">Légume</option>
+<option value="fruit">Fruit</option>
+<option value="laitier">Laitier</option>
+<option value="autre">Autre</option>
+</select>
 
-<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-<button type="button" onClick={onClose}>
-Annuler
-</button>
-<button type="submit">Ajouter</button>
+<label>Lieu</label>
+<select value={place} onChange={e=>setPlace(e.target.value)}>
+<option value="frigo">Frigo</option>
+<option value="congélo">Congélo</option>
+<option value="placard">Placard</option>
+</select>
+
+<div className="modal-actions">
+<button type="button" className="ghostBtn" onClick={closeModal}>Annuler</button>
+<button className="primary" type="submit" disabled={saving}>{saving ? 'Ajout…' : 'Ajouter'}</button>
 </div>
 </form>
 </div>
 </div>
 );
 }
-
-const backdropStyle = {
-position: "fixed",
-inset: 0,
-background: "rgba(0,0,0,0.5)",
-display: "grid",
-placeItems: "center",
-zIndex: 1000,
-};
-
-const modalStyle = {
-width: 360,
-maxWidth: "90vw",
-background: "#121212",
-color: "#fff",
-border: "1px solid #2a2a2a",
-borderRadius: 10,
-padding: 16,
-boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-};
