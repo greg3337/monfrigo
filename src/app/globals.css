@@ -1,76 +1,78 @@
-/* --- Réserve de l’espace en bas pour la barre --- */
-html, body { height: 100%; }
-body {
-/* hauteur de la barre + safe area iOS */
-padding-bottom: calc(64px + env(safe-area-inset-bottom));
+.page {
+padding: 20px;
+font-family: sans-serif;
 }
 
-/* --- Barre d’onglets fixe --- */
-.tabbar {
-position: fixed;
-left: 0; right: 0; bottom: 0;
-height: 64px;
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-align-items: center;
-background: #ffffff;
-border-top: 1px solid rgba(0,0,0,0.08);
-box-shadow: 0 -8px 20px rgba(0,0,0,0.06);
-z-index: 1000;
-padding-bottom: env(safe-area-inset-bottom); /* iPhone notch */
-}
-
-/* --- Boutons d’onglet --- */
-.tabbar .tab {
-height: 100%;
+.stats {
 display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 4px;
-text-decoration: none;
-color: #555; /* état par défaut */
-font-size: 12px; /* label */
--webkit-tap-highlight-color: transparent;
-user-select: none;
+gap: 10px;
+margin: 15px 0;
 }
 
-.tab__icon { /* icône (emoji/SVG) */
-font-size: 18px;
-line-height: 1;
-}
-
-/* --- État actif --- */
-.tab.is-active {
-color: #0a66ff;
-font-weight: 600;
-}
-.tab.is-active .tab__icon {
-transform: translateY(-1px);
-}
-
-/* --- Feedback tactile / hover --- */
-.tabbar .tab:active { background: rgba(0,0,0,0.05); }
-@media (hover:hover) {
-.tabbar .tab:hover { background: rgba(0,0,0,0.04); }
-}
-
-/* --- Accessibilité: focus visible --- */
-.tabbar .tab:focus-visible {
-outline: 2px solid #0a66ff;
-outline-offset: -4px;
+.card {
+flex: 1;
+text-align: center;
+padding: 10px;
 border-radius: 8px;
+color: white;
+font-weight: bold;
 }
 
-/* --- Dark mode --- */
-@media (prefers-color-scheme: dark) {
-.tabbar {
-background: #0e0f12;
-border-top-color: rgba(255,255,255,0.08);
-box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+.green { background: #28a745; }
+.orange { background: #ff9800; }
+.red { background: #dc3545; }
+
+.filters {
+display: flex;
+gap: 10px;
+margin-bottom: 15px;
 }
-.tabbar .tab { color: #c9c9c9; }
-.tab.is-active { color: #6aa6ff; }
-.tabbar .tab:active,
-.tabbar .tab:hover { background: rgba(255,255,255,0.06); }
+
+.primary {
+background: #007bff;
+color: white;
+padding: 6px 12px;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+.product-list {
+list-style: none;
+padding: 0;
+}
+
+.product-item {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 10px;
+border-bottom: 1px solid #ddd;
+}
+
+.pill {
+background: #eee;
+padding: 3px 8px;
+border-radius: 12px;
+font-size: 0.85em;
+}
+
+.deleteBtn {
+background: red;
+color: white;
+border: none;
+padding: 4px 8px;
+border-radius: 5px;
+cursor: pointer;
+}
+
+.empty {
+text-align: center;
+margin-top: 20px;
+}
+
+.add-form {
+margin-top: 20px;
+display: flex;
+gap: 8px;
 }
