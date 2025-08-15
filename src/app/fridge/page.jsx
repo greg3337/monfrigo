@@ -7,16 +7,7 @@ import { usePathname } from 'next/navigation';
 import AddProductModal from './AddProductModal.jsx';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/firebase-config';
-import {
-collection,
-deleteDoc,
-doc,
-getDoc,
-onSnapshot,
-orderBy,
-query,
-} from 'firebase/firestore';
-
+import {collection,deleteDoc,doc,getDoc,onSnapshot,orderBy,query,} from 'firebase/firestore';
 import '../styles/tabbar.css';
 
 export default function FridgePage() {

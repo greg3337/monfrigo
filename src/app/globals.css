@@ -65,7 +65,6 @@ cursor: pointer;
 .primary:hover { background: #0062cc; }
 
 /* Liste produits */
-.content { }
 .grid {
 list-style: none;
 padding: 0;
