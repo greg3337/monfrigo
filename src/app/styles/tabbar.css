@@ -1,6 +1,8 @@
+/* Espace réservé en bas pour ne pas que le contenu passe sous la barre */
 html, body { height: 100%; }
 body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
+/* ----- Barre d’onglets ----- */
 .tabbar {
 position: fixed;
 left: 0; right: 0; bottom: 0;
@@ -12,9 +14,12 @@ background: #ffffff;
 border-top: 1px solid rgba(0,0,0,0.08);
 box-shadow: 0 -8px 20px rgba(0,0,0,0.06);
 z-index: 1000;
+
+/* pour iPhone avec encoche */
 padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Boutons */
 .tabbar .tab {
 height: 100%;
 display: flex;
@@ -27,27 +32,55 @@ color: #555;
 font-size: 12px;
 -webkit-tap-highlight-color: transparent;
 user-select: none;
+touch-action: manipulation;
 }
 
+/* Icône + libellé */
 .tab__icon { font-size: 18px; line-height: 1; }
+.tab__label { line-height: 1; }
 
-.tab.is-active { color: #0a66ff; font-weight: 600; }
-.tab.is-active .tab__icon { transform: translateY(-1px); }
+/* État actif */
+.tab.is-active {
+color: #0a66ff;
+font-weight: 600;
+}
+.tab.is-active .tab__icon {
+transform: translateY(-1px);
+}
 
+/* États d’interaction */
 .tabbar .tab:active { background: rgba(0,0,0,0.05); }
-@media (hover:hover) { .tabbar .tab:hover { background: rgba(0,0,0,0.04); } }
+@media (hover:hover) {
+.tabbar .tab:hover { background: rgba(0,0,0,0.04); }
+}
 
+/* Focus accessible */
 .tabbar .tab:focus-visible {
 outline: 2px solid #0a66ff;
 outline-offset: -4px;
 border-radius: 8px;
 }
 
+/* ----- Responsive ----- */
+@media (max-width: 420px) {
+.tabbar { height: 56px; }
+body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+.tab__icon { font-size: 16px; }
+.tabbar .tab { font-size: 11px; gap: 2px; }
+}
+
+/* Très petits écrans */
+@media (max-width: 340px) {
+.tab__icon { font-size: 15px; }
+.tabbar .tab { font-size: 10.5px; }
+}
+
+/* ----- Dark mode ----- */
 @media (prefers-color-scheme: dark) {
 .tabbar {
-background: #0e0f12;
+background: #0f1115;
 border-top-color: rgba(255,255,255,0.08);
-box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+box-shadow: 0 -8px 20px rgba(0,0,0,0.45);
 }
 .tabbar .tab { color: #c9c9c9; }
 .tab.is-active { color: #6aa6ff; }
