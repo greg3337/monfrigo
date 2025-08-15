@@ -1,3 +1,4 @@
+/* Base */
 body {
 font-family: Arial, sans-serif;
 background: #f8f9fa;
@@ -7,113 +8,141 @@ color: #333;
 }
 
 .wrap {
-padding: 1rem;
-padding-bottom: 4rem; /* espace pour la tabbar */
+padding: 16px;
+padding-bottom: 80px; /* espace pour la tabbar */
 }
 
-.header {
-margin-bottom: 1rem;
-}
+/* Header */
+.header { margin-bottom: 16px; }
+.brandTitle { font-size: 1.4rem; font-weight: 700; }
+.brandSub { color: #666; font-size: .95rem; }
 
-.brandTitle {
-font-size: 1.4rem;
-font-weight: bold;
-}
-
-.brandSub {
-color: #666;
-font-size: 0.9rem;
-}
-
+/* Cartes stats */
 .stats {
 display: flex;
-gap: 1rem;
-margin-bottom: 1rem;
+gap: 12px;
+margin-bottom: 16px;
 }
-
 .card {
 flex: 1;
-padding: 1rem;
+padding: 14px;
 border-radius: 8px;
-color: white;
+color: #fff;
 text-align: center;
 }
-
 .card.green { background: #28a745; }
 .card.orange { background: #fd7e14; }
 .card.red { background: #dc3545; }
+.cardLabel { font-size: .9rem; opacity: .9; }
+.cardValue { font-size: 1.4rem; font-weight: 700; }
 
-.cardLabel { font-size: 0.9rem; }
-.cardValue { font-size: 1.5rem; font-weight: bold; }
-
+/* Barre d’actions */
 .actions {
 display: flex;
 flex-wrap: wrap;
-gap: 0.5rem;
-margin-bottom: 1rem;
+gap: 8px;
+margin-bottom: 16px;
 }
-
 .search {
 flex: 1;
-padding: 0.5rem;
+padding: 8px;
+border: 1px solid #ccc;
+border-radius: 6px;
 }
-
 .filters select {
-padding: 0.5rem;
+padding: 8px;
+border: 1px solid #ccc;
+border-radius: 6px;
 }
-
 .primary {
 background: #007bff;
-color: white;
+color: #fff;
 border: none;
-padding: 0.5rem 0.8rem;
-border-radius: 4px;
+padding: 8px 12px;
+border-radius: 6px;
 cursor: pointer;
 }
+.primary:hover { background: #0062cc; }
 
+/* Liste produits */
+.content { }
 .grid {
 list-style: none;
 padding: 0;
 }
-
 .item {
-background: white;
+background: #fff;
 border-radius: 8px;
-padding: 0.8rem;
-margin-bottom: 0.5rem;
+padding: 12px;
+margin-bottom: 10px;
 display: flex;
 justify-content: space-between;
 align-items: center;
+box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
-
-.itemMeta {
-display: flex;
-flex-direction: column;
-}
-
-.itemName { font-weight: bold; }
+.itemMeta { display: flex; flex-direction: column; gap: 4px; }
+.itemName { font-weight: 700; }
 .pill {
-background: #eee;
+background: #eef0f3;
 border-radius: 12px;
-padding: 0.2rem 0.5rem;
-font-size: 0.8rem;
-margin-top: 0.2rem;
+padding: 3px 8px;
+font-size: .8rem;
+width: max-content;
 }
-
 .deleteBtn {
 background: #dc3545;
-color: white;
+color: #fff;
 border: none;
-padding: 0.4rem 0.6rem;
-border-radius: 4px;
+padding: 6px 10px;
+border-radius: 6px;
 cursor: pointer;
 }
+.deleteBtn:hover { background: #b02a37; }
 
+/* État vide */
 .empty {
 text-align: center;
-padding: 2rem 0;
+padding: 32px 8px;
+}
+.emptyIcon { font-size: 2rem; }
+.emptyTitle { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
+.emptyText { color: #777; margin: 6px 0 14px; }
+
+/* Tabbar (le CSS spécifique d’apparence est dans ../styles/tabbar.css) */
+
+/* ===========================
+Responsive
+=========================== */
+@media (max-width: 1024px) {
+.wrap { padding: 12px; padding-bottom: 72px; }
+.card { padding: 12px; }
+.cardValue { font-size: 1.2rem; }
 }
 
-.emptyIcon { font-size: 2rem; }
-.emptyTitle { font-size: 1.2rem; font-weight: bold; margin-top: 0.5rem; }
-.emptyText { color: #666; margin: 0.5rem 0 1rem; }
+@media (max-width: 768px) {
+.brandTitle { font-size: 1.2rem; }
+.brandSub { font-size: .9rem; }
+
+.stats { gap: 8px; }
+.card { padding: 10px; }
+.cardLabel { font-size: .8rem; }
+.cardValue { font-size: 1.05rem; }
+
+.actions { flex-direction: column; align-items: stretch; gap: 8px; }
+.search, .filters select, .primary { width: 100%; }
+
+.item { padding: 10px; }
+.itemMeta { gap: 6px; }
+.pill { font-size: .75rem; padding: 2px 6px; }
+
+.empty { padding: 28px 8px; }
+.emptyIcon { font-size: 1.6rem; }
+.emptyTitle { font-size: 1.05rem; }
+.emptyText { font-size: .9rem; }
+}
+
+@media (max-width: 360px) {
+.cardLabel { font-size: .75rem; }
+.cardValue { font-size: .95rem; }
+.pill { font-size: .7rem; padding: 2px 5px; }
+}

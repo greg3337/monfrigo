@@ -20,10 +20,15 @@ query,
 import '../styles/tabbar.css';
 
 export default function FridgePage() {
+// Auth + user doc
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
+
+// Données
 const [products, setProducts] = useState([]);
+
+// UI
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [q, setQ] = useState('');
 const [category, setCategory] = useState('all');
@@ -31,6 +36,7 @@ const [place, setPlace] = useState('all');
 
 const pathname = usePathname();
 
+// Auth + chargement Firestore
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
@@ -54,7 +60,7 @@ const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
 setProducts(list);
 });
 } catch (e) {
-console.error(e);
+console.error('Firestore error:', e);
 } finally {
 setLoading(false);
 }
@@ -62,11 +68,13 @@ setLoading(false);
 return () => unsub();
 }, []);
 
+// Suppression
 const deleteProduct = async (id) => {
 if (!user) return;
 await deleteDoc(doc(db, 'users', user.uid, 'products', id));
 };
 
+// Filtrage affiché
 const visible = useMemo(() => {
 return products.filter((p) => {
 const okQ = q === '' || (p.name || '').toLowerCase().includes(q.toLowerCase());
@@ -76,29 +84,55 @@ return okQ && okCat && okPlace;
 });
 }, [products, q, category, place]);
 
+// Compteurs
 const total = products.length;
 const urgent = products.filter((p) => p.status === 'urgent').length;
 const expired = products.filter((p) => p.status === 'expired' || p.status === 'expiré').length;
+
+// Nom convivial pour le header (Auth > Firestore > vide)
+const greetingName =
+(typeof user?.displayName === 'string' && user.displayName.trim()) ||
+(typeof userDoc?.name === 'string' && userDoc.name.trim()) ||
+'';
 
 if (loading) return <p>Chargement...</p>;
 
 return (
 <div className="wrap">
+{/* Header */}
 <div className="header">
 <div className="brand">
 <div className="brandTitle">Mon Frigo</div>
-<div className="brandSub">Salut {userDoc?.name || 'utilisateur'} 👋</div>
+<div className="brandSub">
+{`Salut${greetingName ? ' ' + greetingName : ''} 👋`}
+</div>
 </div>
 </div>
 
+{/* Cartes stats */}
 <div className="stats">
-<div className="card green"><div className="cardLabel">Total</div><div className="cardValue">{total}</div></div>
-<div className="card orange"><div className="cardLabel">Urgent</div><div className="cardValue">{urgent}</div></div>
-<div className="card red"><div className="cardLabel">Expirés</div><div className="cardValue">{expired}</div></div>
+<div className="card green">
+<div className="cardLabel">Total</div>
+<div className="cardValue">{total}</div>
+</div>
+<div className="card orange">
+<div className="cardLabel">Urgent</div>
+<div className="cardValue">{urgent}</div>
+</div>
+<div className="card red">
+<div className="cardLabel">Expirés</div>
+<div className="cardValue">{expired}</div>
+</div>
 </div>
 
+{/* Barre d’actions */}
 <div className="actions">
-<input className="search" placeholder="Rechercher un produit..." value={q} onChange={(e) => setQ(e.target.value)} />
+<input
+className="search"
+placeholder="Rechercher un produit..."
+value={q}
+onChange={(e) => setQ(e.target.value)}
+/>
 <div className="filters">
 <select value={category} onChange={(e) => setCategory(e.target.value)}>
 <option value="all">Toutes les catégories</option>
@@ -116,9 +150,12 @@ return (
 <option value="placard">Placard</option>
 </select>
 </div>
-<button className="primary" onClick={() => setIsModalOpen(true)}>+ Ajouter un produit</button>
+<button className="primary" onClick={() => setIsModalOpen(true)}>
++ Ajouter un produit
+</button>
 </div>
 
+{/* Liste produits */}
 <div className="content">
 <ul className="grid">
 {visible.map((p) => (
@@ -127,27 +164,40 @@ return (
 <span className="itemName">{p.name}</span>
 {p.expirationDate && <span className="pill">{p.expirationDate}</span>}
 </div>
-<button className="deleteBtn" onClick={() => deleteProduct(p.id)}>Supprimer</button>
+<button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
+Supprimer
+</button>
 </li>
 ))}
 </ul>
 </div>
 
+{/* État vide */}
 {products.length === 0 && (
 <div className="empty">
 <div className="emptyIcon">🧺</div>
 <div className="emptyTitle">Votre frigo est vide</div>
 <div className="emptyText">Ajoutez vos premiers produits pour commencer.</div>
-<button className="primary" onClick={() => setIsModalOpen(true)}>Ajouter un produit</button>
+<button className="primary" onClick={() => setIsModalOpen(true)}>
+Ajouter un produit
+</button>
 </div>
 )}
 
+{/* Modal d’ajout */}
 {isModalOpen && <AddProductModal closeModal={() => setIsModalOpen(false)} />}
 
-<nav className="tabbar">
-<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}><span className="tab__icon">🧊</span><span className="tab__label">Frigo</span></Link>
-<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}><span className="tab__icon">🍽️</span><span className="tab__label">Repas</span></Link>
-<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}><span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span></Link>
+{/* Tabbar */}
+<nav className="tabbar" role="navigation" aria-label="Navigation principale">
+<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
+<span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
+</Link>
+<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
+<span className="tab__icon">🍽️</span><span className="tab__label">Repas</span>
+</Link>
+<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
+<span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
+</Link>
 </nav>
 </div>
 );
