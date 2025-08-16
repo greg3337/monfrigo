@@ -107,6 +107,51 @@ padding: 32px 8px;
 .emptyTitle { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
 .emptyText { color: #777; margin: 6px 0 14px; }
 
+/* ===== Bloc produits (modal Repas) – thème bleu ===== */
+.productListWrap {
+max-height: 260px;
+overflow: auto;
+border: 1px solid #cfe3ff; /* liseré bleu pâle */
+border-radius: 10px;
+margin-top: 6px;
+background: #e6f0ff; /* bleu très clair */
+}
+
+.product-list {
+list-style: none;
+margin: 0;
+padding: 6px;
+color: #0d47a1; /* texte bleu foncé */
+}
+
+.product-list .emptyRow {
+padding: 8px;
+opacity: 0.8;
+}
+
+.product-list li {
+display: flex;
+align-items: center;
+gap: 8px;
+background: #ffffff; /* cartes blanches dans le bloc bleu */
+border-radius: 8px;
+padding: 8px 10px;
+margin: 6px 0;
+cursor: pointer;
+transition: background .15s ease;
+}
+
+.product-list li:hover { background: #eef5ff; }
+.product-list li.is-selected { background: #bbdefb; } /* sélection */
+
+.product-list li .name { font-weight: 600; }
+.product-list li .date {
+margin-left: auto;
+font-size: 12px;
+opacity: .7;
+}
+
+
 /* Tabbar (le CSS spécifique d’apparence est dans ../styles/tabbar.css) */
 
 /* ===========================
