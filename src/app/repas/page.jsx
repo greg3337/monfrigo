@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../../firebase/firebase-config';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import CreateMealModal from '../../components/CreateMealModal';
+import CreateMealModal from './CreateMealModal';
 
 const jours = [
 "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"
