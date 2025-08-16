@@ -13,33 +13,28 @@ const JOURS = [
 ];
 
 export default function RepasPage() {
-const [user, setUser] = useState(null);
 const [meals, setMeals] = useState([]);
-const [openDay, setOpenDay] = useState(null); // jour pour l’ajout
+const [openDay, setOpenDay] = useState(null);
 const pathname = usePathname();
 
 // Auth + chargement des repas
 useEffect(() => {
-let unsubscribeMeals = null;
-
-const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
-setUser(u);
+let unsubMeals = null;
+const unsubAuth = onAuthStateChanged(auth, (u) => {
 if (!u) {
 setMeals([]);
-if (unsubscribeMeals) unsubscribeMeals();
+if (unsubMeals) unsubMeals();
 return;
 }
-
 const q = query(collection(db, 'users', u.uid, 'meals'));
-unsubscribeMeals = onSnapshot(q, (snap) => {
+unsubMeals = onSnapshot(q, (snap) => {
 const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 setMeals(list);
 });
 });
-
 return () => {
-if (unsubscribeMeals) unsubscribeMeals();
-unsubscribeAuth();
+if (unsubMeals) unsubMeals();
+unsubAuth();
 };
 }, []);
 
@@ -58,9 +53,7 @@ return (
 </div>
 
 <ul className="mealList">
-{mealsFor(day).length === 0 && (
-<li className="empty">Aucun repas</li>
-)}
+{mealsFor(day).length === 0 && <li className="empty">Aucun repas</li>}
 {mealsFor(day).map((meal) => (
 <li key={meal.id} className="mealCard">
 <div className="mealName">{meal.name}</div>
@@ -79,10 +72,7 @@ return (
 </div>
 
 {openDay && (
-<CreateMealModal
-selectedDay={openDay}
-close={() => setOpenDay(null)}
-/>
+<CreateMealModal selectedDay={openDay} close={() => setOpenDay(null)} />
 )}
 
 {/* --- Tabbar --- */}

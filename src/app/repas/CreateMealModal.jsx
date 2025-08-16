@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase/firebase-config';
-import {
-addDoc, collection, deleteDoc, doc, onSnapshot,
-} from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 
 export default function CreateMealModal({ selectedDay, close }) {
 const [name, setName] = useState('');
@@ -41,7 +39,7 @@ if (!u) return alert("Tu n'es pas connecté.");
 if (!name.trim()) return alert('Nom du repas obligatoire.');
 if (selectedItems.length === 0) return alert('Sélectionne au moins un produit.');
 
-// 1) créer le repas (jour + items)
+// 1) créer le repas pour le jour choisi
 await addDoc(collection(db, 'users', u.uid, 'meals'), {
 name: name.trim(),
 day: selectedDay,
@@ -79,7 +77,7 @@ value={search}
 onChange={(e) => setSearch(e.target.value)}
 />
 
-{/* Bloc bleu (styles dans globals.css) */}
+{/* Bloc bleu */}
 <div className="productListWrap">
 <ul className="product-list">
 {filtered.length === 0 ? (
@@ -93,16 +91,13 @@ onClick={() => toggle(p.id)}
 >
 <input type="checkbox" checked={!!selected[p.id]} readOnly />
 <span className="name">{p.name}</span>
-{p.expirationDate && (
-<span className="date">{p.expirationDate}</span>
-)}
+{p.expirationDate && <span className="date">{p.expirationDate}</span>}
 </li>
 ))
 )}
 </ul>
 </div>
 
-{/* Récap (facultatif) */}
 {selectedItems.length > 0 && (
 <div style={{ marginTop: 10 }}>
 <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>
@@ -110,21 +105,15 @@ onClick={() => toggle(p.id)}
 </div>
 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
 {selectedItems.map((it) => (
-<span key={it.productId} className="pill">
-{it.name}
-</span>
+<span key={it.productId} className="pill">{it.name}</span>
 ))}
 </div>
 </div>
 )}
 
 <div className="modal-actions">
-<button type="button" className="ghostBtn" onClick={close}>
-Annuler
-</button>
-<button className="primary" type="submit">
-Enregistrer le repas
-</button>
+<button type="button" className="ghostBtn" onClick={close}>Annuler</button>
+<button className="primary" type="submit">Enregistrer le repas</button>
 </div>
 </form>
 </div>
