@@ -170,3 +170,48 @@ Responsive
 .cardValue { font-size: .95rem; }
 .pill { font-size: .7rem; padding: 2px 5px; }
 }
+
+/* ===== Repas : header et état vide ===== */
+.repasSimple { padding: 16px; }
+
+.repasHeader {
+display: flex;
+gap: 12px;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 12px;
+flex-wrap: wrap;
+}
+
+.repasHeader .title .titleLine { display: flex; align-items: center; gap: 8px; }
+.repasHeader .title .cube { font-size: 20px; }
+.repasHeader .title .hello { font-size: .95rem; opacity: .8; }
+
+.repasHeader .actions {
+display: flex; gap: 8px; align-items: center;
+flex: 1 1 460px; justify-content: flex-end;
+}
+
+.repasHeader .search {
+flex: 1;
+padding: 8px 10px;
+border: 1px solid #ccc; border-radius: 6px;
+}
+
+/* État vide centré */
+.emptyMeals { text-align: center; margin: 40px 0 24px; }
+.emptyMeals .emoji { font-size: 26px; margin-bottom: 6px; }
+.emptyMeals .emptyTitle { font-weight: 700; margin-bottom: 4px; }
+.emptyMeals .emptyText { opacity: .75; margin-bottom: 10px; }
+
+/* Modale responsive */
+.modal { width: min(620px, 95vw); }
+@media (max-width: 480px) {
+.repasHeader { gap: 10px; }
+.repasHeader .actions { flex: 1 1 100%; }
+.modal { padding: 14px; border-radius: 10px; }
+}
+
+/* Espace pour la tabbar mobile (si pas déjà présent en haut) */
+html, body { height: 100%; }
+body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }

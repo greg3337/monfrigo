@@ -39,10 +39,10 @@ if (!u) return alert("Tu n'es pas connecté.");
 if (!name.trim()) return alert('Nom du repas obligatoire.');
 if (selectedItems.length === 0) return alert('Sélectionne au moins un produit.');
 
-// 1) créer le repas pour le jour choisi
+// 1) créer le repas (sans jour spécifique ici)
 await addDoc(collection(db, 'users', u.uid, 'meals'), {
 name: name.trim(),
-day: selectedDay,
+day: selectedDay || null,
 items: selectedItems,
 createdAt: new Date().toISOString(),
 });
@@ -58,7 +58,7 @@ close();
 return (
 <div className="modal-backdrop">
 <div className="modal">
-<h3>Créer un repas — {selectedDay}</h3>
+<h3>Composer un repas</h3>
 
 <form onSubmit={onSubmit}>
 <label>Nom du repas</label>
@@ -77,7 +77,7 @@ value={search}
 onChange={(e) => setSearch(e.target.value)}
 />
 
-{/* Bloc bleu */}
+{/* Bloc bleu (style défini dans globals.css) */}
 <div className="productListWrap">
 <ul className="product-list">
 {filtered.length === 0 ? (
