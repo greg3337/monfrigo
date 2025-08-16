@@ -1,191 +1,77 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { auth, db } from '../../firebase/firebase-config';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import CreateMealModal from '../../components/CreateMealModal';
 
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../firebase/firebase-config';
-import {
-collection,
-deleteDoc,
-doc,
-getDoc,
-onSnapshot,
-orderBy,
-query
-} from 'firebase/firestore';
+const jours = [
+"lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"
+];
 
-import CreateMealModal from './CreateMealModal.jsx';
-import '../styles/tabbar.css';
-
-export default function MealsPage() {
+export default function RepasPage() {
 const [user, setUser] = useState(null);
-const [userDoc, setUserDoc] = useState(null);
-const [loading, setLoading] = useState(true);
-
-// Données
-const [products, setProducts] = useState([]); // produits du frigo
-const [meals, setMeals] = useState([]); // repas composés
-
-// UI
-const [isModalOpen, setIsModalOpen] = useState(false);
-const [q, setQ] = useState(''); // recherche repas
-
-const pathname = usePathname();
+const [meals, setMeals] = useState([]);
+const [openDay, setOpenDay] = useState(null); // pour savoir sur quel jour on ajoute un repas
 
 useEffect(() => {
-const unsub = onAuthStateChanged(auth, async (u) => {
-setUser(u || null);
-if (!u) {
-setUserDoc(null);
-setProducts([]);
-setMeals([]);
-setLoading(false);
-return;
-}
-
-try {
-// User doc (pour le nom/prénom)
-const userRef = doc(db, 'users', u.uid);
-const snap = await getDoc(userRef);
-if (snap.exists()) setUserDoc(snap.data());
-
-// Produits du frigo (temps réel)
-const pRef = query(
-collection(db, 'users', u.uid, 'products'),
-orderBy('expirationDate')
-);
-onSnapshot(pRef, (s) => {
-setProducts(s.docs.map((d) => ({ id: d.id, ...d.data() })));
+const unsubscribe = auth.onAuthStateChanged(u => {
+setUser(u);
+if (u) {
+const q = query(collection(db, "users", u.uid, "meals"));
+onSnapshot(q, snapshot => {
+const data = snapshot.docs.map(doc => ({
+id: doc.id,
+...doc.data()
+}));
+setMeals(data);
 });
-
-// Repas (temps réel)
-const mRef = query(
-collection(db, 'users', u.uid, 'meals'),
-orderBy('createdAt')
-);
-onSnapshot(mRef, (s) => {
-setMeals(s.docs.map((d) => ({ id: d.id, ...d.data() })));
-});
-} catch (e) {
-console.error('Firestore error:', e);
-} finally {
-setLoading(false);
 }
 });
-
-return () => unsub();
+return () => unsubscribe();
 }, []);
 
-// Suppression d'un repas
-const deleteMeal = async (id) => {
-if (!user) return;
-await deleteDoc(doc(db, 'users', user.uid, 'meals', id));
-};
-
-// Filtre affichage des repas
-const visibleMeals = useMemo(() => {
-const term = q.trim().toLowerCase();
-if (!term) return meals;
-return meals.filter((m) => {
-const inName = (m.name || '').toLowerCase().includes(term);
-const inItems = (m.items || []).some((it) =>
-(it.name || '').toLowerCase().includes(term)
-);
-return inName || inItems;
-});
-}, [meals, q]);
-
-// Nom convivial
-const greetingName =
-(typeof user?.displayName === 'string' && user.displayName.trim()) ||
-(typeof userDoc?.name === 'string' && userDoc.name.trim()) ||
-'';
-
-if (loading) return <p>Chargement...</p>;
+function getMealsForDay(day) {
+return meals.filter(m => m.day === day);
+}
 
 return (
-<div className="wrap">
-{/* Header */}
-<div className="header">
-<div className="brand">
-<div className="brandTitle">Repas</div>
-<div className="brandSub">
-{`Salut${greetingName ? ' ' + greetingName : ''} 👋`}
-</div>
-</div>
+<div className="page repasPage">
+<h2>Planning des repas</h2>
+
+<div className="planning">
+{jours.map(day => (
+<div key={day} className="dayBlock">
+<div className="dayHeader">
+<h3>{day.charAt(0).toUpperCase() + day.slice(1)}</h3>
+<button onClick={() => setOpenDay(day)}>➕</button>
 </div>
 
-{/* Barre d’actions */}
-<div className="actions">
-<input
-className="search"
-placeholder="Rechercher un repas ou un ingrédient…"
-value={q}
-onChange={(e) => setQ(e.target.value)}
-/>
-<button className="primary" onClick={() => setIsModalOpen(true)}>
-+ Composer un repas
-</button>
-</div>
-
-{/* Liste des repas */}
-<div className="content">
-{visibleMeals.length > 0 ? (
-<ul className="grid">
-{visibleMeals.map((meal) => (
-<li key={meal.id} className="item">
-<div className="itemMeta">
-<span className="itemName">{meal.name}</span>
-<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-{(meal.items || []).map((it) => (
-<span key={it.productId} className="pill">
-{it.name}
-</span>
+<ul className="mealList">
+{getMealsForDay(day).length === 0 && (
+<li className="empty">Aucun repas</li>
+)}
+{getMealsForDay(day).map(meal => (
+<li key={meal.id}>
+<span className="mealName">{meal.name}</span>
+<ul className="mealItems">
+{meal.items.map(it => (
+<li key={it.productId}>{it.name}</li>
 ))}
-</div>
-</div>
-<button className="deleteBtn" onClick={() => deleteMeal(meal.id)}>
-Supprimer
-</button>
+</ul>
 </li>
 ))}
 </ul>
-) : (
-<div className="empty">
-<div className="emptyIcon">🍽️</div>
-<div className="emptyTitle">Aucun repas pour l’instant</div>
-<div className="emptyText">
-Compose un repas à partir des produits de ton frigo.
 </div>
-<button className="primary" onClick={() => setIsModalOpen(true)}>
-Composer un repas
-</button>
-</div>
-)}
+))}
 </div>
 
-{/* Modal de composition */}
-{isModalOpen && (
+{openDay && (
 <CreateMealModal
-products={products}
-close={() => setIsModalOpen(false)}
+closeModal={() => setOpenDay(null)}
+selectedDay={openDay}
 />
 )}
-
-{/* Tabbar */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
-<span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
-</Link>
-<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
-<span className="tab__icon">🍽️</span><span className="tab__label">Repas</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
-<span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
-</Link>
-</nav>
 </div>
 );
 }
