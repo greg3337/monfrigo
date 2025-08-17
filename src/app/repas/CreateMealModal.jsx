@@ -1,121 +1,111 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/firebase-config';
-import { addDoc, collection, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import {
+collection,
+getDocs,
+writeBatch,
+doc,
+Timestamp,
+} from 'firebase/firestore';
 
-export default function CreateMealModal({ selectedDay, close }) {
+export default function CreateMealModal({ onClose }) {
 const [name, setName] = useState('');
-const [products, setProducts] = useState([]); // produits du frigo
-const [selected, setSelected] = useState({}); // { [productId]: true }
-const [search, setSearch] = useState('');
+const [products, setProducts] = useState([]);
+const [selectedIds, setSelectedIds] = useState(new Set());
 
 // Charger les produits du frigo
 useEffect(() => {
-const u = auth.currentUser;
-if (!u) return;
-const ref = collection(db, 'users', u.uid, 'products');
-const unsub = onSnapshot(ref, (snap) => {
-const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setProducts(list);
-});
-return () => unsub();
+const loadProducts = async () => {
+const user = auth.currentUser;
+if (!user) return;
+const snap = await getDocs(collection(db, 'users', user.uid, 'products'));
+setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+};
+loadProducts();
 }, []);
 
-const toggle = (id) => setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+const toggleSelect = (id) => {
+setSelectedIds(prev => {
+const n = new Set(prev);
+n.has(id) ? n.delete(id) : n.add(id);
+return n;
+});
+};
 
-const filtered = products.filter((p) =>
-(p.name || '').toLowerCase().includes(search.trim().toLowerCase())
-);
+// Sauvegarder le repas
+async function saveMeal() {
+const user = auth.currentUser;
+if (!user) return alert("Tu n'es pas connecté.");
+if (!name.trim()) return alert('Donne un nom à ton repas.');
+if (!selectedIds.size) return alert('Sélectionne au moins un produit.');
 
-const selectedItems = products
-.filter((p) => !!selected[p.id])
-.map((p) => ({ productId: p.id, name: p.name || 'Produit' }));
+const picked = products.filter(p => selectedIds.has(p.id));
 
-async function onSubmit(e) {
-e.preventDefault();
-const u = auth.currentUser;
-if (!u) return alert("Tu n'es pas connecté.");
-if (!name.trim()) return alert('Nom du repas obligatoire.');
-if (selectedItems.length === 0) return alert('Sélectionne au moins un produit.');
-
-// 1) créer le repas (sans jour spécifique ici)
-await addDoc(collection(db, 'users', u.uid, 'meals'), {
+// 1) Doc repas
+const mealsCol = collection(db, 'users', user.uid, 'meals');
+const mealRef = doc(mealsCol);
+const mealData = {
 name: name.trim(),
-day: selectedDay || null,
-items: selectedItems,
-createdAt: new Date().toISOString(),
+items: picked.map(p => ({
+id: p.id,
+name: p.name || '',
+expirationDate: p.expirationDate || null,
+})),
+createdAt: Timestamp.now(),
+};
+
+// 2) Batch repas + suppression produits
+const batch = writeBatch(db);
+batch.set(mealRef, mealData);
+picked.forEach(p => {
+const prodRef = doc(db, 'users', user.uid, 'products', p.id);
+batch.delete(prodRef);
 });
 
-// 2) supprimer les produits utilisés du frigo
-for (const it of selectedItems) {
-await deleteDoc(doc(db, 'users', u.uid, 'products', it.productId));
+try {
+await batch.commit();
+onClose?.();
+} catch (e) {
+console.error('saveMeal error:', e);
+alert("Erreur lors de l'enregistrement du repas.");
 }
-
-close();
 }
 
 return (
-<div className="modal-backdrop">
 <div className="modal">
-<h3>Composer un repas</h3>
-
-<form onSubmit={onSubmit}>
-<label>Nom du repas</label>
+<h2>Composer un repas</h2>
 <input
 type="text"
-placeholder="ex : Pâtes thon-tomate"
+placeholder="Nom du repas (ex : Pâtes thon-tomate)"
 value={name}
-onChange={(e) => setName(e.target.value)}
+onChange={e => setName(e.target.value)}
 />
 
-<label>Produits (depuis ton frigo)</label>
-<input
-type="text"
-placeholder="Rechercher un produit…"
-value={search}
-onChange={(e) => setSearch(e.target.value)}
-/>
-
-{/* Bloc bleu (style défini dans globals.css) */}
-<div className="productListWrap">
-<ul className="product-list">
-{filtered.length === 0 ? (
-<li className="emptyRow">Aucun produit</li>
+<h3>Produits (depuis ton frigo)</h3>
+{products.length === 0 ? (
+<p>Aucun produit</p>
 ) : (
-filtered.map((p) => (
-<li
-key={p.id}
-className={selected[p.id] ? 'is-selected' : ''}
-onClick={() => toggle(p.id)}
->
-<input type="checkbox" checked={!!selected[p.id]} readOnly />
-<span className="name">{p.name}</span>
-{p.expirationDate && <span className="date">{p.expirationDate}</span>}
+<ul>
+{products.map(p => (
+<li key={p.id}>
+<label>
+<input
+type="checkbox"
+checked={selectedIds.has(p.id)}
+onChange={() => toggleSelect(p.id)}
+/>
+{p.name}
+</label>
 </li>
-))
-)}
-</ul>
-</div>
-
-{selectedItems.length > 0 && (
-<div style={{ marginTop: 10 }}>
-<div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>
-{selectedItems.length} produit(s) sélectionné(s)
-</div>
-<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-{selectedItems.map((it) => (
-<span key={it.productId} className="pill">{it.name}</span>
 ))}
-</div>
-</div>
+</ul>
 )}
 
-<div className="modal-actions">
-<button type="button" className="ghostBtn" onClick={close}>Annuler</button>
-<button className="primary" type="submit">Enregistrer le repas</button>
-</div>
-</form>
+<div style={{ marginTop: 12 }}>
+<button onClick={onClose}>Annuler</button>
+<button className="primary" onClick={saveMeal}>Enregistrer le repas</button>
 </div>
 </div>
 );
