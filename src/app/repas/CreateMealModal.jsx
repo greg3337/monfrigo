@@ -1,111 +1,169 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/firebase-config';
 import {
 collection,
-getDocs,
-writeBatch,
 doc,
+onSnapshot,
 Timestamp,
+writeBatch,
 } from 'firebase/firestore';
 
-export default function CreateMealModal({ onClose }) {
-const [name, setName] = useState('');
-const [products, setProducts] = useState([]);
-const [selectedIds, setSelectedIds] = useState(new Set());
+const JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+const MOMENTS = ['midi','soir'];
 
-// Charger les produits du frigo
+export default function CreateMealModal({ onClose }) {
+const [user, setUser] = useState(null);
+const [name, setName] = useState('');
+const [day, setDay] = useState('lundi');
+const [moment, setMoment] = useState('midi');
+
+const [products, setProducts] = useState([]); // produits du frigo
+const [search, setSearch] = useState('');
+const [selected, setSelected] = useState({}); // { [productId]: true }
+const [saving, setSaving] = useState(false);
+
+// Auth
 useEffect(() => {
-const loadProducts = async () => {
-const user = auth.currentUser;
-if (!user) return;
-const snap = await getDocs(collection(db, 'users', user.uid, 'products'));
-setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-};
-loadProducts();
+const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
+return () => unsub();
 }, []);
 
-const toggleSelect = (id) => {
-setSelectedIds(prev => {
-const n = new Set(prev);
-n.has(id) ? n.delete(id) : n.add(id);
-return n;
+// Charger les produits du frigo (temps réel)
+useEffect(() => {
+if (!user) return;
+const ref = collection(db, 'users', user.uid, 'products');
+const unsub = onSnapshot(ref, (snap) => {
+const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+setProducts(list);
 });
-};
+return () => unsub();
+}, [user]);
 
-// Sauvegarder le repas
-async function saveMeal() {
-const user = auth.currentUser;
+const filtered = useMemo(() => {
+const q = search.trim().toLowerCase();
+if (!q) return products;
+return products.filter((p) => (p.name || '').toLowerCase().includes(q));
+}, [products, search]);
+
+const selectedItems = useMemo(
+() => products.filter((p) => !!selected[p.id]),
+[products, selected]
+);
+
+const toggle = (id) => setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+
+async function saveMeal(e) {
+e.preventDefault();
 if (!user) return alert("Tu n'es pas connecté.");
-if (!name.trim()) return alert('Donne un nom à ton repas.');
-if (!selectedIds.size) return alert('Sélectionne au moins un produit.');
+if (!name.trim()) return alert('Nom du repas obligatoire.');
+if (selectedItems.length === 0) return alert('Sélectionne au moins un produit.');
 
-const picked = products.filter(p => selectedIds.has(p.id));
-
-// 1) Doc repas
+setSaving(true);
+try {
+// Doc du repas
 const mealsCol = collection(db, 'users', user.uid, 'meals');
-const mealRef = doc(mealsCol);
+const mealRef = doc(mealsCol); // id auto
 const mealData = {
 name: name.trim(),
-items: picked.map(p => ({
-id: p.id,
+day,
+moment,
+items: selectedItems.map((p) => ({
+productId: p.id,
 name: p.name || '',
 expirationDate: p.expirationDate || null,
 })),
 createdAt: Timestamp.now(),
 };
 
-// 2) Batch repas + suppression produits
+// Batch: créer repas + supprimer produits utilisés
 const batch = writeBatch(db);
 batch.set(mealRef, mealData);
-picked.forEach(p => {
-const prodRef = doc(db, 'users', user.uid, 'products', p.id);
-batch.delete(prodRef);
+selectedItems.forEach((p) => {
+batch.delete(doc(db, 'users', user.uid, 'products', p.id));
 });
 
-try {
 await batch.commit();
 onClose?.();
-} catch (e) {
-console.error('saveMeal error:', e);
+} catch (err) {
+console.error('saveMeal batch error:', err);
 alert("Erreur lors de l'enregistrement du repas.");
+} finally {
+setSaving(false);
 }
 }
 
 return (
+<div className="modal-backdrop">
 <div className="modal">
-<h2>Composer un repas</h2>
+<h3>Composer un repas</h3>
+
+<form onSubmit={saveMeal}>
+<label>Nom du repas</label>
 <input
 type="text"
-placeholder="Nom du repas (ex : Pâtes thon-tomate)"
+placeholder="ex : Pâtes thon-tomate"
 value={name}
-onChange={e => setName(e.target.value)}
+onChange={(e) => setName(e.target.value)}
 />
 
-<h3>Produits (depuis ton frigo)</h3>
-{products.length === 0 ? (
-<p>Aucun produit</p>
-) : (
-<ul>
-{products.map(p => (
-<li key={p.id}>
-<label>
-<input
-type="checkbox"
-checked={selectedIds.has(p.id)}
-onChange={() => toggleSelect(p.id)}
-/>
-{p.name}
-</label>
-</li>
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+<div>
+<label>Jour</label>
+<select value={day} onChange={(e) => setDay(e.target.value)}>
+{JOURS.map((j) => (
+<option key={j} value={j}>{j.charAt(0).toUpperCase()+j.slice(1)}</option>
 ))}
-</ul>
-)}
+</select>
+</div>
+<div>
+<label>Moment</label>
+<select value={moment} onChange={(e) => setMoment(e.target.value)}>
+{MOMENTS.map((m) => (
+<option key={m} value={m}>{m.charAt(0).toUpperCase()+m.slice(1)}</option>
+))}
+</select>
+</div>
+</div>
 
-<div style={{ marginTop: 12 }}>
-<button onClick={onClose}>Annuler</button>
-<button className="primary" onClick={saveMeal}>Enregistrer le repas</button>
+<label>Produits (depuis ton frigo)</label>
+<input
+type="text"
+placeholder="Rechercher un produit…"
+value={search}
+onChange={(e) => setSearch(e.target.value)}
+/>
+
+{/* Bloc bleu (styles déjà dans globals.css) */}
+<div className="productListWrap">
+<ul className="product-list">
+{filtered.length === 0 ? (
+<li className="emptyRow">Aucun produit</li>
+) : (
+filtered.map((p) => (
+<li
+key={p.id}
+className={selected[p.id] ? 'is-selected' : ''}
+onClick={() => toggle(p.id)}
+>
+<input type="checkbox" checked={!!selected[p.id]} readOnly />
+<span className="name">{p.name}</span>
+{p.expirationDate && <span className="date">{p.expirationDate}</span>}
+</li>
+))
+)}
+</ul>
+</div>
+
+<div className="modal-actions">
+<button type="button" className="ghostBtn" onClick={onClose}>Annuler</button>
+<button className="primary" type="submit" disabled={saving}>
+{saving ? 'Enregistrement…' : 'Enregistrer le repas'}
+</button>
+</div>
+</form>
 </div>
 </div>
 );
