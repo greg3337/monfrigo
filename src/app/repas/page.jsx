@@ -1,129 +1,151 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import CreateMealModal from '../CreateMealModal.jsx';
 import { auth, db } from '../firebase/firebase-config';
 import {
 collection,
 onSnapshot,
-orderBy,
 query,
+where,
 } from 'firebase/firestore';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import CreateMealModal from './CreateMealModal';
 
-const JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-const MOMENTS = ['midi','soir'];
+const DAYS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
 
 export default function RepasPage() {
 const [user, setUser] = useState(null);
 const [meals, setMeals] = useState([]);
-const [open, setOpen] = useState(false);
+const [openModal, setOpenModal] = useState(false);
+const [search, setSearch] = useState('');
+
 const pathname = usePathname();
 
-// Auth + chargement des repas
+// Auth + écoute des repas
 useEffect(() => {
-let unsubMeals = null;
-
-const unsubAuth = onAuthStateChanged(auth, (u) => {
+const unsubAuth = auth.onAuthStateChanged(u => {
 setUser(u || null);
-if (!u) {
-setMeals([]);
-if (unsubMeals) unsubMeals();
-return;
-}
+if (!u) { setMeals([]); }
+else {
 const q = query(
 collection(db, 'users', u.uid, 'meals'),
-orderBy('createdAt', 'desc')
+where('deleted', '!=', true) // au cas où
 );
-unsubMeals = onSnapshot(q, (snap) => {
-const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+const unsubMeals = onSnapshot(q, snap => {
+const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 setMeals(list);
 });
+// nettoie quand l’utilisateur change
+return () => unsubMeals();
+}
 });
-
-return () => {
-if (unsubMeals) unsubMeals();
-unsubAuth();
-};
+return () => unsubAuth();
 }, []);
 
-const mealsFor = (day, moment) =>
-meals.filter((m) => (m.day || '').toLowerCase() === day && (m.moment || '').toLowerCase() === moment);
+// Recherche (par nom de repas ou produit)
+const filteredMeals = useMemo(() => {
+const q = search.trim().toLowerCase();
+if (!q) return meals;
+return meals.filter(m =>
+m.name?.toLowerCase().includes(q) ||
+(m.products || []).some(p => p.name?.toLowerCase().includes(q))
+);
+}, [meals, search]);
+
+const mealsFor = (day, slot) =>
+filteredMeals.filter(m => m.day === day && m.slot === slot);
+
+const hello =
+user?.displayName ||
+(user?.email ? user.email.split('@')[0] : 'utilisateur');
 
 return (
-<div className="repasSimple">
-{/* Header */}
+<div className="planningContainer">
+
+{/* En-tête */}
 <div className="repasHeader">
 <div className="title">
 <div className="titleLine">
-<span className="cube">🍽️</span>
+<span className="cube">🧊</span>
 <strong>Planning des repas</strong>
 </div>
-<div className="hello">
-Salut {user?.displayName || user?.email?.split('@')[0] || 'utilisateur'} 👋
+<div className="hello">Salut {hello} 👋</div>
 </div>
-</div>
+
 <div className="actions">
-<button className="primary" onClick={() => setOpen(true)}>
+<input
+className="search"
+placeholder="Rechercher un repas ou un ingrédient…"
+value={search}
+onChange={e => setSearch(e.target.value)}
+/>
+<button className="primary" onClick={() => setOpenModal(true)}>
 + Composer un repas
 </button>
 </div>
 </div>
 
-{/* Planning par jour + midi/soir */}
-<div className="planning">
-{JOURS.map((day) => (
-<div key={day} className="dayBlock">
-<h3 className="dayTitle">📅 {day.charAt(0).toUpperCase() + day.slice(1)}</h3>
+{/* Planning par jour */}
+{DAYS.map(day => (
+<div key={day} className="dayCard">
+<div className="dayHeader">📅 {day[0].toUpperCase() + day.slice(1)}</div>
 
-<div className="moments">
-{MOMENTS.map((moment) => {
-const list = mealsFor(day, moment);
-return (
-<div key={moment} className="momentBlock">
-<h4 className="momentTitle">
-{moment.charAt(0).toUpperCase() + moment.slice(1)}
-</h4>
-
-{list.length === 0 ? (
-<p className="emptyMoment">— Aucun repas —</p>
+{/* Midi */}
+<div className="mealSlot">
+<h3>Midi</h3>
+{mealsFor(day, 'midi').length === 0 ? (
+<div className="emptyMeal">— Aucun repas —</div>
 ) : (
-<ul className="grid" style={{ marginTop: 6 }}>
-{list.map((meal) => (
-<li key={meal.id} className="item mealCard">
-<div className="itemMeta">
-<span className="itemName">{meal.name}</span>
-<span className="pill">
-{(meal.items?.length || 0)} produit(s)
-</span>
+mealsFor(day, 'midi').map(m => (
+<div key={m.id} className="mealItem">
+<span className="mealName">{m.name}</span>
+<span className="pill">{(m.products || []).length} produit(s)</span>
 </div>
-</li>
-))}
-</ul>
+))
 )}
 </div>
-);
-})}
+
+{/* Soir */}
+<div className="mealSlot">
+<h3>Soir</h3>
+{mealsFor(day, 'soir').length === 0 ? (
+<div className="emptyMeal">— Aucun repas —</div>
+) : (
+mealsFor(day, 'soir').map(m => (
+<div key={m.id} className="mealItem">
+<span className="mealName">{m.name}</span>
+<span className="pill">{(m.products || []).length} produit(s)</span>
+</div>
+))
+)}
 </div>
 </div>
 ))}
-</div>
 
-{/* Modale */}
-{open && <CreateMealModal onClose={() => setOpen(false)} />}
+{/* Modale création */}
+{openModal && (
+<CreateMealModal
+closeModal={() => setOpenModal(false)}
+/>
+)}
 
 {/* Tabbar bas */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
-<span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
+<span className="tab__icon">🧊</span>
+<span className="tab__label">Frigo</span>
 </Link>
+
 <Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
-<span className="tab__icon">🍽️</span><span className="tab__label">Repas</span>
+<span className="tab__icon">🍽️</span>
+<span className="tab__label">Repas</span>
 </Link>
+
 <Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
-<span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
+<span className="tab__icon">⚙️</span>
+<span className="tab__label">Paramètres</span>
 </Link>
 </nav>
 </div>
