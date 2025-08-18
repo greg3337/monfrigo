@@ -181,11 +181,11 @@ defaultSlot={pendingSlot} // ex: "Déjeuner"
 {/* ===== Tabbar en bas ===== */}
 
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/frigo') ? 'is-active' : ''}`}>
+<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
 <span className="tab_icon">🧊</span>
 <span className="tab_label">Frigo</span>
-
 </Link>
+
 <Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
 <span className="tab_icon">🍽️</span>
 <span className="tab_label">Repas</span>
