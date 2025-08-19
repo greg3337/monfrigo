@@ -1,58 +1,211 @@
-/* ====== Layout simple ====== */
-.repasSimple { padding: 16px; }
-
-/* Header */
-.repasHeader { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
-.repasHeader .titleLine { display:flex; align-items:center; gap:8px; }
-.repasHeader .cube { font-size:20px; }
-.repasHeader .hello { opacity:.8; }
-
-/* Boutons génériques */
-.btnPrimary { background:#1976d2; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; }
-.btnPrimary:hover { background:#125aa0; }
-.btnGhost { background:#eee; color:#333; border:none; padding:8px 10px; border-radius:10px; cursor:pointer; }
-.btnGhost:hover { background:#e2e2e2; }
-.btnLink { background:transparent; border:none; color:#1976d2; cursor:pointer; padding:0; }
-
-/* Planning */
-.mealPlanner { display:flex; flex-direction:column; gap:12px; }
-.dayCard { background:#fff; border-radius:12px; padding:14px; box-shadow:0 4px 10px rgba(0,0,0,.06); }
-.dayTitle { margin:0 0 8px 0; font-size:1.05rem; }
-
-.slots { display:flex; flex-direction:column; gap:10px; }
-.slotCard { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#f7f9ff; border:1px solid #dbe6ff; border-radius:10px; padding:10px 12px; }
-.slotName { font-weight:700; color:#0d47a1; }
-.slotPlaceholder { opacity:.7; font-style:italic; }
-.slotMeal { font-weight:600; }
-.slotProducts { font-weight:500; color:#0d47a1; opacity:.85; }
-.slotActions { display:flex; gap:10px; }
-
-/* Modal */
-.modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:16px; z-index:999; }
-.modal { width:min(680px, 95vw); background:#fff; border-radius:14px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
-.modalHeader { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-.modalBody { display:flex; flex-direction:column; gap:10px; }
-.modalActions { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
-
-.fieldRow { display:flex; flex-direction:column; gap:6px; }
-.fieldRow input { padding:10px; border:1px solid #ddd; border-radius:10px; }
-
-/* Liste produits (thème bleu) */
-.productListWrap { max-height:260px; overflow:auto; border:1px solid #cfe3ff; border-radius:10px; margin-top:6px; background:#e6f0ff; }
-.product-list { list-style:none; margin:0; padding:6px; color:#0d47a1; }
-.product-list .emptyRow { padding:8px; opacity:.8; }
-.product-list li { display:flex; align-items:center; gap:8px; background:#fff; border-radius:8px; padding:8px 10px; margin:6px 0; cursor:pointer; transition:background .15s ease; }
-.product-list li:hover { background:#eef5ff; }
-.product-list li.is-selected { background:#bbdefb; }
-.product-list li .name { font-weight:600; }
-.product-list li .date { margin-left:auto; font-size:12px; opacity:.7; }
-
-/* Mobile */
-@media (max-width: 480px) {
-.repasHeader .actions { flex:1 1 100%; }
-.modal { padding:14px; }
+* Conteneur global */
+.repasWrap {
+padding: 1rem;
+font-family: system-ui, sans-serif;
 }
 
-/* Espace pour la tabbar */
-html, body { height:100%; }
-body { padding-bottom:calc(56px + env(safe-area-inset-bottom)); }
+/* Header */
+.repasHeader {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 2rem;
+}
+
+.titleLine {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+
+.cube {
+font-size: 1.5rem;
+}
+
+.hello {
+font-size: 0.9rem;
+color: #666;
+margin-top: 0.25rem;
+}
+
+/* Boutons */
+.btnPrimary {
+background: #0070f3;
+color: white;
+border: none;
+padding: 0.6rem 1rem;
+border-radius: 6px;
+cursor: pointer;
+font-weight: 600;
+}
+
+.btnPrimary:hover {
+background: #0059c1;
+}
+
+.btnGhost {
+background: transparent;
+border: 1px solid #ccc;
+padding: 0.4rem 0.8rem;
+border-radius: 6px;
+cursor: pointer;
+font-size: 0.9rem;
+}
+
+.btnGhost:hover {
+background: #f5f5f5;
+}
+
+/* Planning semaine */
+.week {
+display: grid;
+grid-template-columns: 1fr;
+gap: 1.5rem;
+}
+
+.dayCard {
+border: 1px solid #eee;
+border-radius: 8px;
+padding: 1rem;
+background: #fafafa;
+}
+
+.dayTitle {
+margin: 0 0 1rem;
+font-size: 1.2rem;
+font-weight: 600;
+}
+
+.mealItem {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 0.8rem;
+}
+
+.slot {
+font-weight: 600;
+margin-bottom: 0.3rem;
+}
+
+.emptyMeal {
+font-size: 0.85rem;
+color: #999;
+}
+
+.products {
+display: flex;
+flex-wrap: wrap;
+gap: 0.4rem;
+}
+
+.chip {
+display: inline-flex;
+align-items: center;
+background: #e5f0ff;
+color: #004085;
+border-radius: 16px;
+padding: 0.2rem 0.6rem;
+font-size: 0.85rem;
+}
+
+.chip_remove {
+background: transparent;
+border: none;
+color: #004085;
+margin-left: 0.4rem;
+font-weight: bold;
+cursor: pointer;
+}
+
+.chip_remove:hover {
+color: red;
+}
+
+/* Modale */
+.modalOverlay {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+}
+
+.modal {
+background: white;
+padding: 1.5rem;
+border-radius: 8px;
+width: 100%;
+max-width: 400px;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.modal h3 {
+margin-top: 0;
+}
+
+.modalRow {
+margin-bottom: 1rem;
+display: flex;
+flex-direction: column;
+gap: 0.3rem;
+}
+
+.modalRow input,
+.modalRow select {
+padding: 0.5rem;
+border: 1px solid #ccc;
+border-radius: 6px;
+}
+
+.modalGrid {
+display: flex;
+gap: 1rem;
+margin-bottom: 1rem;
+}
+
+.modalGrid label {
+flex: 1;
+display: flex;
+flex-direction: column;
+gap: 0.3rem;
+}
+
+.modalActions {
+display: flex;
+justify-content: flex-end;
+gap: 0.6rem;
+}
+
+/* Tabbar */
+.tabbar {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+background: #fff;
+border-top: 1px solid #eee;
+display: flex;
+justify-content: space-around;
+padding: 0.5rem 0;
+}
+
+.tab {
+text-decoration: none;
+color: #444;
+display: flex;
+flex-direction: column;
+align-items: center;
+font-size: 0.85rem;
+}
+
+.tab_icon {
+font-size: 1.2rem;
+}
+
+.tab.is-active {
+color: #0070f3;
+font-weight: 600;
+}

@@ -1,164 +1,197 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
-collection,
-query,
-where,
-getDocs,
-deleteDoc,
-doc,
-orderBy,
-} from "firebase/firestore";
-import { db } from "../firebase/firebase-config";
-import { useAuth } from "../hooks/useAuth";
-import CreateMealModal from "./CreateMealModal";
+onAuthStateChanged
+} from 'firebase/auth';
+import {
+collection, query, where, onSnapshot, addDoc, doc, deleteDoc, serverTimestamp
+} from 'firebase/firestore';
 
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const SLOTS = ["Petit-déjeuner", "Déjeuner", "Dîner", "Goûter"];
+import { auth, db } from '../firebase/firebase-config';
+import CreateMealModal from './CreateMealModal.jsx';
+import './repas.css';
+
+// Libellés en FR
+const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SLOTS = ['Petit-déjeuner','Déjeuner','Dîner','Goûter'];
 
 export default function RepasPage() {
 const pathname = usePathname();
-const user = useAuth();
 
-const [meals, setMeals] = useState([]);
-const [showModal, setShowModal] = useState(false);
-const [pendingDay, setPendingDay] = useState("");
-const [pendingSlot, setPendingSlot] = useState("");
+const [user, setUser] = useState(null);
+const [meals, setMeals] = useState([]); // liste brute Firestore
+const [isOpen, setIsOpen] = useState(false);
+const [pendingDay, setPendingDay] = useState(null);
+const [pendingSlot, setPendingSlot] = useState(null);
 
-// Charger les repas depuis users/{uid}/meals
+// Auth
+useEffect(() => {
+const unsub = onAuthStateChanged(auth, u => setUser(u || null));
+return () => unsub();
+}, []);
+
+// Stream des repas de l’utilisateur
 useEffect(() => {
 if (!user) return;
-
-(async () => {
-const q = query(
-collection(db, "users", user.uid, "meals"),
-orderBy("createdAt", "desc")
+const qMeals = query(
+collection(db, 'users', user.uid, 'meals'),
+where('userId', '==', user.uid)
 );
-const snap = await getDocs(q);
-const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setMeals(data);
-})();
+const unsub = onSnapshot(qMeals, snap => {
+const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setMeals(rows);
+});
+return () => unsub();
 }, [user]);
 
-const openModal = (day, slot) => {
+// Regroupement par (jour, créneau)
+const grouped = useMemo(() => {
+const map = {};
+for (const d of DAYS) {
+map[d] = {};
+for (const s of SLOTS) map[d][s] = [];
+}
+meals.forEach(m => {
+const d = m.day || 'Lundi';
+const s = m.slot || 'Déjeuner';
+if (!map[d]) map[d] = {};
+if (!map[d][s]) map[d][s] = [];
+map[d][s].push(m);
+});
+return map;
+}, [meals]);
+
+// Ouvrir la modale “Ajouter un repas”
+const openAddMeal = (day, slot) => {
 setPendingDay(day);
 setPendingSlot(slot);
-setShowModal(true);
+setIsOpen(true);
 };
 
+// Supprimer un repas
 const handleDeleteMeal = async (mealId) => {
 if (!user) return;
-await deleteDoc(doc(db, "users", user.uid, "meals", mealId));
-setMeals((prev) => prev.filter((m) => m.id !== mealId));
+try {
+await deleteDoc(doc(db, 'users', user.uid, 'meals', mealId));
+} catch (e) {
+console.error('delete meal error', e);
+alert("Impossible de supprimer ce repas.");
+}
+};
+
+// Création d’un repas (callback depuis la modale)
+const handleCreateMeal = async ({ name, day, slot, product }) => {
+if (!user) return;
+
+try {
+// 1) créer le repas
+await addDoc(collection(db, 'users', user.uid, 'meals'), {
+userId: user.uid,
+name: name || 'Repas',
+day,
+slot,
+products: product ? [{ id: product.id, name: product.name }] : [],
+createdAt: serverTimestamp()
+});
+
+// 2) supprimer le produit du frigo s’il existe
+if (product?.id) {
+await deleteDoc(doc(db, 'users', user.uid, 'products', product.id));
+}
+
+setIsOpen(false);
+} catch (e) {
+console.error('create meal error', e);
+alert("Impossible d’enregistrer le repas.");
+}
 };
 
 return (
 <>
-<div className="repasSimple">
-{/* En-tête */}
+<div className="repasWrap">
+{/* Header */}
 <div className="repasHeader">
 <div className="title">
 <div className="titleLine">
-<span className="cube">🍽️</span>
+<span className="cube" aria-hidden>🍽️</span>
 <h2>Mes repas</h2>
 </div>
-<p className="hello">Planifie tes repas à partir de ton frigo</p>
+<p className="hello">Planifie tes repas et vide ton frigo intelligemment</p>
 </div>
-
 <div className="actions">
-<button className="btnPrimary" onClick={() => openModal("Lundi", "Déjeuner")}>
+<button
+className="btnPrimary"
+onClick={() => openAddMeal('Lundi', 'Déjeuner')}
+>
 ➕ Créer un repas
 </button>
 </div>
 </div>
 
-{/* Planning hebdo */}
-<div className="mealPlanner">
+{/* Planning semaine */}
+<div className="week">
 {DAYS.map((day) => (
-<div key={day} className="dayCard">
+<section key={day} className="dayCard">
 <h3 className="dayTitle">{day}</h3>
 
-<div className="slots">
-{SLOTS.map((slot) => {
-const meal = meals.find((m) => m.day === day && m.slot === slot);
-return (
-<div key={slot} className="slotCard">
-<div className="slotMain">
-<span className="slotName">{slot}</span>
-{meal ? (
-<span className="slotMeal">
-{meal.name}
-{meal.products?.length ? (
-<span className="slotProducts">
-{" · "}
-{meal.products.map((p) => p.name).join(", ")}
-</span>
-) : null}
-</span>
+{SLOTS.map((slot) => (
+<div key={slot} className="mealItem">
+<div className="left">
+<div className="slot">{slot}</div>
+<div className="products">
+{grouped[day][slot].length === 0 ? (
+<span className="emptyMeal">Aucun repas planifié</span>
 ) : (
-<span className="slotPlaceholder">Aucun repas planifié</span>
+grouped[day][slot].map(m => (
+<span key={m.id} className="chip">
+{m.name}
+<button
+className="chip_remove"
+title="Supprimer ce repas"
+onClick={() => handleDeleteMeal(m.id)}
+>
+×
+</button>
+</span>
+))
 )}
 </div>
+</div>
 
-<div className="slotActions">
-<button
-className="btnLink"
-onClick={() => openModal(day, slot)}
->
+<button className="btnGhost" onClick={() => openAddMeal(day, slot)}>
 + Ajouter un repas
 </button>
-{meal && (
-<button
-className="btnGhost"
-onClick={() => handleDeleteMeal(meal.id)}
-title="Supprimer ce repas"
->
-❌ Supprimer
-</button>
-)}
-</div>
-</div>
-);
-})}
-</div>
 </div>
 ))}
+</section>
+))}
+</div>
 </div>
 
-{showModal && (
+{/* Modale */}
+{isOpen && (
 <CreateMealModal
-user={user}
-day={pendingDay}
-slot={pendingSlot}
-onClose={() => setShowModal(false)}
-// Quand on enregistre, on met à jour la liste locale
-onSaved={(newMeal) =>
-setMeals((prev) => {
-// remplace un éventuel repas existant même day/slot
-const filtered = prev.filter(
-(m) => !(m.day === newMeal.day && m.slot === newMeal.slot)
-);
-return [{ ...newMeal }, ...filtered];
-})
-}
+defaultDay={pendingDay}
+defaultSlot={pendingSlot}
+onCancel={() => setIsOpen(false)}
+onCreate={handleCreateMeal}
 />
 )}
-</div>
 
 {/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith("/fridge") ? "is-active" : ""}`}>
+<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
 <span className="tab_icon">🧊</span>
 <span className="tab_label">Frigo</span>
 </Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith("/repas") ? "is-active" : ""}`}>
+<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
 <span className="tab_icon">🍽️</span>
 <span className="tab_label">Repas</span>
 </Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith("/settings") ? "is-active" : ""}`}>
+<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
 <span className="tab_icon">⚙️</span>
 <span className="tab_label">Paramètres</span>
 </Link>
