@@ -1,150 +1,121 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-import { auth, db } from '../firebase/firebase-config';
-import { onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useEffect } from "react";
+import { db, auth } from "../../firebase/firebase-config";
 import {
 collection,
-onSnapshot,
 query,
 where,
+onSnapshot,
+addDoc,
+deleteDoc,
 doc,
-getDoc,
-} from 'firebase/firestore';
+} from "firebase/firestore";
+import CreateMealModal from "./CreateMealModal";
+import "./repas.css";
 
-import CreateMealModal from './CreateMealModal.jsx';
-import './styles/repas.css'; // si tu as déplacé le CSS repas ici. Sinon remplace par './repas.css'
+const DAYS = [
+"Lundi",
+"Mardi",
+"Mercredi",
+"Jeudi",
+"Vendredi",
+"Samedi",
+"Dimanche",
+];
+const SLOTS = ["Petit-déjeuner", "Déjeuner", "Diner", "Goûter"];
 
-const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Goûter'];
+export default function MealsPage() {
+const [meals, setMeals] = useState([]);
+const [showModal, setShowModal] = useState(false);
+const [selectedDay, setSelectedDay] = useState("");
+const [selectedSlot, setSelectedSlot] = useState("");
 
-export default function RepasPage() {
-const pathname = usePathname();
+const user = auth.currentUser;
 
-const [user, setUser] = useState(null);
-const [meals, setMeals] = useState([]); // liste brute Firestore
-const [isOpen, setIsOpen] = useState(false);
-const [pendingDay, setPendingDay] = useState(null);
-const [pendingSlot, setPendingSlot] = useState(null);
-
-// Auth + chargement des repas
+// Charger les repas
 useEffect(() => {
-const unsubAuth = onAuthStateChanged(auth, (u) => {
-setUser(u || null);
-if (!u) return;
+if (!user) return;
 
-const q = query(collection(db, 'users', u.uid, 'meals'));
-const unsubMeals = onSnapshot(q, (snap) => {
-const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setMeals(list);
+const q = query(
+collection(db, "meals"),
+where("userId", "==", user.uid)
+);
+
+const unsubscribe = onSnapshot(q, (snapshot) => {
+const data = snapshot.docs.map((doc) => ({
+id: doc.id,
+...doc.data(),
+}));
+setMeals(data);
 });
 
-// petit fetch du profil (si tu veux saluer l'utilisateur par son nom plus tard)
-getDoc(doc(db, 'users', u.uid)).catch(() => {});
+return () => unsubscribe();
+}, [user]);
 
-return () => unsubMeals();
-});
-return () => unsubAuth();
-}, []);
+// Ouvrir le modal
+const handleAddMeal = (day, slot) => {
+setSelectedDay(day);
+setSelectedSlot(slot);
+setShowModal(true);
+};
 
-// Regroupe les repas par jour+créneau
-const byDaySlot = useMemo(() => {
-const map = {};
-DAYS.forEach((d) => { map[d] = {}; SLOTS.forEach(s => map[d][s] = []); });
-meals.forEach((m) => {
-if (map[m.day] && map[m.day][m.slot]) {
-map[m.day][m.slot].push(m);
+// Supprimer un repas
+const handleDeleteMeal = async (id) => {
+try {
+await deleteDoc(doc(db, "meals", id));
+} catch (error) {
+console.error("Erreur suppression repas :", error);
 }
-});
-return map;
-}, [meals]);
-
-const openAddMeal = (day, slot) => {
-setPendingDay(day);
-setPendingSlot(slot);
-setIsOpen(true);
 };
 
 return (
-<>
-<div className="repasSimple">
-{/* ===== En-tête ===== */}
-<div className="repasHeader">
-<div className="title">
-<div className="titleLine">
-<span className="cube">👨‍🍳</span>
-<h2>Mes repas</h2>
-</div>
-<p className="hello">Planifie tes repas de la semaine</p>
-</div>
-<div className="actions">
-<button className="btnPrimary" onClick={() => openAddMeal('Lundi', 'Déjeuner')}>
-➕ Créer un repas
-</button>
-</div>
-</div>
+<div className="mealsPage">
+<h1>🍽️ Mes repas</h1>
+{user && <p>Salut {user.email} 👋</p>}
 
-{/* ===== Planning ===== */}
-<div className="mealPlanner">
 {DAYS.map((day) => (
-<div key={day} className="dayCard">
-<h3 className="dayTitle">{day}</h3>
-<div className="slots">
+<div key={day} className="dayBlock">
+<h2>{day}</h2>
 {SLOTS.map((slot) => {
-const items = byDaySlot[day]?.[slot] || [];
+const meal = meals.find(
+(m) => m.day === day && m.slot === slot
+);
 return (
-<div key={slot} className="mealItem">
-<div>
-<div className="mealItem_slot">{slot}</div>
-{items.length === 0 ? (
-<div className="mealItem_emptyMeal">Aucun repas planifié</div>
+<div key={slot} className="mealRow">
+<strong>{slot}</strong> :{" "}
+{meal ? (
+<>
+{meal.name}
+<button
+className="btnDelete"
+onClick={() => handleDeleteMeal(meal.id)}
+>
+Supprimer
+</button>
+</>
 ) : (
-<div className="mealItem_products">
-{items.map((m) => m.name).join(', ')}
-</div>
+"Aucun repas planifié"
 )}
-</div>
-
-<button className="btnPrimary" onClick={() => openAddMeal(day, slot)}>
-+ Ajouter
+<button
+className="btnAdd"
+onClick={() => handleAddMeal(day, slot)}
+>
++ Ajouter un repas
 </button>
 </div>
 );
 })}
 </div>
-</div>
 ))}
-</div>
 
-{/* ===== Modale ===== */}
-{isOpen && user && (
+{showModal && (
 <CreateMealModal
-uid={user.uid}
-closeModal={() => setIsOpen(false)}
-defaultDay={pendingDay}
-defaultSlot={pendingSlot}
+day={selectedDay}
+slot={selectedSlot}
+onClose={() => setShowModal(false)}
 />
 )}
 </div>
-
-{/* ===== Tabbar en bas ===== */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab_icon">🧊</span>
-<span className="tab_label">Frigo</span>
-</Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
-<span className="tab_icon">🍽️</span>
-<span className="tab_label">Repas</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab_icon">⚙️</span>
-<span className="tab_label">Paramètres</span>
-</Link>
-</nav>
-</>
 );
 }

@@ -1,132 +1,172 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { db } from '../firebase/firebase-config';
+import React, { useEffect, useState } from "react";
+import { db, auth } from "../../firebase/firebase-config";
 import {
-addDoc,
 collection,
+query,
+where,
+getDocs,
+addDoc,
 deleteDoc,
 doc,
-onSnapshot,
-query,
-orderBy,
-} from 'firebase/firestore';
+serverTimestamp,
+} from "firebase/firestore";
 
-const SLOTS = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Goûter'];
-const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-
-export default function CreateMealModal({ uid, defaultDay, defaultSlot, closeModal }) {
-const [name, setName] = useState('');
-const [day, setDay] = useState(defaultDay || 'Lundi');
-const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
-
+/**
+* Props attendues :
+* - day: string (ex. "Lundi")
+* - slot: string (ex. "Déjeuner")
+* - onClose: () => void
+*/
+export default function CreateMealModal({ day, slot, onClose }) {
+const [name, setName] = useState("");
 const [products, setProducts] = useState([]); // Produits du frigo
-const [selectedProductId, setSelectedProductId] = useState('');
+const [selectedProductId, setSelectedProductId] = useState(""); // id produit choisi
+const [loading, setLoading] = useState(false);
 
-// Charger les produits du frigo (tri par date d’expiration si dispo)
+const user = auth.currentUser;
+
+// Charger les produits du frigo (users/{uid}/products)
 useEffect(() => {
-if (!uid) return;
-const q = query(collection(db, 'users', uid, 'products'), orderBy('expirationDate', 'asc'));
-const unsub = onSnapshot(q, (snap) => {
-const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setProducts(list);
-});
-return () => unsub();
-}, [uid]);
-
-const selectedProduct = useMemo(
-() => products.find((p) => p.id === selectedProductId),
-[products, selectedProductId]
-);
-
-// Sauvegarde : crée le repas + supprime le produit choisi (si choisi)
-const handleSave = async () => {
-const trimmed = name.trim() || selectedProduct?.name || '';
-if (!trimmed) return;
+const loadProducts = async () => {
+if (!user) return;
 
 try {
-// 1) crée le repas
-await addDoc(collection(db, 'users', uid, 'meals'), {
-name: trimmed,
-day,
-slot,
-createdAt: new Date(),
-productId: selectedProduct?.id || null,
-productName: selectedProduct?.name || null,
+// Sous-collection des produits de l'utilisateur
+const ref = collection(db, "users", user.uid, "products");
+const snap = await getDocs(ref);
+
+const list = snap.docs.map((d) => ({
+id: d.id,
+...d.data(),
+}));
+
+// Tri simple : urgents d'abord puis alphabétique
+list.sort((a, b) => {
+const sa = a.status || "";
+const sb = b.status || "";
+if (sa === "urgent" && sb !== "urgent") return -1;
+if (sb === "urgent" && sa !== "urgent") return 1;
+return (a.name || "").localeCompare(b.name || "");
 });
 
-// 2) supprime le produit du frigo si un produit a été sélectionné
-if (selectedProduct?.id) {
-await deleteDoc(doc(db, 'users', uid, 'products', selectedProduct.id));
+setProducts(list);
+} catch (e) {
+console.error("Erreur chargement produits du frigo :", e);
+}
+};
+
+loadProducts();
+}, [user]);
+
+// Enregistrer le repas et retirer le produit du frigo
+const handleSave = async (e) => {
+e.preventDefault();
+if (!user) return;
+
+if (!name.trim() && !selectedProductId) {
+alert("Renseigne un nom de repas ou sélectionne au moins un produit.");
+return;
 }
 
-closeModal();
+setLoading(true);
+try {
+// Préparer le/les produits associés au repas (facultatif)
+let mealProducts = [];
+let productToRemoveDocRef = null;
+
+if (selectedProductId) {
+const prod = products.find((p) => p.id === selectedProductId);
+if (prod) {
+mealProducts = [
+{
+id: prod.id,
+name: prod.name || "",
+expirationDate: prod.expirationDate || null,
+status: prod.status || "",
+place: prod.place || "",
+category: prod.category || "",
+},
+];
+// Référence du doc à supprimer dans le frigo
+productToRemoveDocRef = doc(db, "users", user.uid, "products", prod.id);
+}
+}
+
+// Créer le repas (collection top-level "meals")
+await addDoc(collection(db, "meals"), {
+userId: user.uid,
+day,
+slot,
+name: name.trim() || (mealProducts[0]?.name ?? "Repas"),
+products: mealProducts,
+createdAt: serverTimestamp(),
+});
+
+// Si un produit a été sélectionné, on le retire du frigo
+if (productToRemoveDocRef) {
+await deleteDoc(productToRemoveDocRef);
+}
+
+onClose?.();
 } catch (e) {
-console.error('Save meal error', e);
-// tu peux afficher un toast si tu veux
+console.error("Erreur enregistrement repas :", e);
+alert("Impossible d'enregistrer le repas. Réessaie.");
+} finally {
+setLoading(false);
 }
 };
 
 return (
-<div className="modalOverlay" onClick={closeModal}>
-<div className="modalWindow" onClick={(e) => e.stopPropagation()}>
-<h3 style={{ marginTop: 0 }}>Ajouter un repas</h3>
+<div className="modalOverlay" onClick={onClose}>
+<div className="modal" onClick={(e) => e.stopPropagation()}>
+<h3>Ajouter un repas</h3>
+<p style={{ marginTop: -6, opacity: 0.8 }}>
+{day} · {slot}
+</p>
 
-<div style={{ display: 'grid', gap: 10 }}>
-{/* Nom libre (optionnel si tu sélectionnes un produit) */}
+<form onSubmit={handleSave} style={{ marginTop: 12, display: "grid", gap: 10 }}>
+{/* Nom du repas */}
 <label>
-Nom du repas
+<span>Nom du repas</span>
 <input
 type="text"
-placeholder="ex : Salade poulet-avocat"
+placeholder="ex : Pâtes bolognaise"
 value={name}
 onChange={(e) => setName(e.target.value)}
-style={{ width: '100%', padding: '8px 10px', border: '1px solid #ccc', borderRadius: 8 }}
+style={{ width: "100%" }}
 />
 </label>
 
-{/* Jour */}
+{/* Sélection d'un produit du frigo (facultatif) */}
 <label>
-Jour
-<select value={day} onChange={(e) => setDay(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 8 }}>
-{DAYS.map((d) => (
-<option key={d} value={d}>{d}</option>
-))}
-</select>
-</label>
-
-{/* Créneau */}
-<label>
-Créneau
-<select value={slot} onChange={(e) => setSlot(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 8 }}>
-{SLOTS.map((s) => (
-<option key={s} value={s}>{s}</option>
-))}
-</select>
-</label>
-
-{/* Produit du frigo (optionnel) */}
-<label>
-Choisir un produit du frigo (optionnel)
+<span>Produit du frigo (optionnel)</span>
 <select
 value={selectedProductId}
 onChange={(e) => setSelectedProductId(e.target.value)}
-style={{ width: '100%', padding: 8, borderRadius: 8 }}
+style={{ width: "100%", padding: "8px 10px" }}
 >
 <option value="">— Aucun produit sélectionné —</option>
 {products.map((p) => (
 <option key={p.id} value={p.id}>
-{p.name}{p.expirationDate ? ` — ${p.expirationDate}` : ''}
+{p.name}
+{p.expirationDate ? ` — ${p.expirationDate}` : ""}
+{p.status === "urgent" ? " ⚠️" : ""}
 </option>
 ))}
 </select>
 </label>
-</div>
 
 <div className="modalActions">
-<button className="btnPrimary" onClick={handleSave}>Enregistrer</button>
-<button className="btnGhost" onClick={closeModal}>Annuler</button>
+<button type="button" className="btnGhost" onClick={onClose} disabled={loading}>
+Annuler
+</button>
+<button type="submit" className="btnPrimary" disabled={loading}>
+{loading ? "Enregistrement…" : "Enregistrer"}
+</button>
 </div>
+</form>
 </div>
 </div>
 );
