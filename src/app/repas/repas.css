@@ -1,244 +1,58 @@
-/* ===============================
-Repas : header et état vide
-================================== */
-.repasSimple {
-padding: 16px;
-}
+/* ====== Layout simple ====== */
+.repasSimple { padding: 16px; }
 
-.repasHeader {
-display: flex;
-gap: 12px;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 12px;
-flex-wrap: wrap;
-}
+/* Header */
+.repasHeader { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
+.repasHeader .titleLine { display:flex; align-items:center; gap:8px; }
+.repasHeader .cube { font-size:20px; }
+.repasHeader .hello { opacity:.8; }
 
-.repasHeader .title .titleLine {
-display: flex;
-align-items: center;
-gap: 8px;
-}
+/* Boutons génériques */
+.btnPrimary { background:#1976d2; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; }
+.btnPrimary:hover { background:#125aa0; }
+.btnGhost { background:#eee; color:#333; border:none; padding:8px 10px; border-radius:10px; cursor:pointer; }
+.btnGhost:hover { background:#e2e2e2; }
+.btnLink { background:transparent; border:none; color:#1976d2; cursor:pointer; padding:0; }
 
-.repasHeader .title .cube {
-font-size: 20px;
-}
+/* Planning */
+.mealPlanner { display:flex; flex-direction:column; gap:12px; }
+.dayCard { background:#fff; border-radius:12px; padding:14px; box-shadow:0 4px 10px rgba(0,0,0,.06); }
+.dayTitle { margin:0 0 8px 0; font-size:1.05rem; }
 
-.repasHeader .title .hello {
-font-size: .95rem;
-opacity: .8;
-}
+.slots { display:flex; flex-direction:column; gap:10px; }
+.slotCard { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#f7f9ff; border:1px solid #dbe6ff; border-radius:10px; padding:10px 12px; }
+.slotName { font-weight:700; color:#0d47a1; }
+.slotPlaceholder { opacity:.7; font-style:italic; }
+.slotMeal { font-weight:600; }
+.slotProducts { font-weight:500; color:#0d47a1; opacity:.85; }
+.slotActions { display:flex; gap:10px; }
 
-.repasHeader .actions {
-display: flex;
-gap: 8px;
-align-items: center;
-flex: 1 1 460px;
-justify-content: flex-end;
-}
+/* Modal */
+.modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:16px; z-index:999; }
+.modal { width:min(680px, 95vw); background:#fff; border-radius:14px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
+.modalHeader { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.modalBody { display:flex; flex-direction:column; gap:10px; }
+.modalActions { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
 
-.repasHeader .search {
-flex: 1;
-padding: 8px 10px;
-border: 1px solid #ccc;
-border-radius: 6px;
-}
+.fieldRow { display:flex; flex-direction:column; gap:6px; }
+.fieldRow input { padding:10px; border:1px solid #ddd; border-radius:10px; }
 
-/* Etat vide centré */
-.emptyMeals {
-text-align: center;
-margin: 40px 0 24px;
-}
+/* Liste produits (thème bleu) */
+.productListWrap { max-height:260px; overflow:auto; border:1px solid #cfe3ff; border-radius:10px; margin-top:6px; background:#e6f0ff; }
+.product-list { list-style:none; margin:0; padding:6px; color:#0d47a1; }
+.product-list .emptyRow { padding:8px; opacity:.8; }
+.product-list li { display:flex; align-items:center; gap:8px; background:#fff; border-radius:8px; padding:8px 10px; margin:6px 0; cursor:pointer; transition:background .15s ease; }
+.product-list li:hover { background:#eef5ff; }
+.product-list li.is-selected { background:#bbdefb; }
+.product-list li .name { font-weight:600; }
+.product-list li .date { margin-left:auto; font-size:12px; opacity:.7; }
 
-.emptyMeals .emptyIcon {
-font-size: 3rem;
-margin-bottom: 6px;
-}
-
-.emptyMeals .emptyTitle {
-font-size: 1.2rem;
-font-weight: 700;
-margin-bottom: 4px;
-}
-
-.emptyMeals .emptyText {
-opacity: .75;
-margin-bottom: 10px;
-}
-
-/* Modal responsive */
-.modal {
-width: min(620px, 95vw);
-}
-
+/* Mobile */
 @media (max-width: 480px) {
-.modal { width: 100%; }
+.repasHeader .actions { flex:1 1 100%; }
+.modal { padding:14px; }
 }
 
-.repasHeader .actions {
-flex: 1 1 100%;
-}
-
-.modal {
-padding: 14px;
-margin: auto;
-}
-
-/* ===============================
-Repas : Planning par jours
-================================== */
-.dayCard {
-background: #fff;
-border-radius: 12px;
-padding: 14px;
-margin-bottom: 14px;
-box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.dayCard:hover {
-transform: translateY(-2px);
-box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-}
-
-.dayTitle {
-font-weight: 700;
-font-size: 1rem;
-margin-bottom: 10px;
-color: #0d47a1; /* bleu profond */
-}
-
-/* Slots repas */
-.mealItem {
-padding: 12px;
-background: #f1faff;
-border: 1px solid #bde9ff;
-border-radius: 8px;
-margin-bottom: 8px;
-display: flex;
-justify-content: space-between;
-align-items: center;
-cursor: pointer;
-transition: background 0.15s ease;
-}
-
-.mealItem:hover {
-background: #e8f2ff;
-}
-
-.mealItem .slot {
-font-weight: 600;
-color: #333;
-}
-
-.mealItem .emptyMeal {
-opacity: .6;
-font-size: .85rem;
-}
-
-.mealItem .products {
-font-size: .9rem;
-color: #0d47a1;
-font-weight: 500;
-}
-
-/* Bouton ajouter */
-.mealItem button {
-background: #1976d2;
-border: none;
-color: #fff;
-padding: 6px 10px;
-font-size: .85rem;
-border-radius: 6px;
-cursor: pointer;
-transition: background 0.2s ease;
-}
-
-.mealItem button:hover {
-background: #125a90;
-}
-
-/* Modal modernisée */
-.modal {
-background: #fff;
-border-radius: 14px;
-padding: 18px;
-box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-}
-
-/* Responsive mobile */
-@media (max-width: 480px) {
-.dayCard {
-padding: 12px;
-}
-
-.mealItem {
-flex-direction: column;
-align-items: flex-start;
-gap: 6px;
-}
-
-.mealItem button {
-align-self: flex-end;
-}
-}
-
-/* ===== Modal (overlay + contenu) ===== */
-.modalOverlay {
-position: fixed; inset: 0;
-background: rgba(0,0,0,.5);
-display: grid; place-items: center;
-z-index: 1000;
-}
-
-.modalContent {
-width: min(620px, 92vw);
-background: #fff;
-border-radius: 14px;
-padding: 18px;
-box-shadow: 0 10px 30px rgba(0,0,0,.25);
-}
-
-.modalContent h2 {
-margin: 0 0 12px 0;
-font-size: 1.2rem; font-weight: 800;
-}
-
-.modalContent label {
-display: block;
-font-weight: 600;
-margin: 10px 0 6px;
-}
-
-.modalContent input,
-.modalContent select {
-width: 100%;
-padding: 10px 12px;
-border: 1px solid #dfe4f3;
-border-radius: 10px;
-background: #fff;
-font-size: .95rem;
-}
-
-.modalActions {
-display: flex;
-gap: 8px;
-justify-content: flex-end;
-margin-top: 14px;
-}
-
-.btnPrimary {
-background: #1976d2; color: #fff;
-border: none; border-radius: 10px;
-padding: 10px 14px; font-weight: 700;
-cursor: pointer;
-}
-.btnPrimary:hover { background: #145aa1; }
-
-.btnSecondary {
-background: #f3f4f6; color: #111827;
-border: 1px solid #e5e7eb; border-radius: 10px;
-padding: 10px 14px; font-weight: 600;
-cursor: pointer;
-}
-.btnSecondary:hover { background: #e9ebef; }
+/* Espace pour la tabbar */
+html, body { height:100%; }
+body { padding-bottom:calc(56px + env(safe-area-inset-bottom)); }
