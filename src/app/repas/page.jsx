@@ -16,7 +16,7 @@ getDoc,
 } from 'firebase/firestore';
 
 import CreateMealModal from './CreateMealModal.jsx';
-import '../styles/repas.css'; // si tu as déplacé le CSS repas ici. Sinon remplace par './repas.css'
+import './styles/repas.css'; // si tu as déplacé le CSS repas ici. Sinon remplace par './repas.css'
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SLOTS = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Goûter'];
