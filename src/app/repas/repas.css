@@ -1,14 +1,14 @@
 /* ===== Page repas ===== */
 .repasSimple {
 padding: 16px;
-font-family: sans-serif;
-background: #fafafa;
+font-family: "Segoe UI", Roboto, sans-serif;
+background: #f5f6fa;
 min-height: 100vh;
 box-sizing: border-box;
-padding-bottom: 80px; /* pour laisser de la place à la tabbar */
+padding-bottom: 90px; /* espace pour la tabbar */
 }
 
-/* Header */
+/* ===== Header ===== */
 .repasHeader {
 display: flex;
 justify-content: space-between;
@@ -19,172 +19,103 @@ margin-bottom: 20px;
 .repasHeader .titleLine {
 display: flex;
 align-items: center;
-gap: 8px;
+gap: 10px;
 }
 
 .repasHeader h2 {
 margin: 0;
 font-size: 22px;
+color: #2c3e50;
 }
 
 .repasHeader .hello {
 margin: 4px 0 0 0;
 font-size: 14px;
-color: #666;
+color: #7f8c8d;
 }
 
 .btnPrimary {
 padding: 8px 14px;
-background: #2d89ef;
+background: #3498db;
 color: white;
 border: none;
 border-radius: 6px;
 cursor: pointer;
 font-size: 14px;
+transition: 0.2s;
 }
 .btnPrimary:hover {
-background: #1c65b5;
-}
-
-.btnSecondary {
-padding: 8px 14px;
-background: #ccc;
-color: black;
-border: none;
-border-radius: 6px;
-cursor: pointer;
-font-size: 14px;
-}
-.btnSecondary:hover {
-background: #999;
-}
-
-.btnDelete {
-margin-top: 8px;
-padding: 4px 10px;
-font-size: 13px;
-border: none;
-background: #e74c3c;
-color: white;
-border-radius: 4px;
-cursor: pointer;
-}
-.btnDelete:hover {
-background: #c0392b;
+background: #2980b9;
 }
 
 /* ===== Liste repas ===== */
 .mealPlanner {
 display: grid;
-gap: 16px;
+gap: 18px;
 }
 
 .dayCard {
 background: white;
-padding: 12px;
-border-radius: 8px;
-box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+padding: 14px 18px;
+border-radius: 10px;
+box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .dayTitle {
-margin: 0 0 8px 0;
+margin: 0 0 12px 0;
 font-size: 18px;
-color: #333;
+font-weight: 600;
+color: #2c3e50;
 }
 
-.slots {
-display: flex;
-flex-direction: column;
-gap: 10px;
-}
-
+/* ===== Slot repas ===== */
 .slotCard {
-padding: 10px;
-border: 1px dashed #aaa;
-border-radius: 6px;
-cursor: pointer;
-background: #f9f9f9;
-}
-.slotCard:hover {
-background: #eee;
+margin-bottom: 14px;
+padding: 12px 14px;
+border: 1px solid #e1e1e1;
+border-radius: 8px;
+background: #fdfdfd;
 }
 
+.slotCard h4 {
+margin: 0 0 6px 0;
+font-size: 15px;
+color: #34495e;
+}
+
+.mealItem {
+margin: 0 0 8px 0;
+font-size: 14px;
+color: #2c3e50;
+}
+
+.mealIngredients {
+margin: 0;
+padding-left: 18px;
+font-size: 13px;
+color: #555;
+}
+
+.btnDelete {
+margin-top: 6px;
+padding: 5px 12px;
+font-size: 13px;
+border: none;
+background: #e74c3c;
+color: white;
+border-radius: 5px;
+cursor: pointer;
+transition: 0.2s;
+}
+.btnDelete:hover {
+background: #c0392b;
+}
+
+/* ===== Placeholder (quand pas de repas) ===== */
 .slotPlaceholder {
 font-size: 13px;
 color: #888;
-}
-
-/* ===== Modale ===== */
-.modalOverlay {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.5);
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 1000;
-}
-
-.modalContent {
-background: white;
-padding: 20px;
-border-radius: 10px;
-width: 90%;
-max-width: 400px;
-box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-
-.modalContent h2 {
-margin: 0;
-font-size: 20px;
-}
-
-.modalContent label {
-font-weight: bold;
-font-size: 14px;
-}
-
-.modalContent input,
-.modalContent select {
-padding: 8px;
-border: 1px solid #ccc;
-border-radius: 6px;
-font-size: 14px;
-}
-
-/* Liste produits du frigo */
-.productList {
-display: flex;
-flex-wrap: wrap;
-gap: 8px;
-}
-
-.productItem {
-padding: 6px 10px;
-border: 1px solid #bbb;
-border-radius: 6px;
-cursor: pointer;
-font-size: 14px;
-background: #f5f5f5;
-}
-.productItem:hover {
-background: #eaeaea;
-}
-.productItem.selected {
-background: #2d89ef;
-color: white;
-border-color: #2d89ef;
-}
-
-/* Boutons modale */
-.modalActions {
-display: flex;
-justify-content: flex-end;
-gap: 10px;
-margin-top: 10px;
+font-style: italic;
 }
 
 /* ===== Tabbar ===== */
@@ -197,7 +128,7 @@ background: white;
 border-top: 1px solid #ddd;
 display: flex;
 justify-content: space-around;
-padding: 8px 0;
+padding: 10px 0;
 z-index: 999;
 }
 
@@ -207,10 +138,9 @@ text-align: center;
 font-size: 13px;
 color: #666;
 text-decoration: none;
-padding: 4px 0;
 }
 .tab.is-active {
-color: #2d89ef;
+color: #3498db;
 font-weight: bold;
 }
 .tab_icon {
