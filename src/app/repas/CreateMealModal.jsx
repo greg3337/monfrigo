@@ -2,153 +2,185 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { auth, db } from '../firebase/firebase-config';
-import {collection, onSnapshot, query, orderBy,writeBatch, doc, serverTimestamp} from 'firebase/firestore';
-import './repas.css';
+import {collection, query, onSnapshot, addDoc, deleteDoc, doc, where, updateDoc} from 'firebase/firestore';
 
-export default function CreateMealModal({ closeModal, defaultDay='Lundi', defaultSlot='Déjeuner' }) {
-const [title, setTitle] = useState('');
-const [day, setDay] = useState(defaultDay);
-const [slot, setSlot] = useState(defaultSlot);
+function computeStatus(isoDate) {
+if (!isoDate) return 'ok';
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(isoDate); d.setHours(0,0,0,0);
+const diffDays = Math.ceil((d - today) / (1000*60*60*24));
+if (diffDays < 0) return 'expired';
+if (diffDays <= 2) return 'urgent';
+return 'ok';
+}
 
-const [products, setProducts] = useState([]);
+export default function CreateMealModal({
+closeModal,
+defaultDay,
+defaultSlot,
+editMeal = null, // si fourni => mode édition
+onSaved = () => {}
+}) {
+const [user, setUser] = useState(null);
+const [name, setName] = useState(editMeal?.name || '');
 const [search, setSearch] = useState('');
-const [selected, setSelected] = useState(() => new Set());
-const [loading, setLoading] = useState(true);
+const [selected, setSelected] = useState(editMeal?.products || []); // [{id,name,expirationDate,category,place}]
 const [saving, setSaving] = useState(false);
 
-// Charger produits du frigo
+// Charger les produits restants dans le frigo
+const [products, setProducts] = useState([]);
 useEffect(() => {
-const u = auth.currentUser;
+const unsub = auth.onAuthStateChanged(u => {
+setUser(u || null);
 if (!u) return;
-const q = query(collection(db, 'users', u.uid, 'products'), orderBy('name'));
-const unsub = onSnapshot(q, (snap) => {
-setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-setLoading(false);
-}, () => setLoading(false));
+const q = query(collection(db, 'users', u.uid, 'products'));
+const unsubP = onSnapshot(q, snap => {
+const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setProducts(list);
+});
+return () => unsubP();
+});
 return () => unsub();
 }, []);
 
-const filtered = useMemo(() => {
+// Liste affichée (filtrée)
+const visible = useMemo(() => {
 const q = search.trim().toLowerCase();
-if (!q) return products;
-return products.filter(p =>
-p.name?.toLowerCase().includes(q) ||
-p.category?.toLowerCase().includes(q) ||
-p.place?.toLowerCase().includes(q)
-);
+return products.filter(p => p.name?.toLowerCase().includes(q));
 }, [products, search]);
 
-const toggleSelect = (id) => {
-setSelected(prev => {
-const next = new Set(prev);
-next.has(id) ? next.delete(id) : next.add(id);
-return next;
-});
+const togglePick = (p) => {
+const exists = selected.find(x => x.id === p.id);
+if (exists) {
+setSelected(prev => prev.filter(x => x.id !== p.id));
+} else {
+// on garde toutes les infos utiles pour restauration
+setSelected(prev => [...prev, {
+id: p.id,
+name: p.name,
+expirationDate: p.expirationDate || '',
+category: p.category || 'autre',
+place: p.place || 'frigo',
+}]);
+}
 };
 
-async function saveMeal(e) {
+const onSubmit = async (e) => {
 e.preventDefault();
-const u = auth.currentUser;
-if (!u) { alert("Tu n'es pas connecté."); return; }
-
-const picked = products.filter(p => selected.has(p.id));
-if (picked.length === 0) { alert('Sélectionne au moins un produit.'); return; }
-
-const mealTitle = title.trim() || picked.map(p => p.name).filter(Boolean).join(' + ').slice(0,80) || 'Repas';
+if (!user) return;
+if (!name.trim()) { alert('Nom de repas obligatoire'); return; }
 
 setSaving(true);
 try {
-const batch = writeBatch(db);
-const mealRef = doc(collection(db, 'users', u.uid, 'meals'));
-batch.set(mealRef, {
-name: mealTitle,
-day,
-slot,
-products: picked.map(({ id, name, expirationDate, category, place }) => ({
-id, name: name || '', expirationDate: expirationDate || '', category: category || '', place: place || ''
-})),
-createdAt: serverTimestamp(),
-});
-// Consommer (supprimer) les produits choisis du frigo
-picked.forEach(p => batch.delete(doc(db, 'users', u.uid, 'products', p.id)));
+if (!editMeal) {
+// ===== Création
+const payload = {
+day: defaultDay,
+slot: defaultSlot,
+name: name.trim(),
+products: selected,
+createdAt: new Date().toISOString(),
+};
+const mealRef = await addDoc(collection(db, 'users', user.uid, 'meals'), payload);
 
-await batch.commit();
+// supprimer du frigo les produits utilisés
+for (const p of selected) {
+await deleteDoc(doc(db, 'users', user.uid, 'products', p.id));
+}
+} else {
+// ===== Édition
+const mealRef = doc(db, 'users', user.uid, 'meals', editMeal.id);
+
+// 1) restituer anciens produits au frigo (ceux qui ne sont plus dans la sélection)
+const old = Array.isArray(editMeal.products) ? editMeal.products : [];
+const keepIds = new Set(selected.map(p => p.id));
+const toRestore = old.filter(p => !keepIds.has(p.id));
+for (const p of toRestore) {
+await addDoc(collection(db, 'users', user.uid, 'products'), {
+name: p.name,
+expirationDate: p.expirationDate || '',
+category: p.category || 'autre',
+place: p.place || 'frigo',
+status: computeStatus(p.expirationDate || ''),
+createdAt: new Date().toISOString(),
+});
+}
+
+// 2) supprimer du frigo les nouveaux produits ajoutés (qui n’étaient pas dans l’ancien repas)
+const oldIds = new Set(old.map(p => p.id));
+const newlyUsed = selected.filter(p => !oldIds.has(p.id));
+for (const p of newlyUsed) {
+await deleteDoc(doc(db, 'users', user.uid, 'products', p.id));
+}
+
+// 3) update du repas
+await updateDoc(mealRef, {
+day: defaultDay,
+slot: defaultSlot,
+name: name.trim(),
+products: selected,
+updatedAt: new Date().toISOString(),
+});
+}
+
+onSaved();
 closeModal();
 } catch (err) {
-console.error('saveMeal error:', err);
-alert(`Erreur: ${err.message || err.code}`);
+console.error('save meal error:', err);
+alert("Erreur lors de l’enregistrement du repas.");
 } finally {
 setSaving(false);
 }
-}
+};
 
 return (
-<div className="modalOverlay" onClick={closeModal}>
-<div className="modalContent" onClick={e => e.stopPropagation()}>
-<h2>Composer un repas</h2>
+<div className="modal-backdrop">
+<div className="modal">
+<h3>{editMeal ? 'Modifier le repas' : 'Composer un repas'}</h3>
 
+<form onSubmit={onSubmit}>
 <label>Nom du repas</label>
 <input
 type="text"
-value={title}
-placeholder="ex : Salade poulet-avocat"
-onChange={e => setTitle(e.target.value)}
+placeholder="ex : Pâtes thon-tomate"
+value={name}
+onChange={e => setName(e.target.value)}
 />
 
-<div style={{ display:'flex', gap:8 }}>
-<div style={{ flex:1 }}>
-<label>Jour</label>
-<select value={day} onChange={e => setDay(e.target.value)}>
-{['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].map(d => (
-<option key={d} value={d}>{d}</option>
-))}
-</select>
-</div>
-<div style={{ flex:1 }}>
-<label>Créneau</label>
-<select value={slot} onChange={e => setSlot(e.target.value)}>
-{['Petit-déjeuner','Déjeuner','Dîner','Goûter'].map(s => (
-<option key={s} value={s}>{s}</option>
-))}
-</select>
-</div>
-</div>
-
-<label>Produits du frigo</label>
+<label>Produits (depuis ton frigo)</label>
 <input
-type="text"
+className="search"
 placeholder="Rechercher un produit…"
 value={search}
 onChange={e => setSearch(e.target.value)}
 />
 
-<div className="productListWrap" style={{ marginTop:8 }}>
-{loading ? (
-<div className="product-list emptyRow">Chargement…</div>
-) : filtered.length === 0 ? (
-<div className="product-list emptyRow">Aucun produit</div>
-) : (
+<div className="productListWrap">
 <ul className="product-list">
-{filtered.map(p => {
-const isSel = selected.has(p.id);
+{visible.length === 0 && <li className="emptyRow">Aucun produit</li>}
+{visible.map(p => {
+const isSel = selected.some(x => x.id === p.id);
 return (
-<li key={p.id} className={isSel ? 'is-selected' : ''} onClick={() => toggleSelect(p.id)}>
-<input type="checkbox" readOnly checked={isSel} style={{ pointerEvents:'none' }}/>
-<span className="name">{p.name || '(sans nom)'}</span>
+<li
+key={p.id}
+className={isSel ? 'is-selected' : ''}
+onClick={() => togglePick(p)}
+>
+<span className="name">{p.name}</span>
 {p.expirationDate && <span className="date">{p.expirationDate}</span>}
 </li>
 );
 })}
 </ul>
-)}
 </div>
 
-<div className="modalActions" style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:12 }}>
-<button className="btnSecondary" type="button" onClick={closeModal}>Annuler</button>
-<button className="btnPrimary" type="button" onClick={saveMeal} disabled={saving}>
-{saving ? 'Enregistrement…' : 'Enregistrer le repas'}
+<div className="modal-actions">
+<button type="button" className="ghostBtn" onClick={closeModal}>Annuler</button>
+<button className="primary" type="submit" disabled={saving}>
+{saving ? 'Enregistrement…' : (editMeal ? 'Mettre à jour' : 'Enregistrer le repas')}
 </button>
 </div>
+</form>
 </div>
 </div>
 );

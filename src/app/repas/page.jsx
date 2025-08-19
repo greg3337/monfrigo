@@ -3,146 +3,187 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/firebase-config';
-import {collection,onSnapshot,query,} from 'firebase/firestore';
+import {collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc} from 'firebase/firestore';
 
 import CreateMealModal from './CreateMealModal.jsx';
-import './repas.css';
+import '../styles/tabbar.css'; // ta tabbar
+import './repas.css'; // style spécifique repas
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Petit-déjeuner','Déjeuner','Dîner','Goûter'];
+const SLOTS = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Goûter'];
 
-function normalizeDay(d) {
-if (!d) return '';
-const map = { lundi:'Lundi', mardi:'Mardi', mercredi:'Mercredi', jeudi:'Jeudi', vendredi:'Vendredi', samedi:'Samedi', dimanche:'Dimanche' };
-const k = d.toString().trim().toLowerCase();
-return map[k] || d;
-}
-function normalizeSlot(s, moment) {
-const v = (s || moment || '').toString().trim().toLowerCase();
-if (['petit-déjeuner','petit dejeuner','petitdejeuner','matin'].includes(v)) return 'Petit-déjeuner';
-if (['dejeuner','déjeuner','midi'].includes(v)) return 'Déjeuner';
-if (['diner','dîner','soir'].includes(v)) return 'Dîner';
-if (['gouter','goûter'].includes(v)) return 'Goûter';
-return s || moment || '';
+function computeStatus(isoDate) {
+if (!isoDate) return 'ok';
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(isoDate); d.setHours(0,0,0,0);
+const diffDays = Math.ceil((d - today) / (1000*60*60*24));
+if (diffDays < 0) return 'expired';
+if (diffDays <= 2) return 'urgent';
+return 'ok';
 }
 
 export default function RepasPage() {
 const pathname = usePathname();
-const [isOpen, setIsOpen] = useState(false);
-const [pendingDay, setPendingDay] = useState('Lundi');
-const [pendingSlot, setPendingSlot] = useState('Déjeuner');
-
 const [user, setUser] = useState(null);
-const [meals, setMeals] = useState([]);
+const [meals, setMeals] = useState([]); // {id, day, slot, name, products: [{id,name,expirationDate,category,place}]}
 
-// Auth + écoute temps réel des repas
+// Modale
+const [isOpen, setIsOpen] = useState(false);
+const [pendingDay, setPendingDay] = useState(null);
+const [pendingSlot, setPendingSlot] = useState(null);
+const [editMeal, setEditMeal] = useState(null); // si défini => mode édition
+
 useEffect(() => {
-const unsubAuth = auth.onAuthStateChanged((u) => {
+const unsub = onAuthStateChanged(auth, u => {
 setUser(u || null);
-if (!u) { setMeals([]); return; }
-
+if (!u) return;
 const q = query(collection(db, 'users', u.uid, 'meals'));
-const unsubMeals = onSnapshot(q, (snap) => {
-const list = snap.docs.map((d) => {
-const x = d.data();
-return {
-id: d.id,
-name: x.name || x.title || '',
-day: normalizeDay(x.day || x.jour),
-slot: normalizeSlot(x.slot, x.moment),
-products: x.products || x.items || [],
-};
-});
+const unsubMeals = onSnapshot(q, snap => {
+const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 setMeals(list);
 });
-
 return () => unsubMeals();
 });
-return () => unsubAuth();
+return () => unsub();
 }, []);
-
-// indexation jour|slot -> liste
-const mealsByKey = useMemo(() => {
-const m = {};
-meals.forEach((x) => {
-const key = `${normalizeDay(x.day)}|${normalizeSlot(x.slot, x.moment)}`;
-if (!m[key]) m[key] = [];
-m[key].push(x);
-});
-return m;
-}, [meals]);
-
-const getMealsFor = (day, slot) => mealsByKey[`${day}|${slot}`] || [];
 
 const openAddMeal = (day, slot) => {
 setPendingDay(day);
 setPendingSlot(slot);
+setEditMeal(null);
 setIsOpen(true);
 };
+const openEditMeal = (meal) => {
+setEditMeal(meal);
+setPendingDay(meal.day);
+setPendingSlot(meal.slot);
+setIsOpen(true);
+};
+
+// Suppression d'un repas + restauration des produits dans le frigo
+const deleteMeal = async (meal) => {
+if (!user) return;
+try {
+// 1) Restaurer les produits dans /products
+const prods = Array.isArray(meal.products) ? meal.products : [];
+for (const p of prods) {
+const payload = {
+name: p.name || 'Produit',
+expirationDate: p.expirationDate || '',
+category: p.category || 'autre',
+place: p.place || 'frigo',
+status: computeStatus(p.expirationDate || ''),
+createdAt: new Date().toISOString(),
+};
+await addDoc(collection(db, 'users', user.uid, 'products'), payload);
+}
+// 2) Supprimer le repas
+await deleteDoc(doc(db, 'users', user.uid, 'meals', meal.id));
+} catch (e) {
+console.error('deleteMeal error', e);
+alert("Erreur lors de la suppression du repas.");
+}
+};
+
+// Affichage : indexer par jour+slot
+const byDaySlot = useMemo(() => {
+const map = {};
+meals.forEach(m => {
+const k = `${m.day}__${m.slot}`;
+map[k] = m;
+});
+return map;
+}, [meals]);
 
 return (
 <>
 <div className="repasSimple">
-{/* Header */}
+{/* ===== En-tête ===== */}
 <div className="repasHeader">
 <div className="title">
 <div className="titleLine">
 <span className="cube">🍽️</span>
-<span className="brandTitle">Mes repas</span>
+<h2>Mes repas</h2>
 </div>
-<div className="hello">
-{user ? `Salut ${user.displayName || user.email?.split('@')[0] || 'utilisateur'} 👋`
-: 'Connecte-toi pour planifier tes repas'}
-</div>
+<p className="hello">Planifie tes repas de la semaine</p>
 </div>
 <div className="actions">
-<button className="primary" onClick={() => openAddMeal('Lundi','Déjeuner')} disabled={!user}>
+<button className="btnPrimary" onClick={() => openAddMeal('Lundi', 'Déjeuner')}>
 ➕ Créer un repas
 </button>
 </div>
 </div>
 
-{/* Planning hebdo */}
-{DAYS.map((day) => (
-<div key={day} className="dayCard">
-<div className="dayTitle">{day}</div>
+{/* ===== Planning hebdo ===== */}
+<div className="planner">
+{DAYS.map(day => (
+<div key={day} className="dayBlock">
+<div className="dayHead">
+<span className="dayEmoji">🗓️</span>
+<span className="dayTitle">{day}</span>
+</div>
 
-{SLOTS.map((slot) => {
-const list = getMealsFor(day, slot);
-const summary = list.map((m) => m.name || 'Repas').join(', ');
+<div className="slots">
+{SLOTS.map(slot => {
+const k = `${day}__${slot}`;
+const meal = byDaySlot[k];
 return (
-<div key={slot} className="mealItem" onClick={() => user && openAddMeal(day, slot)}>
-<div className="slot">{slot}</div>
-{list.length === 0 ? (
-<div className="emptyMeal">Aucun repas planifié</div>
-) : (
-<div className="products">{summary}</div>
+<div key={slot} className="mealItem">
+<div className="mealInfo">
+<div className="slotName">{slot}</div>
+{!meal && <div className="emptyMeal">— Aucun repas planifié —</div>}
+{meal && (
+<div className="mealSummary">
+<div className="mealName">{meal.name || 'Repas'}</div>
+{Array.isArray(meal.products) && meal.products.length > 0 && (
+<div className="mealProducts">
+{meal.products.map(p => p.name).join(', ')}
+</div>
 )}
-<button
-type="button"
-onClick={(e) => { e.stopPropagation(); user && openAddMeal(day, slot); }}
-disabled={!user}
->
+</div>
+)}
+</div>
+
+<div className="mealActions">
+{!meal ? (
+<button className="btnPrimary" onClick={() => openAddMeal(day, slot)}>
 + Ajouter un repas
 </button>
+) : (
+<>
+<button className="btnGhost" onClick={() => openEditMeal(meal)}>
+✏️ Modifier
+</button>
+<button className="btnDanger" onClick={() => deleteMeal(meal)}>
+🗑️ Supprimer
+</button>
+</>
+)}
+</div>
 </div>
 );
 })}
 </div>
+</div>
 ))}
+</div>
 
-{/* Modale */}
+{/* ===== Modale (création / édition) ===== */}
 {isOpen && (
 <CreateMealModal
-closeModal={() => setIsOpen(false)}
+closeModal={() => { setIsOpen(false); setEditMeal(null); }}
 defaultDay={pendingDay}
 defaultSlot={pendingSlot}
+// ⚡ mode édition si editMeal non nul
+editMeal={editMeal}
+onSaved={() => { setIsOpen(false); setEditMeal(null); }}
 />
 )}
 </div>
 
-{/* Tabbar (attention au chemin: /fridge) */}
+{/* ===== Tabbar en bas ===== */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
 <span className="tab_icon">🧊</span>
