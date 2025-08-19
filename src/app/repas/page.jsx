@@ -1,112 +1,132 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../firebase/firebase-config";
-import { useAuth } from "../hooks/useAuth";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { auth, db } from "../firebase/firebase-config";
+import {
+collection,
+onSnapshot,
+query,
+orderBy,
+deleteDoc,
+doc,
+} from "firebase/firestore";
+
 import CreateMealModal from "./CreateMealModal";
-import "../styles/tabbar.css";
 import "./repas.css";
 
-const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
-const SLOTS = ["Petit-déjeuner","Déjeuner","Dîner","Goûter"];
-
 export default function RepasPage() {
-const { user } = useAuth();
+const pathname = usePathname();
+const [isOpen, setIsOpen] = useState(false);
 const [meals, setMeals] = useState([]);
-const [showModal, setShowModal] = useState(false);
-const [selectedDay, setSelectedDay] = useState(null);
-const [selectedSlot, setSelectedSlot] = useState(null);
 
+// Charger les repas depuis Firestore
 useEffect(() => {
+const user = auth.currentUser;
 if (!user) return;
-const q = query(collection(db, "meals"), where("userId", "==", user.uid));
-const unsubscribe = onSnapshot(q, (snapshot) => {
+
+const q = query(
+collection(db, "users", user.uid, "meals"),
+orderBy("createdAt", "asc")
+);
+const unsub = onSnapshot(q, (snapshot) => {
 setMeals(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
 });
-return () => unsubscribe();
-}, [user]);
 
-const openModal = (day, slot) => {
-setSelectedDay(day);
-setSelectedSlot(slot);
-setShowModal(true);
-};
+return () => unsub();
+}, []);
 
-const handleDelete = async (mealId) => {
-await deleteDoc(doc(db, "meals", mealId));
+// Supprimer un repas
+const deleteMeal = async (mealId) => {
+const user = auth.currentUser;
+if (!user) return;
+await deleteDoc(doc(db, "users", user.uid, "meals", mealId));
 };
 
 return (
+<>
 <div className="repasSimple">
+{/* ===== En-tête ===== */}
 <div className="repasHeader">
 <div className="title">
 <div className="titleLine">
 <span className="cube">🍽️</span>
-<h1>Planificateur de repas</h1>
+<h2>Mes repas</h2>
 </div>
+<p className="hello">Planifie tes repas de la semaine</p>
+</div>
+<div className="actions">
+<button className="btnPrimary" onClick={() => setIsOpen(true)}>
+➕ Ajouter un repas
+</button>
 </div>
 </div>
 
+{/* ===== Liste repas ===== */}
 <div className="mealPlanner">
-{DAYS.map((day) => (
-<div key={day} className="dayCard">
-<h2 className="dayTitle">{day}</h2>
+{meals.length === 0 && <p>Aucun repas planifié pour l’instant.</p>}
+{meals.map((meal) => (
+<div key={meal.id} className="dayCard">
+<h3 className="dayTitle">
+{meal.day} - {meal.slot}
+</h3>
 <div className="slots">
-{SLOTS.map((slot) => {
-const meal = meals.find((m) => m.day === day && m.slot === slot);
-return (
-<div
-key={slot}
-className="slotCard"
-onClick={() => openModal(day, slot)}
->
-<span className="slotName">{slot} :</span>
-{meal ? (
-<span>
-{meal.name}
-<button
-onClick={(e) => {
-e.stopPropagation();
-handleDelete(meal.id);
-}}
-style={{
-marginLeft: "10px",
-background: "red",
-color: "white",
-border: "none",
-borderRadius: "4px",
-cursor: "pointer",
-}}
->
-Supprimer
-</button>
-</span>
-) : (
-<span className="slotPlaceholder">+ Ajouter un repas</span>
+<div className="slotCard">
+<p>{meal.name}</p>
+{meal.products && meal.products.length > 0 && (
+<ul>
+{meal.products.map((p, i) => (
+<li key={i}>{p.name}</li>
+))}
+</ul>
 )}
+<button
+className="btnDelete"
+onClick={() => deleteMeal(meal.id)}
+>
+❌ Supprimer
+</button>
 </div>
-);
-})}
 </div>
 </div>
 ))}
 </div>
 
-{showModal && (
-<CreateMealModal
-day={selectedDay}
-slot={selectedSlot}
-onClose={() => setShowModal(false)}
-/>
-)}
+{/* ===== Modale ===== */}
+{isOpen && <CreateMealModal closeModal={() => setIsOpen(false)} />}
+</div>
 
-{/* ---------- Bas de page ---------- */}
-<div className="tabbar">
-<a href="/fridge">🧊 Frigo</a>
-<a href="/repas" className="active">🍽️ Repas</a>
-<a href="/settings">⚙️ Réglages</a>
-</div>
-</div>
+{/* ===== Tabbar en bas ===== */}
+<nav
+className="tabbar"
+role="navigation"
+aria-label="Navigation principale"
+>
+<Link
+href="/fridge"
+className={`tab ${pathname?.startsWith("/fridge") ? "is-active" : ""}`}
+>
+<span className="tab_icon">🧊</span>
+<span className="tab_label">Frigo</span>
+</Link>
+<Link
+href="/repas"
+className={`tab ${pathname?.startsWith("/repas") ? "is-active" : ""}`}
+>
+<span className="tab_icon">🍽️</span>
+<span className="tab_label">Repas</span>
+</Link>
+<Link
+href="/settings"
+className={`tab ${
+pathname?.startsWith("/settings") ? "is-active" : ""
+}`}
+>
+<span className="tab_icon">⚙️</span>
+<span className="tab_label">Paramètres</span>
+</Link>
+</nav>
+</>
 );
 }

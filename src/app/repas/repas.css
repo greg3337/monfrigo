@@ -1,140 +1,190 @@
-/* ===== Repas.css ===== */
-
-/* Conteneur principal */
+/* ===== Page repas ===== */
 .repasSimple {
-display: flex;
-flex-direction: column;
-gap: 1.5rem;
-padding: 1rem;
-padding-bottom: 5rem; /* espace pour la tabbar */
-background: #f9f9f9;
+padding: 16px;
+font-family: sans-serif;
+background: #fafafa;
 min-height: 100vh;
 box-sizing: border-box;
+padding-bottom: 80px; /* pour laisser de la place à la tabbar */
 }
 
-/* ===== En-tête ===== */
+/* Header */
 .repasHeader {
 display: flex;
 justify-content: space-between;
 align-items: center;
+margin-bottom: 20px;
 }
 
 .repasHeader .titleLine {
 display: flex;
 align-items: center;
-gap: 0.5rem;
-}
-
-.repasHeader .cube {
-font-size: 1.8rem;
+gap: 8px;
 }
 
 .repasHeader h2 {
 margin: 0;
-font-size: 1.6rem;
+font-size: 22px;
 }
 
 .repasHeader .hello {
-font-size: 0.9rem;
+margin: 4px 0 0 0;
+font-size: 14px;
 color: #666;
 }
 
-.actions .btnPrimary {
-background: #007bff;
+.btnPrimary {
+padding: 8px 14px;
+background: #2d89ef;
+color: white;
 border: none;
-padding: 0.6rem 1rem;
 border-radius: 6px;
-color: #fff;
 cursor: pointer;
-font-size: 0.9rem;
-transition: background 0.2s;
+font-size: 14px;
+}
+.btnPrimary:hover {
+background: #1c65b5;
 }
 
-.actions .btnPrimary:hover {
-background: #0056b3;
+.btnSecondary {
+padding: 8px 14px;
+background: #ccc;
+color: black;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+font-size: 14px;
+}
+.btnSecondary:hover {
+background: #999;
 }
 
-/* ===== Planning ===== */
+.btnDelete {
+margin-top: 8px;
+padding: 4px 10px;
+font-size: 13px;
+border: none;
+background: #e74c3c;
+color: white;
+border-radius: 4px;
+cursor: pointer;
+}
+.btnDelete:hover {
+background: #c0392b;
+}
+
+/* ===== Liste repas ===== */
 .mealPlanner {
 display: grid;
-grid-template-columns: 1fr;
-gap: 1rem;
+gap: 16px;
 }
 
 .dayCard {
-background: #fff;
+background: white;
+padding: 12px;
 border-radius: 8px;
-padding: 1rem;
-box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
 .dayTitle {
-margin: 0 0 0.8rem;
-font-size: 1.2rem;
+margin: 0 0 8px 0;
+font-size: 18px;
 color: #333;
 }
 
 .slots {
 display: flex;
 flex-direction: column;
-gap: 0.6rem;
+gap: 10px;
 }
 
 .slotCard {
-background: #f4f4f4;
-border: 2px dashed #ccc;
+padding: 10px;
+border: 1px dashed #aaa;
 border-radius: 6px;
-padding: 0.8rem;
-text-align: center;
 cursor: pointer;
-transition: border-color 0.2s, background 0.2s;
+background: #f9f9f9;
 }
-
 .slotCard:hover {
-border-color: #007bff;
-background: #eef6ff;
-}
-
-.slotName {
-font-weight: bold;
-margin: 0 0 0.3rem;
+background: #eee;
 }
 
 .slotPlaceholder {
-color: #777;
-font-size: 0.85rem;
+font-size: 13px;
+color: #888;
 }
 
-/* ===== Repas ajouté ===== */
-.mealCard {
-background: #e6f7e9;
-border: 1px solid #a8e6b0;
-border-radius: 6px;
-padding: 0.6rem;
+/* ===== Modale ===== */
+.modalOverlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.5);
 display: flex;
-justify-content: space-between;
 align-items: center;
+justify-content: center;
+z-index: 1000;
 }
 
-.mealName {
+.modalContent {
+background: white;
+padding: 20px;
+border-radius: 10px;
+width: 90%;
+max-width: 400px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+.modalContent h2 {
 margin: 0;
-font-weight: 500;
-color: #2b7a3f;
+font-size: 20px;
 }
 
-.deleteBtn {
-background: #ff4d4d;
-border: none;
-padding: 0.3rem 0.6rem;
-color: white;
-border-radius: 4px;
+.modalContent label {
+font-weight: bold;
+font-size: 14px;
+}
+
+.modalContent input,
+.modalContent select {
+padding: 8px;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 14px;
+}
+
+/* Liste produits du frigo */
+.productList {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+}
+
+.productItem {
+padding: 6px 10px;
+border: 1px solid #bbb;
+border-radius: 6px;
 cursor: pointer;
-font-size: 0.8rem;
-transition: background 0.2s;
+font-size: 14px;
+background: #f5f5f5;
+}
+.productItem:hover {
+background: #eaeaea;
+}
+.productItem.selected {
+background: #2d89ef;
+color: white;
+border-color: #2d89ef;
 }
 
-.deleteBtn:hover {
-background: #cc0000;
+/* Boutons modale */
+.modalActions {
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+margin-top: 10px;
 }
 
 /* ===== Tabbar ===== */
@@ -143,29 +193,27 @@ position: fixed;
 bottom: 0;
 left: 0;
 right: 0;
-background: #fff;
+background: white;
+border-top: 1px solid #ddd;
 display: flex;
 justify-content: space-around;
-border-top: 1px solid #ddd;
-padding: 0.4rem 0;
+padding: 8px 0;
+z-index: 999;
 }
 
 .tab {
-text-align: center;
 flex: 1;
-text-decoration: none;
+text-align: center;
+font-size: 13px;
 color: #666;
-font-size: 0.85rem;
-display: flex;
-flex-direction: column;
-gap: 0.2rem;
+text-decoration: none;
+padding: 4px 0;
 }
-
-.tab_icon {
-font-size: 1.4rem;
-}
-
 .tab.is-active {
-color: #007bff;
+color: #2d89ef;
 font-weight: bold;
+}
+.tab_icon {
+display: block;
+font-size: 20px;
 }
