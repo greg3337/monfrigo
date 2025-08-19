@@ -1,0 +1,94 @@
+/* Conteneur */
+.settings.wrap {
+padding: 16px;
+}
+
+/* Header */
+.settingsHeader {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 18px;
+}
+.brandIcon { font-size: 28px; }
+.brandTitle { font-size: 1.4rem; font-weight: 700; }
+.brandSub { color: #666; font-size: .95rem; }
+
+/* Blocks */
+.block { margin-bottom: 18px; }
+.blockTitle { font-size: 1.1rem; margin: 6px 2px; }
+
+/* Card */
+.card {
+background: #fff;
+border-radius: 12px;
+padding: 14px;
+box-shadow: 0 4px 12px rgba(0,0,0,.06);
+}
+
+/* Lignes profil */
+.row {
+display: grid;
+grid-template-columns: 160px 1fr;
+gap: 10px;
+padding: 10px 0;
+border-bottom: 1px solid #eee;
+}
+.row:last-child { border-bottom: 0; }
+.rowLabel { color: #666; }
+.rowValue a { color: #0d47a1; text-decoration: none; }
+
+/* Actions */
+.actions { margin-top: 8px; }
+
+/* Toggles */
+.toggle {
+display: flex;
+align-items: flex-start;
+gap: 10px;
+padding: 10px 0;
+border-bottom: 1px solid #eee;
+}
+.toggle:last-child { border-bottom: 0; }
+.toggle input { transform: translateY(4px); }
+.toggle span { display: flex; flex-direction: column; }
+.toggle small { color: #777; }
+
+/* Boutons */
+.btn,
+.btnGhost,
+.btnDanger {
+border: none;
+border-radius: 8px;
+padding: 9px 12px;
+font-weight: 600;
+cursor: pointer;
+}
+
+.btn { background: #1976d2; color: #fff; }
+.btn:hover { background: #125aa0; }
+
+.btnGhost { background: #f3f6ff; color: #0d47a1; }
+.btnGhost:hover { background: #e6eeff; }
+
+.btnDanger { background: #e53935; color: #fff; }
+.btnDanger:hover { background: #c62828; }
+
+/* List style (Support) */
+.list { padding: 6px 0; }
+.listItem {
+display: block;
+padding: 10px 12px;
+border-radius: 8px;
+text-decoration: none;
+color: #222;
+}
+.listItem:hover { background: #f7f7fb; }
+
+/* Pile de boutons */
+.stack { display: flex; flex-direction: column; gap: 10px; }
+
+/* Mobile */
+@media (max-width: 480px) {
+.row { grid-template-columns: 1fr; gap: 4px; }
+}
