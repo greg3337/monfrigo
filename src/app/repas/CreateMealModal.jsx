@@ -1,154 +1,156 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-collection, query, where, getDocs, addDoc, writeBatch, doc,
-} from 'firebase/firestore';
-import { db } from '../firebase/firebase-config';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
-const FRIDGE_COLLECTION = 'fridge'; // ← change en 'frigo' si besoin
-const MEALS_COLLECTION = 'meals';
+import React, { useEffect, useState } from 'react';
+import { auth, db } from '../firebase/firebase-config';
+import {
+collection,
+query,
+where,
+getDocs,
+addDoc,
+writeBatch,
+doc,
+Timestamp,
+} from 'firebase/firestore';
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Petit-déjeuner','Déjeuner','Dîner','Goûter'];
+const SLOTS = ['Déjeuner','Dîner'];
 
-export default function CreateMealModal({ onClose, defaultDay, defaultSlot }) {
-const [authUser, setAuthUser] = useState(null);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState('');
-const [products, setProducts] = useState([]);
-const [day, setDay] = useState(defaultDay || 'Lundi');
-const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
+// ⚠️ Si ta collection s’appelle "frigo", remplace 'fridge' par 'frigo'
+const FRIDGE_COLLECTION = 'fridge';
+const MEALS_COLLECTION = 'meals';
+
+export default function CreateMealModal({ defaultDay = 'Lundi', defaultSlot = 'Déjeuner', onClose }) {
+const [userId, setUserId] = useState(null);
+const [day, setDay] = useState(defaultDay);
+const [slot, setSlot] = useState(defaultSlot);
 const [name, setName] = useState('');
-const [selected, setSelected] = useState([]); // tableau d'ids produit
-const canSave = useMemo(() => !!authUser && (selected.length > 0 || name.trim().length > 0), [authUser, selected, name]);
 
-// --- Auth ---
+const [loading, setLoading] = useState(true);
+const [fridgeProducts, setFridgeProducts] = useState([]); // [{id, name, expirationDate}]
+const [selectedIds, setSelectedIds] = useState([]); // ids cochés
+const [saving, setSaving] = useState(false);
+const [err, setErr] = useState('');
+
+// Auth
 useEffect(() => {
-const auth = getAuth();
-return onAuthStateChanged(auth, (u) => setAuthUser(u || null));
+const unsub = auth.onAuthStateChanged(u => setUserId(u?.uid || null));
+return () => unsub();
 }, []);
 
-// --- Charger les produits du frigo ---
+// Charger les produits du frigo (pour cet utilisateur)
 useEffect(() => {
-if (!authUser) return;
+if (!userId) return;
 setLoading(true);
-setError('');
+setErr('');
 (async () => {
 try {
-// 1) essaie avec la collection FRIDGE_COLLECTION
-const q1 = query(collection(db, FRIDGE_COLLECTION), where('userId', '==', authUser.uid));
-let snap = await getDocs(q1);
-
-// 2) si vide, essaie la variante FR / EN (utile si renommage)
-if (snap.empty && FRIDGE_COLLECTION !== 'frigo') {
-const q2 = query(collection(db, 'frigo'), where('userId', '==', authUser.uid));
-snap = await getDocs(q2);
-}
-
-const list = [];
-snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-setProducts(list);
+const qRef = query(collection(db, FRIDGE_COLLECTION), where('userId', '==', userId));
+const snap = await getDocs(qRef);
+const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setFridgeProducts(rows);
 } catch (e) {
-console.error(e);
-setError("Impossible de charger les produits du frigo.");
+console.error('Load fridge error', e);
+setErr("Impossible de charger les produits du frigo.");
 } finally {
 setLoading(false);
 }
 })();
-}, [authUser]);
+}, [userId]);
 
-const toggleSelect = (id) => {
-setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+const toggle = (id) => {
+setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 };
 
-// --- Sauvegarde ---
 const onSave = async () => {
-if (!authUser) return;
+if (!userId) return;
+if (selectedIds.length === 0 && !name.trim()) {
+setErr('Ajoute un nom ou sélectionne au moins un produit.');
+return;
+}
+setSaving(true); setErr('');
 try {
-const batch = writeBatch(db);
+const picked = fridgeProducts
+.filter(p => selectedIds.includes(p.id))
+.map(p => ({ id: p.id, name: p.name || 'Produit', expirationDate: p.expirationDate || null }));
 
-// 1) créer le repas
-const mealDoc = {
-userId: authUser.uid,
+// 1) Créer le repas
+await addDoc(collection(db, MEALS_COLLECTION), {
+userId,
 day,
 slot,
-name: name.trim() || null,
-productIds: selected,
-createdAt: new Date(),
-};
-await addDoc(collection(db, MEALS_COLLECTION), mealDoc);
-
-// 2) supprimer du frigo les produits utilisés
-selected.forEach((pid) => {
-batch.delete(doc(db, FRIDGE_COLLECTION, pid));
+name: name.trim() || (picked.length ? picked.map(p=>p.name).join(' + ') : null),
+products: picked,
+createdAt: Timestamp.now(),
 });
+
+// 2) Supprimer du frigo les produits utilisés (batch)
+if (selectedIds.length) {
+const batch = writeBatch(db);
+selectedIds.forEach(pid => batch.delete(doc(db, FRIDGE_COLLECTION, pid)));
 await batch.commit();
+}
 
 onClose?.();
 } catch (e) {
-console.error(e);
-setError("Échec de l’enregistrement du repas.");
+console.error('Save meal error', e);
+setErr("Échec de l'enregistrement du repas.");
+} finally {
+setSaving(false);
 }
 };
 
 return (
-<div className="modalOverlay">
-<div className="modal">
-<div className="modalHeader">
+<div className="modalContent">
 <h3>Ajouter un repas</h3>
-<button className="btnClose" onClick={onClose}>×</button>
-</div>
+<p className="muted" style={{margin:'6px 0 12px'}}>
+{day} — {slot}
+</p>
 
-{!authUser && (
-<p className="hint">Veuillez vous connecter pour ajouter un repas.</p>
-)}
-
-<div className="formRow">
-<label>Jour</label>
-<select value={day} onChange={e => setDay(e.target.value)}>
+<div className="row">
+<label>
+Jour
+<select value={day} onChange={e=>setDay(e.target.value)}>
 {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
 </select>
+</label>
 
-<label>Créneau</label>
-<select value={slot} onChange={e => setSlot(e.target.value)}>
+<label>
+Créneau
+<select value={slot} onChange={e=>setSlot(e.target.value)}>
 {SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
 </select>
+</label>
 </div>
 
-<div className="formRow">
-<label>Nom du repas (facultatif)</label>
+<label className="row full">
+Nom du repas (facultatif)
 <input
 type="text"
 placeholder="Ex : Salade de poulet"
 value={name}
-onChange={e => setName(e.target.value)}
+onChange={e=>setName(e.target.value)}
 />
-</div>
+</label>
 
-<div className="formRow">
-<label>Produits du frigo</label>
-{loading && <p className="muted">Chargement…</p>}
-{!loading && error && <p className="error">{error}</p>}
-{!loading && !error && products.length === 0 && (
-<p className="muted">
-Aucun produit trouvé pour ce compte.
-Vérifie que la collection s’appelle <code>{FRIDGE_COLLECTION}</code> et que les produits ont bien un champ <code>userId</code>.
-</p>
-)}
-{!loading && products.length > 0 && (
-<ul className="productList">
-{products.map(p => (
+<div className="pickerBlock">
+<div className="pickerHead">Produits du frigo</div>
+{loading ? (
+<p className="muted">Chargement…</p>
+) : fridgeProducts.length === 0 ? (
+<p className="muted">Aucun produit trouvé. Ajoute d’abord des produits dans l’onglet Frigo.</p>
+) : (
+<ul className="productPickList">
+{fridgeProducts.map(p => (
 <li key={p.id}>
-<label className="checkline">
+<label className="pick">
 <input
 type="checkbox"
-checked={selected.includes(p.id)}
-onChange={() => toggleSelect(p.id)}
+checked={selectedIds.includes(p.id)}
+onChange={() => toggle(p.id)}
 />
-<span>
-{p.name || 'Produit'} {p.expirationDate ? `• ${p.expirationDate}` : ''}
-</span>
+<span className="pickName">{p.name || 'Produit'}</span>
+{p.expirationDate && <span className="pickMeta">{p.expirationDate}</span>}
 </label>
 </li>
 ))}
@@ -156,12 +158,13 @@ onChange={() => toggleSelect(p.id)}
 )}
 </div>
 
+{err && <p className="error">{err}</p>}
+
 <div className="modalActions">
-<button className="btnGhost" onClick={onClose}>Annuler</button>
-<button className="btnPrimary" disabled={!canSave} onClick={onSave}>
-Sauvegarder
+<button className="btnPrimary" onClick={onSave} disabled={saving}>
+{saving ? 'Enregistrement…' : 'Sauvegarder'}
 </button>
-</div>
+<button className="btnGhost" onClick={onClose}>Annuler</button>
 </div>
 </div>
 );

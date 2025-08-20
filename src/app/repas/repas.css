@@ -1,59 +1,51 @@
-/* Conteneur */
-.repasPage.wrap { padding: 16px; padding-bottom: 88px; }
+/* Page */
+.repasPage { padding: 16px; padding-bottom: 88px; }
 
 /* Header */
-.repasHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.repasHeader .titleLine { display: flex; align-items: center; gap: 8px; }
-.repasHeader .cube { font-size: 24px; }
-.repasHeader h2 { margin: 0; }
-.repasHeader .hello { opacity: .75; margin: 2px 0 0; font-size: .95rem; }
-.btnPrimary { background: #1976d2; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
-.btnPrimary:hover { background: #145aa2; }
-.btnGhost { background: #eee; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-.btnDanger { background: #dc3545; color: #fff; border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.repasHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.titleLine{ display:flex; align-items:center; gap:8px; }
+.cube{ font-size:22px; }
+.hello{ margin:2px 0 0; opacity:.75; }
+.btnPrimary{ background:#1976d2; color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer; }
+.btnPrimary:hover{ background:#145aa2; }
+.btnGhost{ background:#f3f4f6; color:#111827; border:0; border-radius:10px; padding:10px 12px; cursor:pointer; }
 
 /* Grille semaine */
-.weekGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (max-width: 820px) { .weekGrid { grid-template-columns: 1fr; } }
-
-.dayCard { background: #fff; border: 1px dashed #e3e3e3; border-radius: 12px; padding: 12px; }
-.dayTitle { margin: 0 0 8px 0; font-size: 1rem; }
-
-.slotCard { border: 1px dashed #e6e6e6; border-radius: 10px; padding: 10px; margin-top: 10px; }
-.slotHeader { display: flex; align-items: center; justify-content: space-between; }
-.slotName { font-weight: 600; opacity: .9; }
-.linkAdd { background: transparent; border: none; color: #1976d2; cursor: pointer; }
-
-.slotEmpty { opacity: .7; font-size: .95rem; margin: 10px 0 4px; }
-
-.mealItem { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 10px; border-radius: 10px; background: #f8fafc; }
-.mealTitle { margin: 0 0 4px 0; font-weight: 600; }
-.mealProducts { margin: 0; padding-left: 18px; }
-.mealActions { display: flex; align-items: center; gap: 8px; }
+.weekGrid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+@media (max-width:820px){ .weekGrid{ grid-template-columns:1fr; } }
+.dayCard{ background:#fff; border:1px dashed #e5e7eb; border-radius:12px; padding:12px; }
+.dayTitle{ margin:0 0 8px; font-size:1rem; }
+.slotCard{ border:1px dashed #e6e6e6; border-radius:10px; padding:10px; margin-top:10px; }
+.slotName{ font-weight:600; opacity:.9; margin:0 0 6px; }
+.addBtn{ border:0; background:#eef2ff; border-radius:8px; padding:8px 10px; cursor:pointer; }
+.addBtn:active{ transform: translateY(1px); }
 
 /* ===== Modale ===== */
-.modalBack { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: grid; place-items: center; z-index: 1000; }
-.modalCard { width: min(560px, 92vw); background: #fff; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
-.modalHead { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #eee; }
-.modalBody { padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
-.modalFoot { padding: 12px 14px; display: flex; gap: 8px; border-top: 1px solid #eee; }
+.modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.modal{ background:#fff; border-radius:12px; padding:0; width:min(560px, 92vw); box-shadow:0 12px 30px rgba(0,0,0,.18); }
+.modalContent{ padding:14px; }
+.modalActions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+.error{ color:#b91c1c; }
 
-.row { display: flex; gap: 10px; align-items: center; }
-.row.full { flex-direction: column; align-items: stretch; }
-.row label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: .95rem; }
-input[type="text"], select { border: 1px solid #ddd; border-radius: 8px; padding: 8px 10px; font: inherit; }
+/* Form */
+.row{ display:flex; gap:10px; align-items:center; }
+.row.full{ flex-direction:column; align-items:stretch; }
+label{ display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem; }
+input[type="text"], select{ border:1px solid #d1d5db; border-radius:10px; padding:8px 10px; font:inherit; }
 
-.pickerBlock { border: 1px solid #eee; border-radius: 10px; }
-.pickerHead { padding: 10px 12px; font-weight: 700; border-bottom: 1px solid #eee; background: #f8fafc; }
-.productPickList { list-style: none; margin: 0; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-@media (max-width: 520px) { .productPickList { grid-template-columns: 1fr; } }
-.pick { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 8px; }
-.pickName { font-weight: 600; }
-.pickMeta { font-size: .85rem; opacity: .6; margin-left: auto; }
+/* Liste produits */
+.pickerBlock{ border:1px solid #eee; border-radius:10px; overflow:hidden; }
+.pickerHead{ font-weight:700; padding:10px 12px; background:#f8fafc; border-bottom:1px solid #eee; }
+.productPickList{ list-style:none; margin:0; padding:10px 12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:520px){ .productPickList{ grid-template-columns:1fr; } }
+.pick{ display:flex; align-items:center; gap:8px; border:1px solid #eee; border-radius:8px; padding:8px; }
+.pickName{ font-weight:600; }
+.pickMeta{ margin-left:auto; opacity:.65; font-size:.85rem; }
 
-/* Tabbar (réutilise ton styles/tabbar.css, ceci est juste un fallback léger) */
-.tabbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; gap: 8px; background: #fff; border-top: 1px solid #eee; padding: 10px 8px; z-index: 999; }
-.tab { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #333; padding: 6px 10px; border-radius: 10px; }
-.tab.is-active { background: #e9f1ff; }
-.tab_icon { font-size: 18px; line-height: 18px; }
-.tab_label { font-size: .85rem; }
+/* Tabbar fallback (si tu as déjà ton tabbar.css global, tu peux retirer ceci) */
+.tabbar{ position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee;
+display:flex; justify-content:space-around; padding:10px 8px; z-index:999; }
+.tab{ display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:#333; padding:6px 10px; border-radius:10px; }
+.tab.is-active{ background:#e9f1ff; }
+.tab_icon{ font-size:18px; line-height:18px; }
+.tab_label{ font-size:.85rem; }
