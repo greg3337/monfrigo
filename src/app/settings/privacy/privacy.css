@@ -1,0 +1,48 @@
+/* privacy.css */
+.privacyPage {
+padding: 16px;
+}
+
+.privacyPage .card {
+background:#fff;
+border-radius:12px;
+padding:16px;
+margin-bottom:14px;
+}
+
+.privacyPage h2 {
+margin:0 0 8px;
+font-size:1.1rem;
+}
+
+.privacyPage ul {
+margin:8px 0;
+padding-left:18px;
+}
+
+.privacyPage .note {
+border-radius:10px;
+padding:10px 12px;
+margin-top:8px;
+font-size:.95rem;
+}
+
+.privacyPage .note.ok { background:#e9f8ef; }
+.privacyPage .note.info { background:#eef5ff; }
+.privacyPage .note.bad { background:#ffecec; }
+
+.privacyPage .btn {
+display:inline-block;
+background:#1976d2;
+color:#fff;
+padding:8px 12px;
+border-radius:8px;
+text-decoration:none;
+}
+
+.privacySmall {
+opacity:.6;
+font-size:.85rem;
+text-align:center;
+margin:12px 0 80px;
+}

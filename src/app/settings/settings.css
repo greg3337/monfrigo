@@ -100,16 +100,3 @@ body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 @media (max-width: 480px) {
 .settings-container { padding: 8px; }
 }
-
-/* ===== Page légale ===== */
-.legalPage { padding: 16px; }
-.legalPage .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:14px; }
-.legalPage h2 { margin:0 0 8px; font-size:1.1rem; }
-.legalPage ul { margin:8px 0; padding-left:18px; }
-.legalPage .note { border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.95rem; }
-.legalPage .note.ok { background:#e9f8ef; }
-.legalPage .note.info { background:#eef5ff; }
-.legalPage .note.bad { background:#ffecec; }
-.legalPage .btn { display:inline-block; background:#1976d2; color:#fff; padding:8px 12px; border-radius:8px; text-decoration:none; }
-.legalSmall { opacity:.6; font-size:.85rem; text-align:center; margin:12px 0 80px; }
-
