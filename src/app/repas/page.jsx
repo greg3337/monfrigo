@@ -1,111 +1,144 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { db } from '../firebase/firebase-config';
-import { collection, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import {
+collection,
+query,
+where,
+getDocs,
+addDoc,
+serverTimestamp,
+writeBatch,
+doc
+} from 'firebase/firestore';
+import { db } from '../firebase/firebase-config'; // ← chemin depuis /repas : ../firebase/...
+import useAuth from '../hooks/useAuth'; // même hook que sur les autres pages
 
-import CreateMealModal from './CreateMealModal.jsx';
-import './repas.css';
+/**
+* Modale d’ajout de repas :
+* - liste les produits du frigo (collection "fridge")
+* - permet de sélectionner 1..n produits
+* - crée un doc dans "meals"
+* - supprime du frigo les produits utilisés (batch)
+*/
+export default function CreateMealModal({ dayLabel, slotLabel, onClose, onSaved }) {
+const { user } = useAuth();
+const [loading, setLoading] = useState(true);
+const [fridgeProducts, setFridgeProducts] = useState([]);
+const [checked, setChecked] = useState({}); // { productId: true/false }
+const [saving, setSaving] = useState(false);
 
-export default function RepasPage() {
-const pathname = usePathname();
-
-const [isOpen, setIsOpen] = useState(false);
-const [pendingDay, setPendingDay] = useState(null);
-const [pendingSlot, setPendingSlot] = useState(null);
-
-const [meals, setMeals] = useState([]);
-
-// Charger les repas existants
 useEffect(() => {
-const unsub = onSnapshot(collection(db, 'meals'), (snapshot) => {
-const mealData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-setMeals(mealData);
+const loadFridge = async () => {
+try {
+if (!user) return;
+const qFridge = query(
+collection(db, 'fridge'),
+where('userId', '==', user.uid)
+);
+const snap = await getDocs(qFridge);
+const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setFridgeProducts(items);
+} finally {
+setLoading(false);
+}
+};
+loadFridge();
+}, [user]);
+
+const toggle = (id) => {
+setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+};
+
+const handleSave = async () => {
+if (!user || saving) return;
+const selected = fridgeProducts.filter(p => checked[p.id]);
+if (selected.length === 0) {
+// rien sélectionné -> on ne fait rien
+onClose?.();
+return;
+}
+
+setSaving(true);
+try {
+// 1) crée le repas
+await addDoc(collection(db, 'meals'), {
+userId: user.uid,
+day: dayLabel,
+slot: slotLabel,
+// nom = concat simple des produits sélectionnés
+name: selected.map(s => s.name || s.p_name || 'Produit').join(' + '),
+items: selected.map(s => ({
+productId: s.id,
+name: s.name || s.p_name || '',
+expirationDate: s.expirationDate || s.p_expirationDate || null,
+category: s.category || s.p_category || null,
+})),
+createdAt: serverTimestamp()
 });
-return () => unsub();
-}, []);
 
-const openAddMeal = (day, slot) => {
-setPendingDay(day);
-setPendingSlot(slot);
-setIsOpen(true);
-};
+// 2) supprime du frigo les produits utilisés
+const batch = writeBatch(db);
+selected.forEach((s) => {
+batch.delete(doc(db, 'fridge', s.id));
+});
+await batch.commit();
 
-// Grouper les repas par jour/slot
-const getMealForSlot = (day, slot) => {
-return meals.find((meal) => meal.day === day && meal.slot === slot);
+onSaved?.();
+} catch (e) {
+console.error('Erreur enregistrement repas:', e);
+onClose?.();
+} finally {
+setSaving(false);
+}
 };
 
 return (
-<>
-<div className="repasSimple">
-{/* ===== Header ===== */}
-<div className="repasHeader">
-<div className="title">
-<div className="titleLine">
-<span className="cube">🍽️</span>
-<h2>Mes repas</h2>
-</div>
-<p className="hello">Planifie tes repas de la semaine</p>
-</div>
-<div className="actions">
-<button className="btnPrimary" onClick={() => openAddMeal('Lundi', 'Déjeuner')}>
-➕ Ajouter un repas
-</button>
-</div>
-</div>
+<div className="modalContent">
+<h3>Ajouter un repas</h3>
+<p style={{ margin: '6px 0 12px' }}>
+<strong>{dayLabel} - {slotLabel}</strong>
+</p>
 
-{/* ===== Planning ===== */}
-<div className="mealPlanner">
-{['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].map((day, i) => (
-<div key={i} className="dayCard">
-<h3 className="dayTitle">{day}</h3>
-<div className="slots">
-{['Déjeuner','Dîner'].map((slot, j) => {
-const meal = getMealForSlot(day, slot);
-return (
-<div key={j} className="slotCard" onClick={() => openAddMeal(day, slot)}>
-<p className="slotName">{slot}</p>
-{meal ? (
-<p className="slotMeal">{meal.productName}</p>
+{loading ? (
+<p>Chargement des produits…</p>
+) : fridgeProducts.length === 0 ? (
+<div className="empty">
+<p>Aucun produit dans le frigo</p>
+</div>
 ) : (
-<p className="slotPlaceholder">➕ Ajouter</p>
-)}
-</div>
+<div className="productList">
+{fridgeProducts.map(p => {
+const label = p.name || p.p_name || 'Produit';
+const date = p.expirationDate || p.p_expirationDate || null;
+return (
+<label key={p.id} className="productRow">
+<input
+type="checkbox"
+checked={!!checked[p.id]}
+onChange={() => toggle(p.id)}
+/>
+<span className="productName">{label}</span>
+{date ? <span className="productDate">{date}</span> : null}
+</label>
 );
 })}
 </div>
-</div>
-))}
-</div>
-
-{/* ===== Modal ===== */}
-{isOpen && (
-<CreateMealModal
-closeModal={() => setIsOpen(false)}
-defaultDay={pendingDay}
-defaultSlot={pendingSlot}
-/>
 )}
-</div>
 
-{/* ===== Tabbar ===== */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab_icon">🧊</span>
-<span className="tab_label">Frigo</span>
-</Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
-<span className="tab_icon">🍽️</span>
-<span className="tab_label">Repas</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab_icon">⚙️</span>
-<span className="tab_label">Paramètres</span>
-</Link>
-</nav>
-</>
+<div className="modalActions">
+<button
+type="button"
+className="btnPrimary"
+onClick={handleSave}
+disabled={saving}
+>
+{saving ? 'Enregistrement…' : 'Sauvegarder'}
+</button>
+<button type="button" className="btnGhost" onClick={onClose}>
+Annuler
+</button>
+</div>
+</div>
 );
 }

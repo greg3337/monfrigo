@@ -70,24 +70,25 @@ color: #333;
 /* ===== MODALE ===== */
 .modalOverlay {
 position: fixed;
-top: 0; left: 0;
-width: 100%; height: 100%;
-background: rgba(0,0,0,0.5);
+inset: 0;
+background: rgba(0,0,0,.35);
 display: flex;
-justify-content: center;
 align-items: center;
+justify-content: center;
+z-index: 9999;
 }
-
-.modalContent {
-background: white;
-padding: 1.5rem;
-border-radius: 10px;
-width: 90%;
-max-width: 400px;
+.modal {
+background: #fff;
+border-radius: 12px;
+padding: 18px;
+box-shadow: 0 10px 36px rgba(0,0,0,.18);
+max-width: 520px;
+width: calc(100% - 32px);
 }
-
-.modalActions {
-margin-top: 1rem;
-display: flex;
-justify-content: space-between;
-}
+.productList { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow: auto; }
+.productRow { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #eee; border-radius: 8px; }
+.productName { font-weight: 600; }
+.productDate { margin-left: auto; opacity: .7; font-size: .9rem; }
+.modalActions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-start; }
+.btnPrimary { background:#19c7e4; color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.btnGhost { background:#f3f3f3; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
