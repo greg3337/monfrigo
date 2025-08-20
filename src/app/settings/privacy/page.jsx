@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import '../setting.css';
 
 export default function PrivacyPage() {
 const pathname = usePathname();
