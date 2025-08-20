@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import useAuth from '../hooks/useAuth'; // <-- ton hook existant
-import { auth } from '../firebase/firebase-config'; // <-- ta config Firebase
+import useAuth from '../hooks/useAuth';
+import { auth } from '../firebase/firebase-config';
 import { signOut } from 'firebase/auth';
 
 import './settings.css';
@@ -14,33 +14,20 @@ export default function SettingsPage() {
 const pathname = usePathname();
 const user = useAuth();
 
-// États locaux pour la démo (tu pourras les brancher à Firestore plus tard)
-const [lang, setLang] = useState('fr');
-const [theme, setTheme] = useState('system');
-const [units, setUnits] = useState('metric');
 const [expNotif, setExpNotif] = useState(false);
 const [soundNotif, setSoundNotif] = useState(false);
 
 const handleLogout = async () => {
 try {
 await signOut(auth);
-// Next gère la redirection via tes guards; sinon:
-// window.location.href = '/login';
 } catch (e) {
-alert("Échec de la déconnexion");
+alert('Échec de la déconnexion');
 console.error(e);
 }
 };
 
 const handleDeleteAccount = () => {
-// A brancher plus tard (suppression sécurisée du compte + données)
-alert("Suppression de compte : à brancher côté serveur / Firestore.");
-};
-
-const savePreferences = (e) => {
-e.preventDefault();
-// Ici tu pourras enregistrer en base (Firestore, user doc, etc.)
-alert('Préférences enregistrées ✅');
+alert('Suppression de compte : à brancher côté serveur / Firestore.');
 };
 
 return (
@@ -59,10 +46,16 @@ return (
 <h2>Profil</h2>
 <div className="row between">
 <div>
-<div className="userName">{user?.displayName || user?.email?.split('@')[0] || 'Utilisateur'}</div>
+<div className="userName">
+{user?.displayName || user?.email?.split('@')[0] || 'Utilisateur'}
+</div>
 <div className="userEmail">{user?.email || '—'}</div>
 </div>
-<button className="btn ghost" type="button" onClick={() => alert('Édition profil à venir')}>
+<button
+className="btn ghost"
+type="button"
+onClick={() => alert('Édition profil à venir')}
+>
 Modifier
 </button>
 </div>
@@ -95,51 +88,23 @@ onChange={(e) => setSoundNotif(e.target.checked)}
 <div className="sub">Jouer un son lors des notifications</div>
 </div>
 </label>
-
-<button type="button" className="btn ghost" onClick={() => alert('Diagnostic notifications à venir')}>
-Diagnostiquer les notifications
-</button>
 </section>
 
-{/* Préférences d’application */}
-<form className="settings-section" onSubmit={savePreferences}>
-<h2>Application</h2>
-
-<div className="field">
-<label>Langue</label>
-<select value={lang} onChange={(e) => setLang(e.target.value)}>
-<option value="fr">Français</option>
-<option value="en">English</option>
-</select>
-</div>
-
-<div className="field">
-<label>Thème</label>
-<select value={theme} onChange={(e) => setTheme(e.target.value)}>
-<option value="system">Système</option>
-<option value="light">Clair</option>
-<option value="dark">Sombre</option>
-</select>
-</div>
-
-<div className="field">
-<label>Unités</label>
-<select value={units} onChange={(e) => setUnits(e.target.value)}>
-<option value="metric">Métrique (g, kg, L)</option>
-<option value="imperial">Impérial (oz, lb, cup)</option>
-</select>
-</div>
-
-<button className="btn primary" type="submit">Enregistrer</button>
-</form>
-
-{/* Support */}
+{/* Support (liens cliquables) */}
 <section className="settings-section">
 <h2>Support</h2>
 <ul className="links">
-<li><a href="#" onClick={(e)=>e.preventDefault()}>Aide et FAQ</a></li>
-<li><a href="#" onClick={(e)=>e.preventDefault()}>Nous contacter</a></li>
-<li><a href="#" onClick={(e)=>e.preventDefault()}>Confidentialité</a></li>
+<li>
+<Link href="/settings/faq">Aide et FAQ</Link>
+</li>
+<li>
+<Link href="/settings/contact" onClick={(e)=>{e.preventDefault(); alert('Contact : à venir (formulaire / mail)')}}>
+Nous contacter
+</Link>
+</li>
+<li>
+<Link href="/settings/privacy">Confidentialité</Link>
+</li>
 </ul>
 </section>
 
@@ -156,7 +121,7 @@ Supprimer mon compte
 </section>
 </div>
 
-{/* Tabbar en bas */}
+{/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
 <span className="tab_icon">🧊</span>
