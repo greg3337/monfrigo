@@ -1,81 +1,102 @@
-/* Conteneur */
-.settingsWrap { padding: 16px; }
+/* Base */
+* { box-sizing: border-box; }
+:root {
+--bg: #f5f7fb;
+--card: #ffffff;
+--text: #222;
+--sub: #667085;
+--primary: #0d6efd;
+--primary-hover: #0a58ca;
+--ghost: #eef2f7;
+--danger: #dc3545;
+--danger-hover: #b02a37;
+--border: #e4e7ed;
+--shadow: 0 6px 20px rgba(0,0,0,.08);
+}
 
-/* En-tête */
-.settingsHeader { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.settingsIcon { font-size: 28px; }
-.brandTitle { margin: 0; font-size: 1.4rem; font-weight: 700; }
-.brandSub { color: #6b7280; }
+.settings-container {
+max-width: 920px;
+margin: 20px auto 96px; /* espace pour la tabbar */
+padding: 8px 16px;
+background: var(--bg);
+border-radius: 12px;
+}
+
+.settings-header {
+display: flex; align-items: center; gap: 12px;
+margin: 8px 0 16px;
+}
+.settings-header .icon { font-size: 28px; }
+.settings-header h1 { font-size: 22px; color: var(--text); }
+.settings-header p { color: var(--sub); }
 
 /* Cartes */
-.settings-item {
-background: #fff;
-border: 1px solid #e5e7eb;
+.settings-section {
+background: var(--card);
 border-radius: 14px;
-padding: 14px;
+padding: 16px;
+box-shadow: var(--shadow);
+border: 1px solid var(--border);
 margin-bottom: 16px;
-box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+.settings-section h2 {
+font-size: 16px;
+margin-bottom: 12px;
 }
 
-.sectionTitle { margin: 0 0 10px 0; font-size: 1.05rem; }
+/* Lignes / champs */
+.row { display: flex; gap: 12px; align-items: center; }
+.row.between { justify-content: space-between; }
 
-/* Grille simple */
-.row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
-.col { flex: 1; min-width: 200px; }
-.actionsRight { display: flex; gap: 8px; justify-content: flex-end; }
+.userName { font-weight: 700; }
+.userEmail { color: var(--sub); }
 
-/* Inputs */
-.input, .select {
+.field { margin-bottom: 12px; }
+.field label { display: block; margin-bottom: 6px; color: var(--text); }
+.field select {
 width: 100%;
 padding: 10px 12px;
-border: 1px solid #d1d5db;
-border-radius: 8px;
+border-radius: 10px;
+border: 1px solid var(--border);
 background: #fff;
 }
-.fieldLabel { display:block; font-size: .9rem; margin-bottom: 6px; color: #374151; }
 
-/* Switch / lignes avec checkbox */
-.switchRow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px dashed #eee; }
-.switchRow:first-of-type { border-top: none; }
-.switchRow strong { display:block; }
-.switchRow small { color:#6b7280; }
-
-/* Profil */
-.profileEmail { color:#6b7280; }
-.editName { display: flex; gap: 8px; }
-
-/* Chips (créneaux repas) */
-.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.chip {
-border: 1px solid #d1d5db;
-background: #f9fafb;
-border-radius: 999px;
-padding: 6px 12px;
-font-size: .9rem;
-cursor: pointer;
+/* Switch lignes */
+.switchRow {
+display: flex; gap: 10px; align-items: center;
+padding: 10px 0;
+border-top: 1px dashed var(--border);
 }
-.chip.is-active { background: #e6f0ff; border-color: #bbd3ff; }
-
-/* Liens */
-.links { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.links a { text-decoration: none; color: #0a58ca; }
-
-/* Danger zone */
-.dangerRow { display: flex; justify-content: space-between; gap: 12px; }
+.switchRow:first-of-type { border-top: none; }
+.switchRow input { transform: scale(1.2); }
+.switchRow .label { font-weight: 600; }
+.switchRow .sub { color: var(--sub); font-size: .92rem; }
 
 /* Boutons */
-.btnPrimary {
-background: #0070ff; border: none; color: #fff; padding: 10px 12px; border-radius: 8px; cursor: pointer;
+.btn {
+border: none;
+border-radius: 10px;
+padding: 10px 14px;
+cursor: pointer;
+font-weight: 700;
 }
-.btnGhost {
-background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 10px 12px; border-radius: 8px; cursor: pointer;
-}
-.btnDanger {
-background: #dc3545; border: none; color: #fff; padding: 10px 12px; border-radius: 8px; cursor: pointer;
-}
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.primary:hover { background: var(--primary-hover); }
+.btn.ghost { background: var(--ghost); color: var(--text); }
+.btn.danger { background: var(--danger); color: #fff; width: 100%; margin-top: 10px; }
+.btn.danger:hover { background: var(--danger-hover); }
 
-/* Responsive */
-@media (max-width: 640px) {
-.row { flex-direction: column; align-items: stretch; }
-.actionsRight { justify-content: flex-start; }
+/* Liens support */
+.links { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.links a { color: var(--primary); text-decoration: none; }
+.links a:hover { text-decoration: underline; }
+
+/* Encadré danger */
+.dangerBox { border: 1px solid #fee2e2; background: #fff5f5; }
+
+/* Tabbar (tu as déjà tabbar.css, ceci ne fait que garantir l'espace) */
+body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+
+@media (max-width: 480px) {
+.settings-container { padding: 8px; }
 }
