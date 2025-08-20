@@ -1,82 +1,135 @@
-import { useEffect, useState } from 'react';
-import { db, auth } from '../firebase/firebase-config'; // ← ajuste le chemin si besoin
+'use client';
 
-import {collection,query,where,orderBy,getDocs,addDoc,serverTimestamp,deleteDoc,doc,} from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import {
+collection,
+query,
+where,
+getDocs,
+addDoc,
+deleteDoc,
+doc,
+serverTimestamp,
+} from 'firebase/firestore';
+import { db, auth } from '../firebase/firebase-config';
 
-/**
-* Props attendus :
-* - dayLabel : libellé du jour (ex: "Lundi")
-* - slotLabel : libellé du créneau (ex: "Déjeuner")
-* - onClose : fonction pour fermer la modale
-* - onSaved : callback après sauvegarde pour rafraîchir la liste
-*/
-export default function CreateMealModal({ dayLabel, slotLabel, onClose, onSaved }) {
-const [loading, setLoading] = useState(true);
+export default function CreateMealModal({
+dayLabel,
+slotLabel,
+onClose,
+onSaved,
+}) {
 const [saving, setSaving] = useState(false);
-const [products, setProducts] = useState([]);
-const [selectedProductId, setSelectedProductId] = useState('');
-
-// 1) Charger les produits du frigo de l'utilisateur
-useEffect(() => {
-const unsub = auth.onAuthStateChanged(async (user) => {
-if (!user) {
-setProducts([]);
-setLoading(false);
-return;
-}
-try {
-const q = query(
-collection(db, 'products'), // ← nom de ta collection frigo
-where('userId', '==', user.uid),
-orderBy('expirationDate', 'asc')
-);
-const snap = await getDocs(q);
-const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-setProducts(items);
-} catch (e) {
-console.error('Erreur chargement produits :', e);
-setProducts([]);
-} finally {
-setLoading(false);
-}
-});
-return () => unsub(); // nettoyage
-}, []);
-
-// 2) Sauvegarder le repas + retirer le produit du frigo
-const handleSave = async () => {
+const [products, setProducts] = useState([]); // [{id, name, collection}]
+const [selected, setSelected] = useState('');
 const user = auth.currentUser;
-if (!user) return;
 
-if (!selectedProductId) {
-alert('Choisis un produit du frigo.');
+// -------- Charger les produits du frigo (robuste) --------
+useEffect(() => {
+let mounted = true;
+async function load() {
+if (!user) {
+console.warn('[CreateMealModal] Pas d’utilisateur connecté');
+setProducts([]);
 return;
 }
 
+const uid = user.uid;
+const normalize = (p) => ({
+id: p.id,
+name: p.name || p.label || p.title || '(sans nom)',
+collection: p.__collection || 'products',
+});
+
+const tryFetch = async (colName) => {
+// On tente différentes clés utilisateur
+const colRef = collection(db, colName);
+const queries = [
+query(colRef, where('userId', '==', uid)),
+query(colRef, where('uid', '==', uid)),
+query(colRef, where('ownerId', '==', uid)),
+];
+
+for (const qy of queries) {
 try {
+const snap = await getDocs(qy);
+if (!snap.empty) {
+const arr = snap.docs.map((d) => ({
+id: d.id,
+__collection: colName,
+...d.data(),
+}));
+return arr.map(normalize);
+}
+} catch (e) {
+// Certaines combinaisons where peuvent échouer si l’index n’existe pas, on ignore et on continue
+}
+}
+
+// Dernier recours : on prend tout et on filtre côté client si possible
+try {
+const snapAll = await getDocs(colRef);
+const arr = snapAll.docs
+.map((d) => ({ id: d.id, __collection: colName, ...d.data() }))
+.filter((p) => {
+const owner = p.userId || p.uid || p.ownerId;
+return !owner || owner === uid;
+});
+if (arr.length) return arr.map(normalize);
+} catch (e) {
+console.error(`[CreateMealModal] Erreur fetch ${colName}`, e);
+}
+
+return [];
+};
+
+// On essaie d’abord "products", puis "fridge"
+const fromProducts = await tryFetch('products');
+let finalList = fromProducts;
+if (finalList.length === 0) {
+const fromFridge = await tryFetch('fridge');
+finalList = fromFridge;
+}
+
+if (mounted) {
+console.log('[CreateMealModal] Produits chargés :', finalList);
+setProducts(finalList);
+}
+}
+load();
+return () => { mounted = false; };
+}, [user]);
+
+// -------- Enregistrer --------
+const handleSave = async () => {
+if (!user) return;
+if (!selected) {
+alert('Sélectionne un produit du frigo');
+return;
+}
+
+const prod = products.find((p) => p.id === selected);
+if (!prod) return;
+
 setSaving(true);
-
-// Récupérer le produit choisi (pour stocker son nom dans le repas)
-const chosen = products.find((p) => p.id === selectedProductId);
-const productName = chosen?.name || 'Produit';
-
-// Créer le repas
+try {
+// 1) Créer le repas
 await addDoc(collection(db, 'meals'), {
 userId: user.uid,
-day: dayLabel, // ex "Lundi"
-slot: slotLabel, // ex "Déjeuner"
-title: productName, // simple : le nom du produit
+day: dayLabel, // ex: "Lundi"
+slot: slotLabel, // ex: "Déjeuner"
+title: prod.name,
+products: [prod.name],
 createdAt: serverTimestamp(),
 });
 
-// Supprimer le produit du frigo
-await deleteDoc(doc(db, 'products', selectedProductId));
+// 2) Supprimer le produit de la bonne collection
+await deleteDoc(doc(db, prod.collection || 'products', prod.id));
 
-// Fermer + rafraîchir
-onClose?.();
-onSaved?.();
+if (onSaved) onSaved();
+onClose();
 } catch (e) {
-console.error('Erreur sauvegarde repas :', e);
+console.error('[CreateMealModal] Erreur save:', e);
 alert("Impossible d'enregistrer le repas.");
 } finally {
 setSaving(false);
@@ -84,102 +137,39 @@ setSaving(false);
 };
 
 return (
-<div
-role="dialog"
-aria-modal="true"
-className="modal"
-style={{
-position: 'fixed',
-inset: 0,
-background: 'rgba(0,0,0,.2)',
-display: 'grid',
-placeItems: 'center',
-zIndex: 50,
-}}
-onClick={(e) => {
-// fermer si clic sur le backdrop
-if (e.target === e.currentTarget) onClose?.();
-}}
->
-<div
-style={{
-width: 'min(520px, 92vw)',
-background: '#fff',
-borderRadius: 12,
-padding: 18,
-boxShadow: '0 8px 28px rgba(0,0,0,.18)',
-}}
->
-<h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Ajouter un repas</h3>
-<p style={{ margin: '6px 0 14px', color: '#555' }}>
-{dayLabel} – {slotLabel}
+<div className="modal">
+<h3>Ajouter un repas</h3>
+<p style={{ marginTop: 8, marginBottom: 8 }}>
+{dayLabel} - {slotLabel}
 </p>
 
-{/* Select produit */}
-{loading ? (
-<p style={{ margin: '10px 0' }}>Chargement des produits…</p>
-) : products.length === 0 ? (
-<p style={{ margin: '10px 0', color: '#777' }}>
-Aucun produit dans le frigo.
-</p>
-) : (
-<label style={{ display: 'block', margin: '8px 0 16px' }}>
-<span style={{ display: 'block', fontSize: 13, color: '#444', marginBottom: 6 }}>
-Produits du frigo
-</span>
+<label>
+<span>Produits du frigo</span>
 <select
-value={selectedProductId}
-onChange={(e) => setSelectedProductId(e.target.value)}
-style={{
-width: '100%',
-padding: '10px 12px',
-borderRadius: 8,
-border: '1px solid #d0d5dd',
-background: '#fff',
-}}
+value={selected}
+onChange={(e) => setSelected(e.target.value)}
+style={{ width: '100%', padding: 8, marginTop: 4 }}
 >
-<option value="">— Sélectionne un produit du frigo —</option>
+<option value="">-- Sélectionne un produit du frigo --</option>
 {products.map((p) => (
-<option key={p.id} value={p.id}>
-{p.name}{' '}
-{p.expirationDate ? ` • ${p.expirationDate}` : ''}
+<option key={`${p.collection}:${p.id}`} value={p.id}>
+{p.name}
 </option>
 ))}
 </select>
 </label>
+
+{products.length === 0 && (
+<p style={{ opacity: 0.7, fontSize: 13, marginTop: 8 }}>
+Aucun produit trouvé pour ton compte. Ajoute d’abord des produits dans l’onglet Frigo.
+</p>
 )}
 
-<div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-<button
-disabled={saving || loading}
-onClick={handleSave}
-className="btnPrimary"
-style={{
-background: '#0ea5e9',
-color: '#fff',
-border: 0,
-padding: '10px 14px',
-borderRadius: 8,
-cursor: 'pointer',
-}}
->
+<div className="modalActions" style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+<button className="btnPrimary" disabled={saving} onClick={handleSave}>
 {saving ? 'Enregistrement…' : 'Sauvegarder'}
 </button>
-<button
-onClick={() => onClose?.()}
-className="btnGhost"
-style={{
-background: '#f3f4f6',
-color: '#111827',
-border: 0,
-padding: '10px 14px',
-borderRadius: 8,
-cursor: 'pointer',
-}}
->
-Annuler
-</button>
-</div>
+<button className="btnGhost" onClick={onClose}>Annuler</button>
 </div>
 </div>
 );
