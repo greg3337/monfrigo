@@ -1,196 +1,236 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { auth, db } from '../firebase/firebase-config';
+import React, { useEffect, useMemo, useState } from 'react';
+import { db, auth } from '../firebase/firebase-config';
 import {
-addDoc,
 collection,
-Timestamp,
 query,
 where,
+orderBy,
 getDocs,
+addDoc,
+Timestamp,
 doc,
 deleteDoc,
 } from 'firebase/firestore';
 
-const SLOTS = ['Déjeuner', 'Dîner'];
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SLOTS = ['Petit-déjeuner','Déjeuner','Dîner','Goûter'];
 
-// On essaie plusieurs collections / champs possibles
-const FRIDGE_COLLECTIONS = ['fridge', 'frigo', 'products'];
-const USER_FIELDS = ['userId', 'uid', 'ownerId'];
+export default function CreateMealModal({
+defaultDay = 'Lundi',
+defaultSlot = 'Déjeuner',
+onClose,
+onSaved,
+}) {
+const user = auth.currentUser;
 
-export default function CreateMealModal({ defaultDay, defaultSlot, onClose }) {
-const [userId, setUserId] = useState(null);
-
-const [day, setDay] = useState(defaultDay || 'Lundi');
-const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
+// UI state
+const [day, setDay] = useState(defaultDay);
+const [slot, setSlot] = useState(defaultSlot);
 const [name, setName] = useState('');
-const [products, setProducts] = useState([]); // {id, name, expirationDate?, __col}
 const [loading, setLoading] = useState(true);
 const [saving, setSaving] = useState(false);
+const [error, setError] = useState('');
 
-// Auth
+// Fridge products
+const [fridgeProducts, setFridgeProducts] = useState([]); // [{id, name, ...}]
+const [selectedIds, setSelectedIds] = useState([]); // ids choisis
+
+const nothingInFridge = useMemo(() => !loading && fridgeProducts.length === 0, [loading, fridgeProducts]);
+
 useEffect(() => {
-const unsub = auth.onAuthStateChanged((u) => setUserId(u ? u.uid : null));
-return () => unsub();
-}, []);
-
-// Charger les produits du frigo (autodétection)
-useEffect(() => {
-if (!userId) return;
-let cancelled = false;
-
-(async () => {
+let ignore = false;
+async function loadFridge() {
+if (!user) { setLoading(false); return; }
 setLoading(true);
-try {
-// 1) On tente coll x champ (filtré par user)
-for (const collName of FRIDGE_COLLECTIONS) {
-for (const f of USER_FIELDS) {
-try {
-const qy = query(collection(db, collName), where(f, '==', userId));
-const snap = await getDocs(qy);
-const rows = snap.docs.map((d) => ({ id: d.id, __col: collName, ...d.data() }));
-if (!cancelled && rows.length) {
-setProducts(rows);
-setLoading(false);
-return;
-}
-} catch (_) {
-/* ignore et continue */
-}
-}
-}
-// 2) Dernier recours : sans filtre (utile si les docs n'ont pas de userId)
-for (const collName of FRIDGE_COLLECTIONS) {
-try {
-const snap = await getDocs(collection(db, collName));
-const rows = snap.docs.map((d) => ({ id: d.id, __col: collName, ...d.data() }));
-if (!cancelled && rows.length) {
-setProducts(rows);
-setLoading(false);
-return;
-}
-} catch (_) {/* ignore */}
-}
+setError('');
 
-if (!cancelled) {
-setProducts([]);
-setLoading(false);
+// essaie successivement `fridge`, puis `frigo`, puis `products`
+const tryCollections = ['fridge', 'frigo', 'products'];
+let fetched = [];
+
+try {
+for (const colName of tryCollections) {
+const colRef = collection(db, colName);
+// on filtre par userId si présent
+const q = query(
+colRef,
+where('userId', '==', user.uid)
+);
+const snap = await getDocs(q);
+const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+if (rows.length > 0) {
+fetched = rows;
+break; // trouvé
+}
 }
 } catch (e) {
-console.error('Load fridge products error:', e);
-if (!cancelled) {
-setProducts([]);
+console.error('Erreur chargement frigo:', e);
+setError("Impossible de charger les produits du frigo.");
+}
+
+if (!ignore) {
+setFridgeProducts(fetched);
 setLoading(false);
 }
 }
-})();
 
-return () => { cancelled = true; };
-}, [userId]);
+loadFridge();
+return () => { ignore = true; };
+}, [user]);
 
-const [selectedIds, setSelectedIds] = useState([]);
 const togglePick = (id) => {
-setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+setSelectedIds(prev =>
+prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+);
 };
 
 const handleSave = async () => {
-if (!userId) return;
-if (selectedIds.length === 0 && !name.trim()) {
-alert('Ajoute un nom ou sélectionne au moins un produit.');
+if (!user) { setError("Vous n'êtes pas connecté."); return; }
+if (selectedIds.length === 0) {
+setError('Sélectionne au moins un produit du frigo.');
 return;
 }
-setSaving(true);
-try {
-const picked = products
-.filter((p) => selectedIds.includes(p.id))
-.map((p) => ({ id: p.id, name: p.name || p.label || 'Produit' }));
 
+setSaving(true);
+setError('');
+
+try {
+// infos produits retenus
+const picked = fridgeProducts.filter(p => selectedIds.includes(p.id))
+.map(p => ({
+id: p.id,
+name: p.name ?? p.nom ?? 'Produit',
+expirationDate: p.expirationDate ?? p.date ?? null,
+}));
+
+// crée le repas
 await addDoc(collection(db, 'meals'), {
-userId,
+userId: user.uid,
 day,
 slot,
-name: name.trim(),
+name: name.trim() || null,
 products: picked,
 createdAt: Timestamp.now(),
 });
 
-// Supprimer les produits utilisés dans leur collection d'origine
-for (const p of products.filter((x) => selectedIds.includes(x.id))) {
-try {
-await deleteDoc(doc(db, p.__col || 'fridge', p.id));
-} catch (e) {
-console.warn('Delete from fridge failed for', p.__col, p.id, e);
+// supprime les produits du frigo utilisés
+// tente sur la première collection non vide utilisée plus haut,
+// sinon essaie dans l'ordre.
+const possibleCols = ['fridge', 'frigo', 'products'];
+let usedCol = null;
+
+// Détermine si un des possibles a au moins un doc à ce user (pour éviter 3 delete en boucle)
+for (const colName of possibleCols) {
+const snap = await getDocs(
+query(collection(db, colName), where('userId','==', user.uid))
+);
+if (!snap.empty) { usedCol = colName; break; }
 }
+if (!usedCol) usedCol = 'fridge';
+
+for (const id of selectedIds) {
+await deleteDoc(doc(db, usedCol, id));
 }
 
-onClose?.();
-} catch (e) {
-console.error('save meal error', e);
-alert("Impossible d'enregistrer le repas.");
-} finally {
 setSaving(false);
+onSaved?.(); // pour rafraîchir la liste sur la page parente
+onClose?.(); // ferme la modale
+} catch (e) {
+console.error(e);
+setSaving(false);
+setError("Erreur lors de l'enregistrement du repas.");
 }
 };
 
 return (
-<div className="modalBack" role="dialog" aria-modal="true" aria-label="Ajouter un repas">
-<div className="modalCard">
-<header className="modalHead">
-<h4>Ajouter un repas</h4>
-<button className="btnGhost" onClick={onClose}>×</button>
-</header>
+<div
+aria-modal="true"
+role="dialog"
+style={{
+position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)',
+display: 'flex', alignItems: 'center', justifyContent: 'center',
+zIndex: 50
+}}
+onClick={(e) => {
+// click sur l’overlay ferme la modale
+if (e.target === e.currentTarget) onClose?.();
+}}
+>
+<div style={{
+width: 'min(640px, 92vw)',
+background: '#fff',
+borderRadius: 12,
+padding: 20,
+boxShadow: '0 20px 60px rgba(0,0,0,.2)',
+maxHeight: '82vh',
+overflow: 'auto'
+}}>
+<div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+<h3 style={{margin:0}}>Ajouter un repas</h3>
+<button onClick={onClose} aria-label="Fermer" style={{
+border:'none', background:'#f2f2f2', borderRadius:10, width:36, height:36, cursor:'pointer'
+}}>×</button>
+</div>
 
-<div className="modalBody">
-<div className="row">
-<label>
-Jour
-<select value={day} onChange={(e) => setDay(e.target.value)}>
-{DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
+{/* Choix jour/slot */}
+<div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12}}>
+<label style={{display:'grid', gap:6}}>
+<span>Jour</span>
+<select value={day} onChange={e=>setDay(e.target.value)} style={{padding:'10px 12px', borderRadius:10, border:'1px solid #ddd'}}>
+{DAYS.map(d => <option key={d} value={d}>{d}</option>)}
 </select>
 </label>
-
-<label>
-Créneau
-<select value={slot} onChange={(e) => setSlot(e.target.value)}>
-{SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+<label style={{display:'grid', gap:6}}>
+<span>Créneau</span>
+<select value={slot} onChange={e=>setSlot(e.target.value)} style={{padding:'10px 12px', borderRadius:10, border:'1px solid #ddd'}}>
+{SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
 </select>
 </label>
 </div>
 
-<label className="row full">
-Nom du repas (facultatif)
+{/* Nom facultatif */}
+<label style={{display:'grid', gap:6, marginBottom:16}}>
+<span>Nom du repas (facultatif)</span>
 <input
-type="text"
 placeholder="Ex : Salade de poulet"
 value={name}
-onChange={(e) => setName(e.target.value)}
+onChange={e=>setName(e.target.value)}
+style={{padding:'12px 14px', borderRadius:12, border:'1px solid #e5e5e5'}}
 />
 </label>
 
-<div className="pickerBlock">
-<div className="pickerHead">Produits du frigo</div>
-{loading ? (
-<p className="muted">Chargement…</p>
-) : products.length === 0 ? (
-<p className="muted">Aucun produit trouvé dans le frigo.</p>
-) : (
-<ul className="productPickList">
-{products.map((p) => {
-const checked = selectedIds.includes(p.id);
+{/* Produits du frigo */}
+<div style={{display:'grid', gap:10}}>
+<strong>Produits du frigo</strong>
+{loading && <p style={{opacity:.7}}>Chargement…</p>}
+
+{!loading && nothingInFridge && (
+<p style={{opacity:.8}}>Aucun produit trouvé dans le frigo.</p>
+)}
+
+{!loading && fridgeProducts.length > 0 && (
+<ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:8}}>
+{fridgeProducts.map(p => {
+const label = p.name ?? p.nom ?? '(sans nom)';
+const sub = p.expirationDate ? `— exp. ${String(p.expirationDate).slice(0,10)}` : '';
+const picked = selectedIds.includes(p.id);
 return (
-<li key={`${p.__col}:${p.id}`}>
-<label className="pick">
+<li key={p.id}>
+<label style={{
+display:'flex', gap:10, alignItems:'center',
+padding:'10px 12px', border:'1px solid #eee',
+borderRadius:10, cursor:'pointer',
+background: picked ? '#eef6ff' : '#fff'
+}}>
 <input
 type="checkbox"
-checked={checked}
+checked={picked}
 onChange={() => togglePick(p.id)}
 />
-<span className="pickName">{p.name || p.label || 'Produit'}</span>
-{p.expirationDate && (
-<span className="pickMeta">{p.expirationDate}</span>
-)}
+<span>{label} <span style={{opacity:.6}}>{sub}</span></span>
 </label>
 </li>
 );
@@ -198,14 +238,16 @@ onChange={() => togglePick(p.id)}
 </ul>
 )}
 </div>
-</div>
 
-<footer className="modalFoot">
-<button className="btnPrimary" onClick={handleSave} disabled={saving}>
-{saving ? 'Sauvegarde…' : 'Sauvegarder'}
+{error && <p style={{color:'#d33', marginTop:12}}>{error}</p>}
+
+{/* Actions */}
+<div style={{display:'flex', gap:10, justifyContent:'flex-end', marginTop:18}}>
+<button onClick={onClose} className="btnGhost">Annuler</button>
+<button onClick={handleSave} disabled={saving} className="btnPrimary">
+{saving ? 'Enregistrement…' : 'Sauvegarder'}
 </button>
-<button className="btnGhost" onClick={onClose}>Annuler</button>
-</footer>
+</div>
 </div>
 </div>
 );
