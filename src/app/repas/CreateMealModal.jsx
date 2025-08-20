@@ -1,135 +1,83 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { auth, db } from '../firebase/firebase-config';
 import {
+addDoc,
 collection,
+Timestamp,
 query,
 where,
-getDocs,
-addDoc,
-deleteDoc,
+onSnapshot,
 doc,
-serverTimestamp,
+deleteDoc,
 } from 'firebase/firestore';
-import { db, auth } from '../firebase/firebase-config';
 
-export default function CreateMealModal({
-dayLabel,
-slotLabel,
-onClose,
-onSaved,
-}) {
+const SLOTS = ['Déjeuner', 'Dîner'];
+const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+export default function CreateMealModal({ defaultDay, defaultSlot, onClose }) {
+const [userId, setUserId] = useState(null);
+
+const [day, setDay] = useState(defaultDay || 'Lundi');
+const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
+const [name, setName] = useState('');
+const [products, setProducts] = useState([]); // produits du frigo
+const [selectedIds, setSelectedIds] = useState([]); // ids sélectionnés
 const [saving, setSaving] = useState(false);
-const [products, setProducts] = useState([]); // [{id, name, collection}]
-const [selected, setSelected] = useState('');
-const user = auth.currentUser;
 
-// -------- Charger les produits du frigo (robuste) --------
+// auth
 useEffect(() => {
-let mounted = true;
-async function load() {
-if (!user) {
-console.warn('[CreateMealModal] Pas d’utilisateur connecté');
-setProducts([]);
-return;
-}
+const unsub = auth.onAuthStateChanged((u) => setUserId(u ? u.uid : null));
+return () => unsub();
+}, []);
 
-const uid = user.uid;
-const normalize = (p) => ({
-id: p.id,
-name: p.name || p.label || p.title || '(sans nom)',
-collection: p.__collection || 'products',
+// Charger les produits du frigo
+useEffect(() => {
+if (!userId) return;
+const q = query(collection(db, 'fridge'), where('userId', '==', userId));
+const unsub = onSnapshot(q, (snap) => {
+const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+setProducts(rows);
 });
+return () => unsub();
+}, [userId]);
 
-const tryFetch = async (colName) => {
-// On tente différentes clés utilisateur
-const colRef = collection(db, colName);
-const queries = [
-query(colRef, where('userId', '==', uid)),
-query(colRef, where('uid', '==', uid)),
-query(colRef, where('ownerId', '==', uid)),
-];
-
-for (const qy of queries) {
-try {
-const snap = await getDocs(qy);
-if (!snap.empty) {
-const arr = snap.docs.map((d) => ({
-id: d.id,
-__collection: colName,
-...d.data(),
-}));
-return arr.map(normalize);
-}
-} catch (e) {
-// Certaines combinaisons where peuvent échouer si l’index n’existe pas, on ignore et on continue
-}
-}
-
-// Dernier recours : on prend tout et on filtre côté client si possible
-try {
-const snapAll = await getDocs(colRef);
-const arr = snapAll.docs
-.map((d) => ({ id: d.id, __collection: colName, ...d.data() }))
-.filter((p) => {
-const owner = p.userId || p.uid || p.ownerId;
-return !owner || owner === uid;
-});
-if (arr.length) return arr.map(normalize);
-} catch (e) {
-console.error(`[CreateMealModal] Erreur fetch ${colName}`, e);
-}
-
-return [];
+const togglePick = (id) => {
+setSelectedIds((prev) =>
+prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+);
 };
 
-// On essaie d’abord "products", puis "fridge"
-const fromProducts = await tryFetch('products');
-let finalList = fromProducts;
-if (finalList.length === 0) {
-const fromFridge = await tryFetch('fridge');
-finalList = fromFridge;
-}
-
-if (mounted) {
-console.log('[CreateMealModal] Produits chargés :', finalList);
-setProducts(finalList);
-}
-}
-load();
-return () => { mounted = false; };
-}, [user]);
-
-// -------- Enregistrer --------
 const handleSave = async () => {
-if (!user) return;
-if (!selected) {
-alert('Sélectionne un produit du frigo');
+if (!userId) return;
+if (selectedIds.length === 0 && !name.trim()) {
+alert('Ajoute un nom ou sélectionne au moins un produit.');
 return;
 }
-
-const prod = products.find((p) => p.id === selected);
-if (!prod) return;
-
 setSaving(true);
 try {
-// 1) Créer le repas
+const picked = products
+.filter((p) => selectedIds.includes(p.id))
+.map((p) => ({ id: p.id, name: p.name || p.label || 'Produit' }));
+
 await addDoc(collection(db, 'meals'), {
-userId: user.uid,
-day: dayLabel, // ex: "Lundi"
-slot: slotLabel, // ex: "Déjeuner"
-title: prod.name,
-products: [prod.name],
-createdAt: serverTimestamp(),
+userId,
+day,
+slot,
+name: name.trim(),
+products: picked,
+createdAt: Timestamp.now(),
 });
 
-// 2) Supprimer le produit de la bonne collection
-await deleteDoc(doc(db, prod.collection || 'products', prod.id));
+// Supprimer du frigo les produits utilisés
+for (const id of selectedIds) {
+await deleteDoc(doc(db, 'fridge', id));
+}
 
-if (onSaved) onSaved();
-onClose();
+onClose?.();
 } catch (e) {
-console.error('[CreateMealModal] Erreur save:', e);
+console.error('save meal error', e);
 alert("Impossible d'enregistrer le repas.");
 } finally {
 setSaving(false);
@@ -137,39 +85,75 @@ setSaving(false);
 };
 
 return (
-<div className="modal">
-<h3>Ajouter un repas</h3>
-<p style={{ marginTop: 8, marginBottom: 8 }}>
-{dayLabel} - {slotLabel}
-</p>
+<div className="modalBack" role="dialog" aria-modal="true" aria-label="Ajouter un repas">
+<div className="modalCard">
+<header className="modalHead">
+<h4>Ajouter un repas</h4>
+<button className="btnGhost" onClick={onClose}>×</button>
+</header>
 
+<div className="modalBody">
+<div className="row">
 <label>
-<span>Produits du frigo</span>
-<select
-value={selected}
-onChange={(e) => setSelected(e.target.value)}
-style={{ width: '100%', padding: 8, marginTop: 4 }}
->
-<option value="">-- Sélectionne un produit du frigo --</option>
-{products.map((p) => (
-<option key={`${p.collection}:${p.id}`} value={p.id}>
-{p.name}
-</option>
-))}
+Jour
+<select value={day} onChange={(e) => setDay(e.target.value)}>
+{DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
 </select>
 </label>
 
-{products.length === 0 && (
-<p style={{ opacity: 0.7, fontSize: 13, marginTop: 8 }}>
-Aucun produit trouvé pour ton compte. Ajoute d’abord des produits dans l’onglet Frigo.
-</p>
-)}
+<label>
+Créneau
+<select value={slot} onChange={(e) => setSlot(e.target.value)}>
+{SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+</select>
+</label>
+</div>
 
-<div className="modalActions" style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-<button className="btnPrimary" disabled={saving} onClick={handleSave}>
-{saving ? 'Enregistrement…' : 'Sauvegarder'}
+<label className="row full">
+Nom du repas (facultatif)
+<input
+type="text"
+placeholder="Ex : Salade de poulet"
+value={name}
+onChange={(e) => setName(e.target.value)}
+/>
+</label>
+
+<div className="pickerBlock">
+<div className="pickerHead">Produits du frigo</div>
+{products.length === 0 ? (
+<p className="muted">Aucun produit dans le frigo.</p>
+) : (
+<ul className="productPickList">
+{products.map((p) => {
+const checked = selectedIds.includes(p.id);
+return (
+<li key={p.id}>
+<label className="pick">
+<input
+type="checkbox"
+checked={checked}
+onChange={() => togglePick(p.id)}
+/>
+<span className="pickName">{p.name || 'Produit'}</span>
+{p.expirationDate && (
+<span className="pickMeta">{p.expirationDate}</span>
+)}
+</label>
+</li>
+);
+})}
+</ul>
+)}
+</div>
+</div>
+
+<footer className="modalFoot">
+<button className="btnPrimary" onClick={handleSave} disabled={saving}>
+{saving ? 'Sauvegarde…' : 'Sauvegarder'}
 </button>
 <button className="btnGhost" onClick={onClose}>Annuler</button>
+</footer>
 </div>
 </div>
 );
