@@ -1,107 +1,113 @@
 /* Conteneur principal */
-.privacyPage {
-padding: 16px;
+.privacyWrap {
+max-width: 860px;
+margin: 0 auto;
+padding: 16px 16px 96px; /* espace pour la tabbar */
 }
 
 /* En-tête */
-.privacyHeader {
+.pageHeader {
 display: flex;
-align-items: center;
 gap: 12px;
-margin-bottom: 16px;
+align-items: center;
+margin: 8px 0 16px;
 }
-
-.privacyHeader .privacyIcon {
-font-size: 28px;
-}
-
-.privacyHeader h1 {
+.pageHeader h1 {
 margin: 0;
-font-size: 1.35rem;
+font-size: 1.6rem;
+font-weight: 750;
+color: #0f172a; /* contrasté */
 }
-
 .subtitle {
 margin: 2px 0 0;
-opacity: 0.75;
-font-size: 0.95rem;
+color: #475569;
+font-size: .95rem;
+}
+.iconCube {
+width: 42px;
+height: 42px;
+display: grid;
+place-items: center;
+border-radius: 12px;
+background: #eef2ff;
 }
 
 /* Cartes */
 .card {
-background: #fff;
-border-radius: 12px;
-padding: 16px;
-margin-bottom: 14px;
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+background: #ffffff;
+border: 1px solid #e5e7eb;
+border-radius: 14px;
+padding: 14px;
+margin: 14px 0;
+box-shadow: 0 1px 2px rgba(0,0,0,.04);
 }
-
-.card h2 {
-margin: 0 0 8px;
+.cardTitle {
+margin: 0 0 8px 0;
 font-size: 1.1rem;
+font-weight: 700;
+color: #111827;
 }
 
-.card p {
-margin: 6px 0;
-}
+/* Texte lisible */
+p, li { color: #1f2937; }
+.muted { color: #6b7280; }
 
-.card ul {
-margin: 8px 0 0;
-padding-left: 18px;
+.list {
+margin: 8px 0 10px 18px;
 }
+.list li { margin: 4px 0; }
 
-.card li {
-margin: 4px 0;
-}
-
-/* Notes (encarts colorés) */
-.note {
+/* Bannières d’info (contrastées) */
+.banner {
+display: flex;
+align-items: center;
+gap: 8px;
 border-radius: 10px;
 padding: 10px 12px;
-margin-top: 8px;
-font-size: 0.95rem;
-}
-
-.note.ok {
-background: #e9f8ef;
-}
-
-.note.info {
-background: #eef5ff;
-}
-
-.note.bad {
-background: #ffecec;
-}
-
-/* Bouton d’action */
-.actions {
-margin-top: 8px;
-}
-
-.btnPrimary {
-display: inline-block;
-background: #1976d2;
-color: #fff;
-text-decoration: none;
-padding: 8px 12px;
-border-radius: 8px;
 font-weight: 600;
 }
+.bannerOk {
+background: #e7f8ea;
+color: #065f46;
+border: 1px solid #98e1a5;
+}
+.bannerWarn {
+background: #fde8e8;
+color: #991b1b;
+border: 1px solid #f5b5b5;
+}
+.bannerIcon { font-size: 1.1rem; }
 
-/* Pied de page */
-.smallMuted {
-text-align: center;
-opacity: 0.6;
-font-size: 0.85rem;
-margin: 12px 0 80px;
+/* Notes */
+.note {
+background: #f1f5f9;
+color: #0f172a;
+border: 1px solid #e2e8f0;
+border-radius: 10px;
+padding: 10px 12px;
+font-weight: 500;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-.privacyPage {
-padding: 12px;
+/* Lien et bouton */
+.link { color: #2563eb; text-decoration: underline; }
+.btnPrimary {
+margin-top: 10px;
+border: none;
+border-radius: 10px;
+padding: 10px 14px;
+background: #0ea5e9;
+color: #fff;
+font-weight: 700;
+cursor: pointer;
 }
-.card {
-padding: 14px;
+.btnPrimary:active { transform: translateY(1px); }
+
+/* Date de MAJ */
+.lastUpdated {
+margin-top: 10px;
+color: #6b7280;
+font-size: .9rem;
 }
-}
+
+/* Tabbar : on réutilise tes styles globaux, mais on garantit l’espace bas */
+body, html { height: 100%; }
