@@ -8,7 +8,7 @@ collection,
 Timestamp,
 query,
 where,
-onSnapshot,
+getDocs,
 doc,
 deleteDoc,
 } from 'firebase/firestore';
@@ -16,37 +16,83 @@ deleteDoc,
 const SLOTS = ['Déjeuner', 'Dîner'];
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 
+// On essaie plusieurs collections / champs possibles
+const FRIDGE_COLLECTIONS = ['fridge', 'frigo', 'products'];
+const USER_FIELDS = ['userId', 'uid', 'ownerId'];
+
 export default function CreateMealModal({ defaultDay, defaultSlot, onClose }) {
 const [userId, setUserId] = useState(null);
 
 const [day, setDay] = useState(defaultDay || 'Lundi');
 const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
 const [name, setName] = useState('');
-const [products, setProducts] = useState([]); // produits du frigo
-const [selectedIds, setSelectedIds] = useState([]); // ids sélectionnés
+const [products, setProducts] = useState([]); // {id, name, expirationDate?, __col}
+const [loading, setLoading] = useState(true);
 const [saving, setSaving] = useState(false);
 
-// auth
+// Auth
 useEffect(() => {
 const unsub = auth.onAuthStateChanged((u) => setUserId(u ? u.uid : null));
 return () => unsub();
 }, []);
 
-// Charger les produits du frigo
+// Charger les produits du frigo (autodétection)
 useEffect(() => {
 if (!userId) return;
-const q = query(collection(db, 'fridge'), where('userId', '==', userId));
-const unsub = onSnapshot(q, (snap) => {
-const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+let cancelled = false;
+
+(async () => {
+setLoading(true);
+try {
+// 1) On tente coll x champ (filtré par user)
+for (const collName of FRIDGE_COLLECTIONS) {
+for (const f of USER_FIELDS) {
+try {
+const qy = query(collection(db, collName), where(f, '==', userId));
+const snap = await getDocs(qy);
+const rows = snap.docs.map((d) => ({ id: d.id, __col: collName, ...d.data() }));
+if (!cancelled && rows.length) {
 setProducts(rows);
-});
-return () => unsub();
+setLoading(false);
+return;
+}
+} catch (_) {
+/* ignore et continue */
+}
+}
+}
+// 2) Dernier recours : sans filtre (utile si les docs n'ont pas de userId)
+for (const collName of FRIDGE_COLLECTIONS) {
+try {
+const snap = await getDocs(collection(db, collName));
+const rows = snap.docs.map((d) => ({ id: d.id, __col: collName, ...d.data() }));
+if (!cancelled && rows.length) {
+setProducts(rows);
+setLoading(false);
+return;
+}
+} catch (_) {/* ignore */}
+}
+
+if (!cancelled) {
+setProducts([]);
+setLoading(false);
+}
+} catch (e) {
+console.error('Load fridge products error:', e);
+if (!cancelled) {
+setProducts([]);
+setLoading(false);
+}
+}
+})();
+
+return () => { cancelled = true; };
 }, [userId]);
 
+const [selectedIds, setSelectedIds] = useState([]);
 const togglePick = (id) => {
-setSelectedIds((prev) =>
-prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-);
+setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 };
 
 const handleSave = async () => {
@@ -70,9 +116,13 @@ products: picked,
 createdAt: Timestamp.now(),
 });
 
-// Supprimer du frigo les produits utilisés
-for (const id of selectedIds) {
-await deleteDoc(doc(db, 'fridge', id));
+// Supprimer les produits utilisés dans leur collection d'origine
+for (const p of products.filter((x) => selectedIds.includes(x.id))) {
+try {
+await deleteDoc(doc(db, p.__col || 'fridge', p.id));
+} catch (e) {
+console.warn('Delete from fridge failed for', p.__col, p.id, e);
+}
 }
 
 onClose?.();
@@ -121,21 +171,23 @@ onChange={(e) => setName(e.target.value)}
 
 <div className="pickerBlock">
 <div className="pickerHead">Produits du frigo</div>
-{products.length === 0 ? (
-<p className="muted">Aucun produit dans le frigo.</p>
+{loading ? (
+<p className="muted">Chargement…</p>
+) : products.length === 0 ? (
+<p className="muted">Aucun produit trouvé dans le frigo.</p>
 ) : (
 <ul className="productPickList">
 {products.map((p) => {
 const checked = selectedIds.includes(p.id);
 return (
-<li key={p.id}>
+<li key={`${p.__col}:${p.id}`}>
 <label className="pick">
 <input
 type="checkbox"
 checked={checked}
 onChange={() => togglePick(p.id)}
 />
-<span className="pickName">{p.name || 'Produit'}</span>
+<span className="pickName">{p.name || p.label || 'Produit'}</span>
 {p.expirationDate && (
 <span className="pickMeta">{p.expirationDate}</span>
 )}
