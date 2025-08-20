@@ -1,48 +1,107 @@
-/* privacy.css */
+/* Conteneur principal */
 .privacyPage {
 padding: 16px;
 }
 
-.privacyPage .card {
-background:#fff;
-border-radius:12px;
-padding:16px;
-margin-bottom:14px;
+/* En-tête */
+.privacyHeader {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
 }
 
-.privacyPage h2 {
-margin:0 0 8px;
-font-size:1.1rem;
+.privacyHeader .privacyIcon {
+font-size: 28px;
 }
 
-.privacyPage ul {
-margin:8px 0;
-padding-left:18px;
+.privacyHeader h1 {
+margin: 0;
+font-size: 1.35rem;
 }
 
-.privacyPage .note {
-border-radius:10px;
-padding:10px 12px;
-margin-top:8px;
-font-size:.95rem;
+.subtitle {
+margin: 2px 0 0;
+opacity: 0.75;
+font-size: 0.95rem;
 }
 
-.privacyPage .note.ok { background:#e9f8ef; }
-.privacyPage .note.info { background:#eef5ff; }
-.privacyPage .note.bad { background:#ffecec; }
-
-.privacyPage .btn {
-display:inline-block;
-background:#1976d2;
-color:#fff;
-padding:8px 12px;
-border-radius:8px;
-text-decoration:none;
+/* Cartes */
+.card {
+background: #fff;
+border-radius: 12px;
+padding: 16px;
+margin-bottom: 14px;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.privacySmall {
-opacity:.6;
-font-size:.85rem;
-text-align:center;
-margin:12px 0 80px;
+.card h2 {
+margin: 0 0 8px;
+font-size: 1.1rem;
+}
+
+.card p {
+margin: 6px 0;
+}
+
+.card ul {
+margin: 8px 0 0;
+padding-left: 18px;
+}
+
+.card li {
+margin: 4px 0;
+}
+
+/* Notes (encarts colorés) */
+.note {
+border-radius: 10px;
+padding: 10px 12px;
+margin-top: 8px;
+font-size: 0.95rem;
+}
+
+.note.ok {
+background: #e9f8ef;
+}
+
+.note.info {
+background: #eef5ff;
+}
+
+.note.bad {
+background: #ffecec;
+}
+
+/* Bouton d’action */
+.actions {
+margin-top: 8px;
+}
+
+.btnPrimary {
+display: inline-block;
+background: #1976d2;
+color: #fff;
+text-decoration: none;
+padding: 8px 12px;
+border-radius: 8px;
+font-weight: 600;
+}
+
+/* Pied de page */
+.smallMuted {
+text-align: center;
+opacity: 0.6;
+font-size: 0.85rem;
+margin: 12px 0 80px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+.privacyPage {
+padding: 12px;
+}
+.card {
+padding: 14px;
+}
 }
