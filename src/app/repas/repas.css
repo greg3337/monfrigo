@@ -1,51 +1,184 @@
-/* Page */
-.repasPage { padding: 16px; padding-bottom: 88px; }
+/* ===========================
+Page Repas — Styles globaux
+src/app/repas/repas.css
+=========================== */
 
-/* Header */
-.repasHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
-.titleLine{ display:flex; align-items:center; gap:8px; }
-.cube{ font-size:22px; }
-.hello{ margin:2px 0 0; opacity:.75; }
-.btnPrimary{ background:#1976d2; color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer; }
-.btnPrimary:hover{ background:#145aa2; }
-.btnGhost{ background:#f3f4f6; color:#111827; border:0; border-radius:10px; padding:10px 12px; cursor:pointer; }
+/* Variables de thème (tu peux adapter aux couleurs de l’app) */
+:root {
+--bg: #fafafa;
+--card: #ffffff;
+--muted: #6b7280; /* gris texte secondaire */
+--text: #111827; /* gris très foncé */
+--primary: #1976d2; /* bleu bouton */
+--primary-600: #125ca1;
+--border: #e5e7eb; /* gris bordures */
+--ring: rgba(25, 118, 210, .18);
+--success: #10b981;
+--danger: #dc3545;
+--shadow-1: 0 1px 3px rgba(16, 24, 40, .08), 0 1px 2px rgba(16, 24, 40, .06);
+--shadow-2: 0 8px 24px rgba(16, 24, 40, .10);
+}
 
-/* Grille semaine */
-.weekGrid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-@media (max-width:820px){ .weekGrid{ grid-template-columns:1fr; } }
-.dayCard{ background:#fff; border:1px dashed #e5e7eb; border-radius:12px; padding:12px; }
-.dayTitle{ margin:0 0 8px; font-size:1rem; }
-.slotCard{ border:1px dashed #e6e6e6; border-radius:10px; padding:10px; margin-top:10px; }
-.slotName{ font-weight:600; opacity:.9; margin:0 0 6px; }
-.addBtn{ border:0; background:#eef2ff; border-radius:8px; padding:8px 10px; cursor:pointer; }
-.addBtn:active{ transform: translateY(1px); }
+/* Conteneur principal de la page /repas */
+.wrap {
+padding: 16px;
+padding-bottom: 88px; /* espace pour la tabbar */
+max-width: 1100px;
+margin: 0 auto;
+color: var(--text);
+}
 
-/* ===== Modale ===== */
-.modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:9999; }
-.modal{ background:#fff; border-radius:12px; padding:0; width:min(560px, 92vw); box-shadow:0 12px 30px rgba(0,0,0,.18); }
-.modalContent{ padding:14px; }
-.modalActions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
-.error{ color:#b91c1c; }
+/* Entête (titre + bouton) */
+.repasHeader {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+margin-bottom: 14px;
+}
 
-/* Form */
-.row{ display:flex; gap:10px; align-items:center; }
-.row.full{ flex-direction:column; align-items:stretch; }
-label{ display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem; }
-input[type="text"], select{ border:1px solid #d1d5db; border-radius:10px; padding:8px 10px; font:inherit; }
+.repasHeader .title h2 {
+margin: 0 0 6px 0;
+font-size: 1.25rem;
+font-weight: 700;
+}
+.repasHeader .title p {
+margin: 0;
+color: var(--muted);
+font-size: .95rem;
+}
 
-/* Liste produits */
-.pickerBlock{ border:1px solid #eee; border-radius:10px; overflow:hidden; }
-.pickerHead{ font-weight:700; padding:10px 12px; background:#f8fafc; border-bottom:1px solid #eee; }
-.productPickList{ list-style:none; margin:0; padding:10px 12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-@media (max-width:520px){ .productPickList{ grid-template-columns:1fr; } }
-.pick{ display:flex; align-items:center; gap:8px; border:1px solid #eee; border-radius:8px; padding:8px; }
-.pickName{ font-weight:600; }
-.pickMeta{ margin-left:auto; opacity:.65; font-size:.85rem; }
+/* Boutons génériques */
+.primary {
+background: var(--primary);
+color: #fff;
+border: none;
+border-radius: 10px;
+padding: 10px 14px;
+font-weight: 600;
+cursor: pointer;
+box-shadow: var(--shadow-1);
+transition: background .15s ease, transform .05s ease, box-shadow .2s ease;
+}
+.primary:hover { background: var(--primary-600); box-shadow: var(--shadow-2); }
+.primary:active { transform: translateY(1px); }
 
-/* Tabbar fallback (si tu as déjà ton tabbar.css global, tu peux retirer ceci) */
-.tabbar{ position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee;
-display:flex; justify-content:space-around; padding:10px 8px; z-index:999; }
-.tab{ display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:#333; padding:6px 10px; border-radius:10px; }
-.tab.is-active{ background:#e9f1ff; }
-.tab_icon{ font-size:18px; line-height:18px; }
-.tab_label{ font-size:.85rem; }
+.btnGhost {
+background: #f3f4f6;
+color: var(--text);
+border: 1px solid var(--border);
+border-radius: 10px;
+padding: 8px 12px;
+font-weight: 500;
+cursor: pointer;
+transition: background .15s ease, border-color .15s ease;
+}
+.btnGhost:hover { background: #edeff2; border-color: #d8dce1; }
+
+/* Grille semaine 2 colonnes (mobile), 4 colonnes (desktop) */
+.mealPlanner {
+display: grid;
+grid-template-columns: 1fr;
+gap: 14px;
+}
+
+@media (min-width: 700px) {
+.mealPlanner { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1080px) {
+.mealPlanner { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Carte d’un jour */
+.dayCard {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 14px;
+padding: 12px;
+box-shadow: var(--shadow-1);
+transition: box-shadow .2s ease, border-color .2s ease, transform .05s ease;
+}
+.dayCard:hover { box-shadow: var(--shadow-2); border-color: #d9dde3; }
+.dayCard:active { transform: translateY(1px); }
+
+.dayTitle {
+margin: 0 0 10px 0;
+font-size: 1rem;
+font-weight: 700;
+}
+
+/* Slots (Déjeuner / Dîner) */
+.slots {
+display: grid;
+gap: 10px;
+}
+
+.slotCard {
+border: 1px dashed #cfd5dc;
+border-radius: 12px;
+padding: 12px;
+min-height: 84px;
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 10px;
+background: #fcfcfd;
+transition: border-color .15s ease, background .15s ease;
+}
+.slotCard:hover { border-color: #bfc6cf; background: #f8fafc; }
+
+.slotName {
+margin: 0 0 6px 0;
+font-weight: 700;
+font-size: .95rem;
+}
+
+.slotPlaceholder {
+margin: 0;
+color: var(--muted);
+font-size: .9rem;
+}
+
+/* Bouton “+ Ajouter” dans un slot (si tu l’utilises en lien/bouton séparé) */
+.slotAdd {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-weight: 600;
+color: var(--primary);
+background: rgba(25, 118, 210, 0.08);
+border: 1px solid rgba(25,118,210,0.20);
+padding: 6px 10px;
+border-radius: 8px;
+cursor: pointer;
+}
+.slotAdd:hover { background: rgba(25,118,210,0.12); }
+
+/* État “rempli” d’un slot (si tu listes les produits) */
+.slotContent {
+margin: 6px 0 0 0;
+font-size: .92rem;
+}
+.slotContent ul {
+margin: 6px 0 0 18px;
+}
+
+/* Petites helpers */
+.muted { color: var(--muted); }
+
+/* ===========
+Responsive
+=========== */
+@media (max-width: 420px) {
+.primary { padding: 9px 12px; }
+.slotCard { padding: 10px; min-height: 74px; }
+.wrap { padding: 12px; padding-bottom: 88px; }
+}
+
+/* Optionnel : petite “baguette” de focus */
+:focus-visible {
+outline: 2px solid var(--ring);
+outline-offset: 2px;
+border-radius: 10px;
+}
+
