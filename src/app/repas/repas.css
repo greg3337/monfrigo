@@ -77,3 +77,19 @@ width:100%; border:1px solid #d1d5db; border-radius:10px; padding:9px 10px; font
 .modalBody{ padding:12px; }
 .modalHeader, .modalActions{ padding:10px 12px; }
 }
+
+
+.addBtn {
+background: none;
+border: 0;
+font-weight: 600;
+cursor: pointer;
+padding: 4px 6px;
+border-radius: 6px;
+line-height: 1;
+}
+
+.addBtn:hover { background: rgba(0,0,0,.06); }
+
+.slotCard { position: relative; }
+.slotHeader { display: flex; align-items: center; justify-content: space-between; }
