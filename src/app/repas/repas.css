@@ -1,41 +1,73 @@
-.repasPage { padding: 20px; }
+.repasPage { max-width: 1100px; margin: 0 auto; padding: 20px; }
 
-.repasGrid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
-gap: 16px;
+.repasHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.titleLine { display:flex; align-items:center; gap:10px; }
+.cube { font-size:22px; }
+.hello { color:#666; margin-top:4px; }
+
+.btnPrimary { background:#0ea5e9; color:#fff; border:0; padding:10px 14px; border-radius:8px; cursor:pointer; }
+.btnPrimary:hover { filter:brightness(0.95); }
+.btnDanger { background:#ef4444; color:#fff; border:0; padding:8px 10px; border-radius:6px; cursor:pointer; }
+.btnDanger.small { padding:6px 8px; font-size:13px; }
+.btnGhost { background:#eee; border:0; padding:8px 12px; border-radius:6px; cursor:pointer; }
+.linkAdd { font-size:13px; color:#0ea5e9; background:transparent; border:0; cursor:pointer; }
+
+.muted { color:#888; }
+
+.weekGrid {
+display:grid;
+grid-template-columns: repeat(2, minmax(0,1fr));
+gap:16px;
 }
-.dayColumn {
-background: #fafafa; border: 1px solid #e6e6e6; border-radius: 10px;
-padding: 12px;
+@media (min-width: 980px) {
+.weekGrid { grid-template-columns: repeat(2, 1fr); }
 }
 
-.mealSlot { margin-top: 10px; }
-.mealList { list-style: none; margin: 6px 0 0; padding: 0; }
-.mealName { font-weight: 600; }
-.linkBtn { margin-left: 8px; background: none; border: 0; color: #1976d2; cursor: pointer; }
-.empty { display: flex; align-items: center; gap: 6px; }
+.dayCard { border:1px dashed #e5e7eb; border-radius:12px; padding:12px; background:#fafafa; }
+.dayTitle { font-size:15px; margin:0 0 10px; color:#374151; }
+.slots { display:flex; flex-direction:column; gap:12px; }
+.slotCard { border:1px solid #eee; border-radius:10px; padding:10px; background:#fff; }
+.slotHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.slotName { font-weight:600; }
 
-/* === Modal === */
-.modalOverlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); z-index: 1000; }
-.modalCard { background: #fff; width: min(560px, 92vw); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.2); overflow: hidden; }
-.modalHeader { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #eee; }
-.modalClose { background: transparent; border: 0; font-size: 22px; cursor: pointer; padding: 4px 8px; }
-.modalBody { padding: 16px; }
-.modalBody .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.modalBody label { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
-.modalBody input, .modalBody select { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; }
-.modalBody label.full { grid-column: 1 / -1; }
+.meal { border:1px solid #eee; border-radius:8px; padding:8px; background:#fdfdfd; }
+.mealName { font-weight:600; margin-bottom:4px; }
+.mealItems { margin: 0 0 8px 0; padding-left:16px; }
 
-.productList { list-style: none; padding: 0; margin: 8px 0 0; max-height: 220px; overflow: auto; }
-.checkline { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
-.checkline .name { font-weight: 600; }
-.checkline .meta { margin-left: auto; opacity: .6; font-size: .85rem; }
-.error { color: #d33; margin-top: 6px; }
+/* Modal */
+.modalBackdrop {
+position:fixed; inset:0; background:rgba(0,0,0,.28);
+display:flex; align-items:center; justify-content:center; z-index:50;
+}
+.modal {
+width:min(620px, 94vw);
+background:#fff; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.2);
+overflow:hidden;
+}
+.modalHeader { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #eee; }
+.iconBtn { background:#eee; border:0; border-radius:8px; padding:6px 10px; cursor:pointer; }
+.modalBody { padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+.row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+label > span { display:block; font-size:13px; color:#555; margin-bottom:6px; }
+input[type="text"], select {
+width:100%; border:1px solid #ddd; border-radius:8px; padding:10px; outline:none;
+}
+.modalActions { display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid #eee; }
 
-.modalActions { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid #eee; }
-.btnPrimary { background: #1976d2; color: #fff; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
-.btnPrimary:disabled { opacity: .6; cursor: not-allowed; }
-.btnGhost { background: #eee; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+.fridgeSection { margin-top:4px; }
+.fridgeTitle { font-weight:700; margin-bottom:6px; }
+.productList { list-style:none; margin:0; padding:0; max-height:220px; overflow:auto; border:1px solid #eee; border-radius:8px; }
+.productList li { padding:8px 10px; border-bottom:1px solid #f2f2f2; }
+.productList li:last-child { border-bottom:none; }
+.checkLine { display:flex; align-items:center; gap:10px; }
+.error { color:#ef4444; margin-top:6px; }
 
-/* la tabbar utilise déjà styles/tabbar.css */
+/* Tabbar (réutilise ton style global, mais au cas où) */
+.tabbar {
+position: sticky; bottom:0; background:#fff; border-top:1px solid #eee;
+display:flex; justify-content:space-around; padding:8px 10px; margin-top:18px;
+}
+.tab { text-decoration:none; color:#666; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:13px; padding:6px 10px; border-radius:10px; }
+.tab.is-active { background:#eef6ff; color:#0ea5e9; }
+.tab_icon { font-size:18px; line-height:18px; }
+.tab_label { font-size:12px; }
