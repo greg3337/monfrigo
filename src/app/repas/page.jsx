@@ -1,104 +1,104 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import CreateMealModal from './CreateMealModal.jsx';
-import '../styles/tabbar.css'; // si tu as déjà ce fichier pour la tabbar
-import './repas.css'; // ton css repas
+import React, { useEffect, useState } from 'react';
+import './repas.css';
+import CreateMealModal from './CreateMealModal';
+import { useAuth } from '../hooks/useAuth'; // chemin selon ton projet (src/app/hooks/useAuth.tsx)
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SLOTS = ['Déjeuner','Dîner'];
 
-export default function RepasPage() {
-const pathname = usePathname();
+export default function MealsPage() {
+const { user } = useAuth(); // suppose que ça renvoie { user } ou null
+const [open, setOpen] = useState(false);
+const [defaultDay, setDefaultDay] = useState('Lundi');
+const [defaultSlot, setDefaultSlot] = useState('Déjeuner');
 
-const [showModal, setShowModal] = useState(false);
-const [currentDay, setCurrentDay] = useState('');
-const [currentSlot, setCurrentSlot] = useState('');
+// simple liste locale des repas (affichage). Tu peux la brancher sur Firestore ensuite.
+const [meals, setMeals] = useState([]); // [{id, day, slot, name, products: [...] }]
 
-const openAdd = (day, slot) => {
-setCurrentDay(day);
-setCurrentSlot(slot);
-setShowModal(true);
+// Pour éviter tout rendu serveur foireux, on attend le client
+const [isHydrated, setIsHydrated] = useState(false);
+useEffect(() => setIsHydrated(true), []);
+if (!isHydrated) return null;
+
+const handleAddClick = (day, slot) => {
+setDefaultDay(day);
+setDefaultSlot(slot);
+setOpen(true);
+};
+
+const handleSaved = (newMeal) => {
+// Ajout optimiste à l’écran
+setMeals((m) => [{ id: newMeal.id || Math.random().toString(36).slice(2), ...newMeal }, ...m]);
 };
 
 return (
-<>
-<div className="wrap">
-<header className="repasHeader">
-<div className="title">
-<div className="titleLine">
-<span className="cube">🍽️</span>
-<h2>Mes repas</h2>
+<div className="meals_page">
+<header className="meals_header">
+<div className="meals_title">
+<span className="emoji">🍽️</span>
+<div>
+<h1>Mes repas</h1>
+<p>Planifie tes repas de la semaine</p>
 </div>
-<p className="hello">Planifie tes repas de la semaine</p>
 </div>
-
-<div className="actions">
 <button
-type="button"
 className="btnPrimary"
-onClick={() => openAdd('Lundi', 'Déjeuner')}
+onClick={() => { setDefaultDay('Lundi'); setDefaultSlot('Déjeuner'); setOpen(true); }}
 >
-➕ Ajouter un repas
++ Ajouter un repas
 </button>
-</div>
 </header>
 
-{/* Grille semaine (même structure visuelle) */}
-<div className="mealPlanner">
+<div className="week_grid">
 {DAYS.map((day) => (
-<section key={day} className="dayCard">
-<h3 className="dayTitle">{day}</h3>
-<div className="slots">
-{SLOTS.map((slot) => (
-<div key={slot} className="slotCard">
-<p className="slotName">{slot}</p>
-<button
-type="button"
-className="addBtn"
-onClick={() => openAdd(day, slot)}
->
-+ Ajouter
-</button>
+<section key={day} className="day_card">
+<h3 className="day_title">{day}</h3>
+{SLOTS.map((slot) => {
+const items = meals.filter(m => m.day === day && m.slot === slot);
+return (
+<div key={day+slot} className="slot_block">
+<div className="slot_head">
+<strong>{slot}</strong>
+<button className="link_add" onClick={() => handleAddClick(day, slot)}>+ Ajouter</button>
 </div>
-))}
+<div className="slot_body">
+{items.length === 0 ? (
+<div className="empty_slot">Aucun repas</div>
+) : (
+items.map(it => (
+<div className="meal_item" key={it.id}>
+<div className="meal_name">{it.name || '(sans nom)'}</div>
+{Array.isArray(it.products) && it.products.length > 0 && (
+<ul className="meal_products">
+{it.products.map(p => <li key={p.id || p}>{p.name || p}</li>)}
+</ul>
+)}
 </div>
+))
+)}
+</div>
+</div>
+);
+})}
 </section>
 ))}
 </div>
-</div>
 
-{/* Modale pour ajouter un repas */}
-{showModal && (
-<div className="modalOverlay" onClick={() => setShowModal(false)}>
-<div className="modal" onClick={(e) => e.stopPropagation()}>
+{open && (
 <CreateMealModal
-dayLabel={currentDay}
-slotLabel={currentSlot}
-onClose={() => setShowModal(false)}
-onSaved={() => setShowModal(false)}
+open={open}
+onClose={() => setOpen(false)}
+defaultDay={defaultDay}
+defaultSlot={defaultSlot}
+onSaved={(saved) => {
+handleSaved(saved);
+setOpen(false);
+}}
+user={user || null}
 />
-</div>
-</div>
 )}
-
-{/* Tabbar en bas */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab_icon">🧊</span>
-<span className="tab_label">Frigo</span>
-</Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
-<span className="tab_icon">🍽️</span>
-<span className="tab_label">Repas</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab_icon">⚙️</span>
-<span className="tab_label">Paramètres</span>
-</Link>
-</nav>
-</>
+</div>
 );
 }
