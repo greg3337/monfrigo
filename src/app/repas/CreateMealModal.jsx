@@ -1,227 +1,297 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { getAuth } from 'firebase/auth';
+import { useEffect, useMemo, useState } from 'react';
 import {
-addDoc, collection, deleteDoc, doc, getDocs, query, where
+collection,
+doc,
+getDocs,
+addDoc,
+deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
+import { useAuth } from '../hooks/useAuth';
 
-const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Déjeuner','Dîner'];
+const DAY_LABELS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SLOT_LABELS = ['Déjeuner','Dîner'];
 
-// collections et clés d’utilisateur possibles
-const CANDIDATE_COLLECTIONS = ['fridge', 'products', 'frigo', 'items', 'fridgeItems'];
-const CANDIDATE_USER_KEYS = ['userId', 'uid', 'ownerId'];
-
-export default function CreateMealModal({ defaultDay, defaultSlot, closeModal }) {
-const [day, setDay] = useState(defaultDay || 'Lundi');
-const [slot, setSlot] = useState(defaultSlot || 'Déjeuner');
+export default function CreateMealModal({
+onClose,
+defaultDay = 'Lundi',
+defaultSlot = 'Déjeuner',
+onCreated, // callback optionnel pour rafraîchir la liste
+}) {
+const { user } = useAuth();
+const [day, setDay] = useState(defaultDay);
+const [slot, setSlot] = useState(defaultSlot);
 const [name, setName] = useState('');
-
 const [loading, setLoading] = useState(true);
-const [loadError, setLoadError] = useState('');
-const [debugMsg, setDebugMsg] = useState('');
-const [products, setProducts] = useState([]);
-const [selectedIds, setSelectedIds] = useState([]);
+const [loadMsg, setLoadMsg] = useState('Chargement des produits…');
+const [error, setError] = useState('');
+const [products, setProducts] = useState([]); // [{id, name, expirationDate}]
+const [selectedIds, setSelectedIds] = useState(new Set());
 
-const overlayRef = useRef(null);
-
-// ESC pour fermer
+// ferme si on clique en dehors
 useEffect(() => {
-const onKey = (e) => e.key === 'Escape' && closeModal?.();
-document.addEventListener('keydown', onKey);
-return () => document.removeEventListener('keydown', onKey);
-}, [closeModal]);
+const onKey = (e) => e.key === 'Escape' && onClose?.();
+window.addEventListener('keydown', onKey);
+return () => window.removeEventListener('keydown', onKey);
+}, [onClose]);
 
-const onOverlayClick = (e) => {
-if (e.target === overlayRef.current) closeModal?.();
-};
-
-// util pour tenter une collection + where, avec fallback sans where
-async function loadFromCollection(colName, userUid) {
-const colRef = collection(db, colName);
-
-// 1) tenter une requête avec where sur différentes clés
-for (const key of CANDIDATE_USER_KEYS) {
-try {
-const q = query(colRef, where(key, '==', userUid));
-const snap = await getDocs(q);
-if (!snap.empty) {
-return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-// si vide, on continue à tester d’autres clés
-} catch (err) {
-// règle/index -> on essaie sans where et on filtre client-side
-try {
-const snap = await getDocs(colRef);
-const rows = snap.docs
-.map(d => ({ id: d.id, ...d.data() }))
-.filter(r => CANDIDATE_USER_KEYS.some(k => r?.[k] === userUid));
-if (rows.length) return rows;
-} catch (err2) {
-// on laisse remonter à la boucle appelante
-throw new Error(`Collection "${colName}" lecture impossible: ${err2?.message || err2}`);
-}
-}
-}
-
-// 2) si rien renvoyé avec where, tenter SANS where quoi qu’il arrive
-try {
-const snap = await getDocs(colRef);
-const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-// si aucune clé user, on retourne tout (tu n’as sans doute qu’un frigo par user en dev)
-return rows;
-} catch (err) {
-throw new Error(`Collection "${colName}" lecture impossible: ${err?.message || err}`);
-}
-}
-
-// charger les produits du frigo
+// charge les produits du frigo sous users/{uid}/…
 useEffect(() => {
-(async () => {
-setLoading(true);
-setLoadError('');
-setDebugMsg('');
-try {
-const auth = getAuth();
-const user = auth.currentUser;
-if (!user) throw new Error('Utilisateur non connecté');
+let cancelled = false;
 
-let found = [];
-let tried = [];
-
-for (const col of CANDIDATE_COLLECTIONS) {
-tried.push(col);
-try {
-const rows = await loadFromCollection(col, user.uid);
-if (rows?.length) {
-found = rows;
-setDebugMsg(`Source: "${col}" (${rows.length} éléments)`);
-break;
-}
-} catch (err) {
-// on empile l’info de debug et on tente la suivante
-setDebugMsg(prev => (prev ? prev + ' | ' : '') + `${col}: ${err?.message || err}`);
-}
-}
-
-setProducts(found);
-if (!found.length) {
-// rien de grave: pas de produits
-setDebugMsg(prev => (prev ? prev + ' | ' : '') + `Collections testées: ${tried.join(', ')}`);
-}
-} catch (err) {
-console.error('Load fridge error:', err);
-setLoadError("Impossible de charger les produits du frigo.");
-setDebugMsg(err?.message || String(err));
-} finally {
+async function loadFridge() {
+if (!user?.uid) {
+setError("Utilisateur non connecté.");
 setLoading(false);
+return;
 }
-})();
-}, []);
 
-const toggle = (id) => {
-setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+setLoading(true);
+setError('');
+setLoadMsg('Chargement des produits…');
+
+const candidateCollections = ['fridge', 'items', 'products', 'frigo'];
+const found = [];
+let usedCollection = null;
+
+try {
+for (const colName of candidateCollections) {
+const snap = await getDocs(collection(doc(db, 'users', user.uid), colName));
+if (!cancelled && !snap.empty && found.length === 0) {
+usedCollection = colName;
+snap.forEach((d) => {
+const data = d.data();
+found.push({
+id: d.id,
+name: data.name ?? data.title ?? data.label ?? 'Sans nom',
+expirationDate: data.expirationDate ?? null,
+});
+});
+break; // on prend la première qui contient des docs
+}
+}
+
+if (cancelled) return;
+
+if (found.length === 0) {
+setProducts([]);
+setLoadMsg("Aucun produit trouvé sous users/{uid}/(fridge|items|products|frigo). Ajoute d’abord des produits dans l’onglet Frigo.");
+} else {
+setProducts(found);
+setLoadMsg(`Produits chargés depuis “${usedCollection}” (${found.length}).`);
+}
+} catch (e) {
+if (cancelled) return;
+console.error('[CreateMealModal] loadFridge error:', e);
+setError('Impossible de charger les produits du frigo (vérifie tes règles Firestore et l’emplacement des données).');
+} finally {
+if (!cancelled) setLoading(false);
+}
+}
+
+loadFridge();
+return () => { cancelled = true; };
+}, [user?.uid]);
+
+const toggleSelect = (id) => {
+setSelectedIds((prev) => {
+const copy = new Set(prev);
+if (copy.has(id)) copy.delete(id); else copy.add(id);
+return copy;
+});
 };
 
-const save = async () => {
-try {
-const auth = getAuth();
-const user = auth.currentUser;
-if (!user) return;
-
-await addDoc(collection(db, 'meals'), {
-userId: user.uid,
-day,
-slot,
-name: name?.trim() || null,
-productIds: selectedIds,
-createdAt: Date.now()
-});
-
-// suppression dans toutes les collections candidates (selon où est stocké ton frigo)
-await Promise.all(
-CANDIDATE_COLLECTIONS.flatMap(col =>
-selectedIds.map(id =>
-deleteDoc(doc(db, col, id)).catch(() => null)
-)
-)
+const canSave = useMemo(
+() => !!user?.uid && day && slot && (name.trim().length > 0 || selectedIds.size > 0),
+[user?.uid, day, slot, name, selectedIds]
 );
 
-closeModal?.();
-} catch (err) {
-console.error('Save meal error:', err);
-alert("Une erreur est survenue lors de l'enregistrement.");
+const onSave = async () => {
+if (!canSave) return;
+try {
+const uid = user.uid;
+// 1) Créer le repas
+await addDoc(collection(doc(db, 'users', uid), 'meals'), {
+day,
+slot,
+name: name.trim() || null,
+items: Array.from(selectedIds),
+createdAt: Date.now(),
+});
+
+// 2) Supprimer les produits consommés
+if (selectedIds.size > 0) {
+const paths = ['fridge', 'items', 'products', 'frigo'];
+for (const colName of paths) {
+// on tente la suppression dans chaque col, au cas où
+for (const id of selectedIds) {
+try {
+await deleteDoc(doc(doc(db, 'users', uid), colName, id));
+} catch {
+// ignore si le doc n’existe pas dans cette collection
+}
+}
+}
+}
+
+onCreated?.(); // rafraîchir la liste si fourni
+onClose?.();
+} catch (e) {
+console.error('[CreateMealModal] save error:', e);
+setError("Impossible d'enregistrer le repas.");
 }
 };
 
 return (
-<div className="modalOverlay" ref={overlayRef} onClick={onOverlayClick}>
-<div className="modalCard" onClick={(e) => e.stopPropagation()}>
-<div className="modalHeader">
-<h3>Ajouter un repas</h3>
-<button className="modalClose" onClick={() => closeModal?.()}>×</button>
+<div
+role="dialog"
+aria-modal="true"
+className="modalOverlay"
+onClick={(e) => {
+if (e.target.classList.contains('modalOverlay')) onClose?.();
+}}
+style={{
+position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
+display: 'grid', placeItems: 'center', zIndex: 1000
+}}
+>
+<div
+className="modalCard"
+style={{
+width: 'min(720px, 92vw)',
+background: '#fff',
+borderRadius: 12,
+boxShadow: '0 10px 30px rgba(0,0,0,.2)',
+padding: 20,
+position: 'relative'
+}}
+>
+<button
+aria-label="Fermer"
+onClick={() => onClose?.()}
+style={{
+position: 'absolute', top: 10, right: 10,
+background: '#f4f4f5', border: '1px solid #e4e4e7',
+borderRadius: 8, width: 32, height: 32, cursor: 'pointer'
+}}
+>
+×
+</button>
+
+<h3 style={{ margin: '4px 0 16px', fontSize: 20, fontWeight: 700 }}>Ajouter un repas</h3>
+
+{/* Jour & créneau */}
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+<div>
+<label style={{ fontSize: 14, fontWeight: 600 }}>Jour</label>
+<select value={day} onChange={(e) => setDay(e.target.value)} style={selectStyle}>
+{DAY_LABELS.map(d => <option key={d} value={d}>{d}</option>)}
+</select>
+</div>
+<div>
+<label style={{ fontSize: 14, fontWeight: 600 }}>Créneau</label>
+<select value={slot} onChange={(e) => setSlot(e.target.value)} style={selectStyle}>
+{SLOT_LABELS.map(s => <option key={s} value={s}>{s}</option>)}
+</select>
+</div>
 </div>
 
-<div className="modalBody">
-<div className="row">
-<label>
-Jour
-<select value={day} onChange={e => setDay(e.target.value)}>
-{DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-</select>
-</label>
-<label>
-Créneau
-<select value={slot} onChange={e => setSlot(e.target.value)}>
-{SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
-</select>
-</label>
-</div>
-
-<label className="full">
-Nom du repas (facultatif)
+{/* Nom facultatif */}
+<div style={{ marginTop: 12 }}>
+<label style={{ fontSize: 14, fontWeight: 600 }}>Nom du repas (facultatif)</label>
 <input
-placeholder="Ex : Salade de poulet"
 value={name}
-onChange={e => setName(e.target.value)}
+onChange={(e) => setName(e.target.value)}
+placeholder="Ex : Salade de poulet"
+style={inputStyle}
 />
-</label>
+</div>
 
-<div className="full">
-<h4>Produits du frigo</h4>
-{loading && <p>Chargement…</p>}
-{!loading && loadError && <p className="error">{loadError}</p>}
-{!!debugMsg && <p style={{opacity:.6, fontSize:'.85rem', marginTop:4}}>{debugMsg}</p>}
-{!loading && !loadError && products.length === 0 && (
-<p>Aucun produit trouvé dans le frigo.</p>
+{/* Produits du frigo */}
+<div style={{ marginTop: 16 }}>
+<div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Produits du frigo</div>
+
+{loading && <p style={{ color: '#6b7280' }}>{loadMsg}</p>}
+{!loading && error && <p style={{ color: '#dc2626' }}>{error}</p>}
+
+{!loading && !error && products.length === 0 && (
+<p style={{ color: '#6b7280' }}>
+{loadMsg || "Aucun produit trouvé dans le frigo."}
+</p>
 )}
-{!loading && !loadError && products.length > 0 && (
-<ul className="productList">
-{products.map(p => (
-<li key={p.id}>
-<label className="checkline">
+
+{!loading && products.length > 0 && (
+<ul style={{ listStyle: 'none', padding: 0, margin: '8px 0', maxHeight: 220, overflow: 'auto' }}>
+{products.map((p) => {
+const checked = selectedIds.has(p.id);
+return (
+<li key={p.id} style={{
+display: 'flex', alignItems: 'center', gap: 10,
+padding: '8px 10px', border: '1px solid #eee',
+borderRadius: 8, marginBottom: 8
+}}>
 <input
 type="checkbox"
-checked={selectedIds.includes(p.id)}
-onChange={() => toggle(p.id)}
+checked={checked}
+onChange={() => toggleSelect(p.id)}
 />
-<span className="name">{p.name || p.title || '(sans nom)'}</span>
-{p.expirationDate && <span className="meta">{p.expirationDate}</span>}
-</label>
+<div style={{ flex: 1 }}>
+<div style={{ fontWeight: 600 }}>{p.name}</div>
+{p.expirationDate && (
+<div style={{ fontSize: 12, color: '#6b7280' }}>
+DLC : {p.expirationDate}
+</div>
+)}
+</div>
 </li>
-))}
+);
+})}
 </ul>
 )}
 </div>
-</div>
 
-<div className="modalActions">
-<button className="btnGhost" onClick={() => closeModal?.()}>Annuler</button>
-<button className="btnPrimary" onClick={save} disabled={loading}>Sauvegarder</button>
+{/* Actions */}
+<div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+<button
+onClick={() => onClose?.()}
+style={ghostBtn}
+>
+Annuler
+</button>
+<button
+disabled={!canSave}
+onClick={onSave}
+style={{ ...primaryBtn, opacity: canSave ? 1 : 0.5, cursor: canSave ? 'pointer' : 'not-allowed' }}
+>
+Sauvegarder
+</button>
 </div>
 </div>
 </div>
 );
 }
+
+/* petits styles inline réutilisables */
+const selectStyle = {
+width: '100%',
+height: 40,
+borderRadius: 10,
+border: '1px solid #e5e7eb',
+background: '#fff',
+padding: '0 10px',
+fontSize: 14,
+};
+const inputStyle = {
+width: '100%', height: 42, borderRadius: 10, border: '1px solid #e5e7eb',
+background: '#fff', padding: '0 12px', fontSize: 14,
+};
+const primaryBtn = {
+minWidth: 120, height: 40, borderRadius: 10, border: '1px solid #0ea5e9',
+background: '#22d3ee', color: '#0b1221', fontWeight: 700
+};
+const ghostBtn = {
+minWidth: 120, height: 40, borderRadius: 10, border: '1px solid #e5e7eb',
+background: '#fff', color: '#0b1221', fontWeight: 600
+};
