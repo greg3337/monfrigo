@@ -1,79 +1,44 @@
-/* Espace bas pour que la tabbar fixe ne recouvre pas le contenu */
-.page { padding-bottom: 76px; }
+.meals_page { padding: 20px 16px 90px; max-width: 1100px; margin: 0 auto; }
+.meals_header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.meals_header h1 { margin:0; font-size: 22px; }
+.week_grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+@media (min-width: 900px){ .week_grid{ grid-template-columns: repeat(3, 1fr);} }
+.day_card { background: #fff; border:1px solid #ececec; border-radius:10px; padding:12px; }
+.day_card h3 { margin: 0 0 8px; font-size: 16px; }
+.slot_box { border: 1px dashed #ddd; border-radius: 8px; padding: 8px; margin-bottom: 10px; }
+.slot_head { display:flex; align-items:center; justify-content:space-between; }
+.slot_title { font-weight:600; }
+.link_add { background:none; border:none; color:#0d6efd; cursor:pointer; }
+.empty { color:#999; font-size: 14px; }
+.meal_item { border:1px solid #eee; border-radius:8px; padding:8px; margin-top:8px; }
+.meal_title { font-weight:600; margin-bottom:4px; }
+.meal_products { margin:4px 0 8px 18px; }
 
-/* en-tête */
-.page-meals .pageHeader {
-display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-justify-content: space-between; margin: 16px 0 12px;
-}
-.page-meals .pageHeader h1 { margin:0; }
-.page-meals .pageHeader p { margin:0; opacity:.7; }
+.btnPrimary { background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
+.btnDanger { background:#ef4444; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; }
+.btnDanger.small { padding:4px 8px; font-size: 12px; }
+.btnGhost { background:#f2f2f2; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
 
-/* grille semaine */
-.gridWeek {
-display:grid;
-grid-template-columns: repeat(2, minmax(280px,1fr));
-gap:16px;
-}
-@media (min-width: 900px){
-.gridWeek { grid-template-columns: repeat(4, minmax(220px,1fr)); }
-}
-.dayCol h3 { margin:8px 0; }
-.slotCard {
-border:1px dashed #ccc;
-border-radius:10px;
-padding:12px;
-background:#fff;
-}
-.slotHead { display:flex; align-items:center; justify-content:space-between; }
-.link {
-background:transparent; border:none; color:#0b74ff; cursor:pointer;
-}
-.muted { opacity:.6; }
-.mealList { margin:8px 0 0; padding-left:18px; }
+/* Modal */
+.modal_backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal { width: min(560px, 92vw); background:#fff; border-radius:12px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.15); }
+.modal_header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.modal_header .close { background:#f3f4f6; border:none; border-radius:6px; width:28px; height:28px; cursor:pointer; }
+.gridTwo { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+label { display:block; font-size:14px; color:#444; margin: 8px 0 4px; }
+label select, label input { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+.sectionTitle { font-weight:700; margin-top:8px; }
+.fridgeList { list-style:none; padding:0; margin:8px 0; }
+.checkLine { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #eee; }
+.checkLine:last-child { border-bottom:none; }
+.checkLine input { margin-right:8px; }
+.checkLine .muted { color:#888; font-size:12px; }
+.error { color:#ef4444; }
 
-/* modal */
-.modalOverlay {
-position:fixed; inset:0; background:rgba(0,0,0,.35);
-display:flex; align-items:center; justify-content:center;
-z-index:1000;
-}
-.modalCard {
-width:min(620px, 92vw);
-background:#fff; border-radius:12px; padding:16px 16px 12px;
-box-shadow:0 10px 28px rgba(0,0,0,.2);
-}
-.modalHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.btnClose { background:#eee; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; }
+.modalActions { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
 
-.gridTwo {
-display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;
-}
-label { display:block; font-weight:600; font-size:14px; }
-label select, label input {
-width:100%; margin-top:6px; padding:10px 12px; border:1px solid #ddd; border-radius:8px;
-}
-
-.sectionTitle { font-weight:700; margin:14px 0 6px; }
-.fridgeList { list-style:none; padding-left:0; margin:0; max-height:240px; overflow:auto; }
-.checkLine { display:flex; align-items:center; gap:10px; }
-.checkLine .name { font-weight:600; }
-.checkLine .muted { margin-left:auto; font-size:12px; opacity:.7; }
-
-.modalActions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
-.btnPrimary {
-background:#0b74ff; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer;
-}
-.btnPrimary:disabled { opacity:.6; cursor:not-allowed; }
-.btnGhost { background:#eee; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
-.error { color:#d00; }
-
-/* --- tabbar fixée en bas (si pas déjà dans tabbar.css) --- */
-.tabbar {
-position:fixed; left:0; right:0; bottom:0; height:60px;
-display:flex; align-items:center; justify-content:space-around;
-border-top:1px solid #e6e6e6; background:#fff; z-index:999;
-}
-.tab { display:flex; gap:8px; align-items:center; padding:8px 10px; text-decoration:none; color:#444; }
-.tab.is-active { font-weight:700; }
-.tab_icon { font-size:18px; }
+/* Tabbar (tu as déjà le fichier global, mais au cas où) */
+.tabbar { position: fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #eee;
+display:flex; justify-content:space-around; align-items:center; height:54px; z-index:40; }
+.tab { display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none; color:#666; font-size:12px; padding:6px 10px; }
+.tab.is-active { color:#0ea5e9; font-weight:600; }

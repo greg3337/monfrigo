@@ -1,92 +1,136 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../firebase/firebase-config";
-import { useAuth } from "../hooks/useAuth";
-import CreateMealModal from "./CreateMealModal";
-import "./repas.css"; // styles de la page
-import "../styles/tabbar.css"; // assure la tabbar en bas
+import React, { useEffect, useState } from 'react';
+import './repas.css';
+import '../styles/tabbar.css';
+import { db } from '../firebase/firebase-config';
+import {
+collection,
+query,
+where,
+getDocs,
+deleteDoc,
+doc,
+} from 'firebase/firestore';
+import CreateMealModal from './CreateMealModal';
+import useAuth from '../hooks/useAuth';
 
-const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
-const SLOTS = ["Déjeuner","Dîner"];
+const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SLOTS = ['Déjeuner','Dîner'];
 
 export default function MealsPage() {
 const { user } = useAuth();
-const [open, setOpen] = useState(false);
-const [meals, setMeals] = useState([]); // [{id, day, slot, name, productIds}]
+const [meals, setMeals] = useState([]); // {id, day, slot, name, products:[]}
 const [loading, setLoading] = useState(true);
+const [showModal, setShowModal] = useState(false);
+const [preset, setPreset] = useState({ day: 'Lundi', slot: 'Déjeuner' });
 
-// stream des repas de l'utilisateur
-useEffect(() => {
+// Charger les repas de l’utilisateur
+async function loadMeals() {
 if (!user) return;
-const q = query(collection(db, `users/${user.uid}/meals`));
-const unsub = onSnapshot(q, (snap) => {
-const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-setMeals(rows);
+setLoading(true);
+const q = query(collection(db, 'users', user.uid, 'meals'));
+const snap = await getDocs(q);
+const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setMeals(data);
 setLoading(false);
-});
-return () => unsub();
-}, [user]);
+}
 
-const grouped = DAYS.map(day => ({
-day,
-slots: SLOTS.map(slot => ({
-slot,
-items: meals.filter(m => m.day === day && m.slot === slot),
-})),
-}));
+useEffect(() => { if (user) loadMeals(); }, [user]);
+
+function openAdd(day, slot) {
+setPreset({ day, slot });
+setShowModal(true);
+}
+
+async function handleDelete(mealId) {
+if (!user) return;
+await deleteDoc(doc(db, 'users', user.uid, 'meals', mealId));
+await loadMeals();
+}
+
+function mealsOf(day, slot) {
+return meals.filter(m => m.day === day && m.slot === slot);
+}
 
 return (
-<main className="page page-meals">
-<header className="pageHeader">
+<div className="meals_page">
+<header className="meals_header">
+<div>
 <h1>🍽️ Mes repas</h1>
 <p>Planifie tes repas de la semaine</p>
-<button className="btnPrimary" onClick={() => setOpen(true)}>
+</div>
+<button className="btnPrimary" onClick={() => openAdd('Lundi','Déjeuner')}>
 + Ajouter un repas
 </button>
 </header>
 
-<section className="gridWeek">
-{grouped.map(({ day, slots }) => (
-<div key={day} className="dayCol">
+{loading ? (
+<p>Chargement…</p>
+) : (
+<div className="week_grid">
+{DAYS.map((day) => (
+<div key={day} className="day_card">
 <h3>{day}</h3>
-{slots.map(({ slot, items }) => (
-<div key={slot} className="slotCard">
-<div className="slotHead">
-<strong>{slot}</strong>
-<button className="link" onClick={() => setOpen(true)}>+ Ajouter</button>
+
+{SLOTS.map((slot) => (
+<div key={slot} className="slot_box">
+<div className="slot_head">
+<span className="slot_title">{slot}</span>
+<button className="link_add" onClick={() => openAdd(day, slot)}>+ Ajouter</button>
 </div>
 
-{items.length === 0 ? (
-<p className="muted">Aucun repas</p>
-) : (
-<ul className="mealList">
-{items.map(m => (
-<li key={m.id}>{m.name || "(sans nom)"}</li>
+<div className="slot_meals">
+{mealsOf(day, slot).length === 0 && (
+<div className="empty">Aucun repas</div>
+)}
+{mealsOf(day, slot).map((m) => (
+<div key={m.id} className="meal_item">
+<div className="meal_title">{m.name || '(sans nom)'}</div>
+{Array.isArray(m.products) && m.products.length > 0 && (
+<ul className="meal_products">
+{m.products.map(p => (
+<li key={p.id}>{p.name}</li>
 ))}
 </ul>
 )}
+<button className="btnDanger small" onClick={() => handleDelete(m.id)}>
+Supprimer
+</button>
+</div>
+))}
+</div>
 </div>
 ))}
 </div>
 ))}
-</section>
+</div>
+)}
 
-<CreateMealModal open={open} onClose={() => setOpen(false)} />
+{showModal && (
+<CreateMealModal
+defaultDay={preset.day}
+defaultSlot={preset.slot}
+onClose={() => setShowModal(false)}
+onSaved={() => { setShowModal(false); loadMeals(); }}
+/>
+)}
 
-{/* Tabbar déjà fixée en bas via tabbar.css */}
+{/* Tabbar bas de page */}
 <nav className="tabbar">
 <a className="tab" href="/fridge">
-<span className="tab_icon">🧊</span> Frigo
+<span className="tab_icon">🧊</span>
+<span className="tab_label">Frigo</span>
 </a>
 <a className="tab is-active" href="/repas">
-<span className="tab_icon">🍽️</span> Repas
+<span className="tab_icon">🍽️</span>
+<span className="tab_label">Repas</span>
 </a>
 <a className="tab" href="/settings">
-<span className="tab_icon">⚙️</span> Paramètres
+<span className="tab_icon">⚙️</span>
+<span className="tab_label">Paramètres</span>
 </a>
 </nav>
-</main>
+</div>
 );
 }

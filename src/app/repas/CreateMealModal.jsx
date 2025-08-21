@@ -1,191 +1,141 @@
-"use client";
+'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { db } from '../firebase/firebase-config';
 import {
 collection,
-query,
-where,
 getDocs,
 addDoc,
 serverTimestamp,
 deleteDoc,
 doc,
-} from "firebase/firestore";
-import { db } from "../firebase/firebase-config";
-import { useAuth } from "../hooks/useAuth";
+} from 'firebase/firestore';
+import useAuth from '../hooks/useAuth';
 
-/**
-* Modal d'ajout de repas :
-* - lit les produits depuis users/{uid}/items (même chemin que la page Frigo)
-* - enregistre le repas dans users/{uid}/meals
-* - supprime les produits consommés du frigo
-*/
+const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SLOTS = ['Déjeuner','Dîner'];
 
-const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
-const SLOTS = ["Déjeuner","Dîner"];
-
-export default function CreateMealModal({ open, onClose }) {
+export default function CreateMealModal({ defaultDay='Lundi', defaultSlot='Déjeuner', onClose, onSaved }) {
 const { user } = useAuth();
-const [day, setDay] = useState(DAYS[0]);
-const [slot, setSlot] = useState(SLOTS[0]);
-const [name, setName] = useState("");
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
-const [fridgeItems, setFridgeItems] = useState([]); // [{id, name, expirationDate}]
-const [selectedIds, setSelectedIds] = useState([]); // ids des produits choisis
 
-// Charger les produits du frigo (users/{uid}/items)
+const [day, setDay] = useState(defaultDay);
+const [slot, setSlot] = useState(defaultSlot);
+const [name, setName] = useState('');
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState('');
+const [fridgeItems, setFridgeItems] = useState([]);
+const [selectedIds, setSelectedIds] = useState([]);
+
+// Charge les produits du frigo de l’utilisateur
 useEffect(() => {
-if (!open || !user) return;
+if (!user) return;
 (async () => {
 try {
-setError("");
+setError('');
 setLoading(true);
-const colRef = collection(db, `users/${user.uid}/items`);
-// si tu tagges les items “consumed: false”, décommente la ligne suivante :
-// const q = query(colRef, where("consumed", "==", false));
-const q = query(colRef);
-const snap = await getDocs(q);
-const items = snap.docs.map(d => ({
-id: d.id,
-...d.data(),
-}));
-// tri par date d’expiration si dispo
-items.sort((a,b) => (a.expirationDate || "") > (b.expirationDate || "") ? 1 : -1);
+const snap = await getDocs(collection(db, 'users', user.uid, 'fridge'));
+const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 setFridgeItems(items);
-setSelectedIds([]); // reset
 } catch (e) {
-console.error(e);
 setError("Impossible de charger les produits du frigo.");
-setFridgeItems([]);
 } finally {
 setLoading(false);
 }
 })();
-}, [open, user]);
+}, [user]);
 
-const canSave = useMemo(() => !!user && !loading, [user, loading]);
+function toggleSelect(id) {
+setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+}
 
-const toggleSelect = (id) => {
-setSelectedIds(prev =>
-prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-);
-};
-
-const handleSave = async () => {
-if (!canSave) return;
-setLoading(true);
-setError("");
-
+async function save() {
+if (!user) return;
 try {
-const meal = {
-day,
-slot,
-name: name.trim() || null,
-productIds: selectedIds, // on stocke les IDs utilisés
+setError('');
+// produits choisis (nom + id) pour affichage dans la liste
+const picked = fridgeItems.filter(i => selectedIds.includes(i.id))
+.map(i => ({ id: i.id, name: i.name || i.label || '—' }));
+
+await addDoc(collection(db, 'users', user.uid, 'meals'), {
+day, slot, name: name.trim(),
+products: picked,
 createdAt: serverTimestamp(),
-};
+});
 
-// 1) créer le repas dans users/{uid}/meals
-const mealsRef = collection(db, `users/${user.uid}/meals`);
-await addDoc(mealsRef, meal);
-
-// 2) supprimer les produits choisis du frigo
-if (selectedIds.length) {
-await Promise.all(
-selectedIds.map((pid) =>
-deleteDoc(doc(db, `users/${user.uid}/items/${pid}`))
-)
-);
+// supprimer du frigo les produits utilisés
+for (const id of selectedIds) {
+await deleteDoc(doc(db, 'users', user.uid, 'fridge', id));
 }
 
-// reset & fermer
-setName("");
-setSelectedIds([]);
-onClose?.(true); // true = a enregistré
+onSaved && onSaved();
 } catch (e) {
-console.error(e);
-setError("Une erreur est survenue à l’enregistrement.");
-} finally {
-setLoading(false);
+setError("Échec de l’enregistrement du repas.");
 }
-};
-
-if (!open) return null;
+}
 
 return (
-<div className="modalOverlay" onClick={() => onClose?.(false)}>
-<div className="modalCard" onClick={(e) => e.stopPropagation()}>
-<div className="modalHeader">
+<div className="modal_backdrop" onClick={onClose}>
+<div className="modal" onClick={(e)=>e.stopPropagation()}>
+<div className="modal_header">
 <h3>Ajouter un repas</h3>
-<button className="btnClose" onClick={() => onClose?.(false)}>×</button>
+<button className="close" onClick={onClose}>×</button>
 </div>
 
 <div className="gridTwo">
 <label>
 Jour
-<select value={day} onChange={e => setDay(e.target.value)}>
+<select value={day} onChange={e=>setDay(e.target.value)}>
 {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
 </select>
 </label>
-
 <label>
 Créneau
-<select value={slot} onChange={e => setSlot(e.target.value)}>
+<select value={slot} onChange={e=>setSlot(e.target.value)}>
 {SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
 </select>
 </label>
 </div>
 
-<label style={{ display:"block", marginTop:12 }}>
+<label>
 Nom du repas (facultatif)
 <input
-type="text"
 placeholder="Ex : Salade de poulet"
 value={name}
-onChange={e => setName(e.target.value)}
+onChange={e=>setName(e.target.value)}
 />
 </label>
 
-<div style={{ marginTop:16 }}>
-<div className="sectionTitle">Produits du frigo</div>
-
-{error && <p className="error">{error}</p>}
-
-{!error && loading && <p>Chargement…</p>}
-
-{!error && !loading && fridgeItems.length === 0 && (
+<h4 className="sectionTitle">Produits du frigo</h4>
+{loading && <p>Chargement…</p>}
+{!loading && fridgeItems.length === 0 && (
 <p>Aucun produit trouvé dans le frigo.</p>
 )}
 
-{!error && !loading && fridgeItems.length > 0 && (
+{!loading && fridgeItems.length > 0 && (
 <ul className="fridgeList">
-{fridgeItems.map(item => (
-<li key={item.id}>
-<label className="checkLine">
+{fridgeItems.map(p => (
+<li key={p.id} className="checkLine">
+<label>
 <input
 type="checkbox"
-checked={selectedIds.includes(item.id)}
-onChange={() => toggleSelect(item.id)}
+checked={selectedIds.includes(p.id)}
+onChange={() => toggleSelect(p.id)}
 />
-<span className="name">{item.name || "Sans nom"}</span>
-{item.expirationDate && (
-<span className="muted">
-{item.expirationDate}
-</span>
-)}
+<span>{p.name || p.label}</span>
 </label>
+{p.expirationDate && (
+<span className="muted">{p.expirationDate}</span>
+)}
 </li>
 ))}
 </ul>
 )}
-</div>
+
+{error && <p className="error">{error}</p>}
 
 <div className="modalActions">
-<button className="btnGhost" onClick={() => onClose?.(false)}>Annuler</button>
-<button className="btnPrimary" disabled={!canSave} onClick={handleSave}>
-Sauvegarder
-</button>
+<button className="btnGhost" onClick={onClose}>Annuler</button>
+<button className="btnPrimary" onClick={save}>Sauvegarder</button>
 </div>
 </div>
 </div>
