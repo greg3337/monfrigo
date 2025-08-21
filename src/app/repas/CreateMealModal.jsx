@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import {
 collection, query, where, orderBy, getDocs, addDoc, doc, deleteDoc
 } from 'firebase/firestore';
-import { db } from '../firebase/firebase-config'; // <-- adapte si besoin
+import { db } from '../firebase/firebase-config';
 
 export default function CreateMealModal({ defaultDay, defaultSlot, closeModal }) {
 const [day, setDay] = useState(defaultDay || 'Lundi');
@@ -18,7 +18,6 @@ const [selectedIds, setSelectedIds] = useState([]);
 
 const overlayRef = useRef(null);
 
-// ======= Fermeture (overlay + ESC) =======
 useEffect(() => {
 function onKey(e) {
 if (e.key === 'Escape') closeModal?.();
@@ -31,7 +30,6 @@ const onOverlayClick = (e) => {
 if (e.target === overlayRef.current) closeModal?.();
 };
 
-// ======= Charger les produits du frigo =======
 useEffect(() => {
 (async () => {
 setLoading(true);
@@ -46,7 +44,6 @@ setLoading(false);
 return;
 }
 
-// Collection root "fridge" avec un champ userId
 const q = query(
 collection(db, 'fridge'),
 where('userId', '==', user.uid),
@@ -54,7 +51,6 @@ orderBy('name', 'asc')
 );
 const snap = await getDocs(q);
 const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
 setProducts(rows);
 } catch (err) {
 console.error('Fridge load error:', err);
@@ -65,15 +61,13 @@ setLoading(false);
 })();
 }, []);
 
-// ======= Sauvegarder le repas =======
 const saveMeal = async () => {
 try {
 const auth = getAuth();
 const user = auth.currentUser;
 if (!user) return;
 
-// 1) créer le repas (collection "meals")
-const mealRef = await addDoc(collection(db, 'meals'), {
+await addDoc(collection(db, 'meals'), {
 userId: user.uid,
 day,
 slot,
@@ -82,12 +76,10 @@ productIds: selectedIds,
 createdAt: Date.now()
 });
 
-// 2) supprimer du frigo les produits sélectionnés
 await Promise.all(
 selectedIds.map(id => deleteDoc(doc(db, 'fridge', id)))
 );
 
-// 3) fermer
 closeModal?.();
 } catch (err) {
 console.error('Save meal error:', err);
@@ -102,26 +94,14 @@ prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
 };
 
 return (
-<div
-className="modalOverlay"
-ref={overlayRef}
-onClick={onOverlayClick}
-role="dialog"
-aria-modal="true"
->
+<div className="modalOverlay" ref={overlayRef} onClick={onOverlayClick}>
 <div className="modalCard" onClick={e => e.stopPropagation()}>
 <div className="modalHeader">
 <h3>Ajouter un repas</h3>
-<button
-type="button"
-className="modalClose"
-aria-label="Fermer"
-onClick={() => closeModal?.()}
->×</button>
+<button className="modalClose" onClick={() => closeModal?.()}>×</button>
 </div>
 
 <div className="modalBody">
-{/* Jour + créneau */}
 <div className="row">
 <label>
 Jour
@@ -142,7 +122,6 @@ Créneau
 </label>
 </div>
 
-{/* Nom */}
 <label className="full">
 Nom du repas (facultatif)
 <input
@@ -152,19 +131,13 @@ onChange={e => setName(e.target.value)}
 />
 </label>
 
-{/* Produits du frigo */}
 <div className="full">
 <h4>Produits du frigo</h4>
-
 {loading && <p>Chargement…</p>}
-{!loading && loadError && (
-<p className="error">{loadError}</p>
-)}
-
+{!loading && loadError && <p className="error">{loadError}</p>}
 {!loading && !loadError && products.length === 0 && (
 <p>Aucun produit trouvé dans le frigo.</p>
 )}
-
 {!loading && !loadError && products.length > 0 && (
 <ul className="productList">
 {products.map(p => (
@@ -188,15 +161,8 @@ onChange={() => toggleSelect(p.id)}
 </div>
 
 <div className="modalActions">
-<button type="button" className="btnGhost" onClick={() => closeModal?.()}>
-Annuler
-</button>
-<button
-type="button"
-className="btnPrimary"
-onClick={saveMeal}
-disabled={loading}
->
+<button className="btnGhost" onClick={() => closeModal?.()}>Annuler</button>
+<button className="btnPrimary" onClick={saveMeal} disabled={loading}>
 Sauvegarder
 </button>
 </div>

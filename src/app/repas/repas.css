@@ -1,95 +1,72 @@
-/* ===========================
-/repas — styles complets
-=========================== */
-
-/* Thème (modifiable) */
-:root{
---bg:#fafafa; --card:#fff; --text:#111827; --muted:#6b7280;
---border:#e5e7eb; --primary:#1976d2; --primary-600:#125ca1;
---danger:#dc3545; --shadow-1:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
---shadow-2:0 8px 24px rgba(16,24,40,.10);
+.repasPage {
+padding: 20px;
 }
 
-/* Page wrap */
-.wrap{ padding:16px; padding-bottom:88px; max-width:1100px; margin:0 auto; color:var(--text); }
-
-/* Header */
-.repasHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
-.repasHeader h2{ margin:0 0 4px; font-size:1.25rem; font-weight:700; }
-.muted{ color:var(--muted); }
-
-/* Boutons */
-.primary{ background:var(--primary); color:#fff; border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-1); }
-.primary:hover{ background:var(--primary-600); box-shadow:var(--shadow-2); }
-.btnGhost{ background:#f3f4f6; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 12px; cursor:pointer; }
-.btnGhost:hover{ background:#edeff2; }
-
-/* Grille semaine */
-.mealPlanner{ display:grid; grid-template-columns:1fr; gap:14px; }
-@media (min-width:700px){ .mealPlanner{ grid-template-columns:1fr 1fr; } }
-@media (min-width:1080px){ .mealPlanner{ grid-template-columns:repeat(4,1fr); } }
-
-/* Carte jour */
-.dayCard{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow:var(--shadow-1); }
-.dayCard:hover{ box-shadow:var(--shadow-2); }
-.dayTitle{ margin:0 0 10px; font-size:1rem; font-weight:700; }
-
-/* Slots */
-.slots{ display:grid; gap:10px; }
-.slotCard{ border:1px dashed #cfd5dc; border-radius:12px; padding:12px; background:#fcfcfd; }
-.slotName{ margin:0 0 6px; font-weight:700; font-size:.95rem; }
-.slotPlaceholder{ margin:0; color:var(--muted); font-size:.9rem; }
-.slotAdd{ display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--primary); background:rgba(25,118,210,.08); border:1px solid rgba(25,118,210,.20); padding:6px 10px; border-radius:8px; cursor:pointer; }
-.slotAdd:hover{ background:rgba(25,118,210,.12); }
-.slotContent{ margin-top:6px; font-size:.92rem; }
-.slotContent ul{ margin:6px 0 0 18px; }
-
-/* ========== Modale ========== */
-.modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:9999; }
-.modal{ width:min(720px,92vw); background:#fff; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.18); padding:0; overflow:hidden; }
-.modalHeader{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
-.modalBody{ padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
-.modalActions{ padding:12px 16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); }
-
-/* Form modale */
-.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-label{ font-weight:600; }
-input[type="text"], select{
-width:100%; border:1px solid #d1d5db; border-radius:10px; padding:9px 10px; font:inherit; background:#fff;
+.repasGrid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+gap: 16px;
 }
 
-/* Liste produits (modale) */
-.productList{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:260px; overflow:auto; }
-.productList li{ background:#fafafa; border:1px solid #eee; padding:8px; border-radius:8px; }
-.productList label{ display:flex; align-items:center; gap:10px; }
-.productList .pill{ margin-left:auto; font-size:.82rem; opacity:.7; }
-
-/* Tabbar (fallback si pas de style global) */
-.tabbar{ position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; gap:8px; background:#fff; border-top:1px solid var(--border); padding:10px 8px; z-index:999; }
-.tab{ display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:#333; padding:6px 10px; border-radius:10px; }
-.tab.is-active{ background:#e9f1ff; }
-.tab_icon{ font-size:18px; line-height:18px; }
-.tab_label{ font-size:.85rem; }
-
-/* Mobile tweaks */
-@media (max-width:420px){
-.wrap{ padding:12px; padding-bottom:88px; }
-.modalBody{ padding:12px; }
-.modalHeader, .modalActions{ padding:10px 12px; }
+.dayColumn {
+background: #fafafa;
+padding: 12px;
+border-radius: 8px;
+border: 1px solid #ddd;
 }
 
-
-.addBtn {
-background: none;
-border: 0;
-font-weight: 600;
-cursor: pointer;
-padding: 4px 6px;
-border-radius: 6px;
-line-height: 1;
+.mealSlot {
+margin-bottom: 12px;
 }
 
-.addBtn:hover { background: rgba(0,0,0,.06); }
+.mealSlot button {
+margin-top: 6px;
+font-size: .9rem;
+}
 
-.slotCard { position: relative; }
-.slotHeader { display: flex; align-items: center; justify-content: space-between; }
+/* === Modal === */
+.modalOverlay {
+position: fixed; inset: 0;
+background: rgba(0,0,0,.35);
+display: flex; align-items: center; justify-content: center;
+z-index: 1000;
+}
+
+.modalCard {
+background: #fff; border-radius: 12px;
+width: min(520px, 92vw);
+box-shadow: 0 12px 40px rgba(0,0,0,.2);
+overflow: hidden;
+}
+
+.modalHeader {
+display: flex; align-items: center; justify-content: space-between;
+padding: 14px 16px; border-bottom: 1px solid #eee;
+}
+.modalClose {
+background: transparent; border: 0; font-size: 22px;
+cursor: pointer; padding: 4px 8px;
+}
+
+.modalBody { padding: 16px; }
+.modalBody .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modalBody label { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
+.modalBody input, .modalBody select {
+padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
+}
+.modalBody label.full { grid-column: 1 / -1; }
+
+.productList { list-style: none; padding: 0; margin: 8px 0 0; max-height: 220px; overflow: auto; }
+.checkline { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
+.checkline .name { font-weight: 600; }
+.checkline .meta { margin-left: auto; opacity: .6; font-size: .85rem; }
+
+.error { color: #d33; margin-top: 6px; }
+
+.modalActions {
+display: flex; gap: 8px; justify-content: flex-end;
+padding: 12px 16px; border-top: 1px solid #eee;
+}
+.btnPrimary { background: #1976d2; color: #fff; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+.btnPrimary:disabled { opacity: .6; cursor: not-allowed; }
+.btnGhost { background: #eee; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }

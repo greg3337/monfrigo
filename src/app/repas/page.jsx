@@ -1,101 +1,83 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-// Modale d’ajout
-import CreateMealModal from './CreateMealModal.jsx';
-// Styles
+import React, { useState, useEffect } from 'react';
+import { getAuth } from 'firebase/auth';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/firebase-config';
+import CreateMealModal from './CreateMealModal';
 import './repas.css';
 
-const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Déjeuner','Dîner'];
-
 export default function RepasPage() {
-const pathname = usePathname();
+const [meals, setMeals] = useState([]);
+const [modalOpen, setModalOpen] = useState(false);
+const [selectedDay, setSelectedDay] = useState(null);
+const [selectedSlot, setSelectedSlot] = useState(null);
 
-// ⬇️ États pour la modale
-const [showModal, setShowModal] = useState(false);
-const [selectedDay, setDay] = useState('Lundi');
-const [selectedSlot, setSlot] = useState('Déjeuner');
+useEffect(() => {
+const auth = getAuth();
+const user = auth.currentUser;
+if (!user) return;
+
+const q = query(
+collection(db, 'meals'),
+where('userId', '==', user.uid)
+);
+
+const unsub = onSnapshot(q, snap => {
+const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setMeals(data);
+});
+
+return () => unsub();
+}, []);
 
 const openModal = (day, slot) => {
-setDay(day);
-setSlot(slot);
-setShowModal(true);
+setSelectedDay(day);
+setSelectedSlot(slot);
+setModalOpen(true);
 };
 
+const days = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const slots = ['Déjeuner','Dîner'];
+
 return (
-<>
 <div className="repasPage">
-<header className="repasHeader">
-<div>
-<h1>🍽️ Mes repas</h1>
+<h2>Mes repas</h2>
 <p>Planifie tes repas de la semaine</p>
-</div>
-<button
-type="button"
-className="btnPrimary"
-onClick={() => openModal('Lundi', 'Déjeuner')}
->
-➕ Ajouter un repas
-</button>
-</header>
 
-{/* Grille hebdo */}
-<div className="mealGrid">
-{DAYS.map((day) => (
-<section key={day} className="dayCard">
-<h3 className="dayTitle">{day}</h3>
-
-{SLOTS.map((slot) => (
-<div key={slot} className="slotCard">
-<div className="slotHeader">
-<span className="slotName">{slot}</span>
-<button
-type="button"
-className="addBtn"
-onClick={() => openModal(day, slot)}
-aria-label={`Ajouter un repas pour ${day} - ${slot}`}
->
-+ Ajouter
-</button>
-</div>
-
-{/* Ici tu affiches les repas existants pour ce créneau si tu en as */}
-<p className="slotEmpty">Aucun repas</p>
-</div>
+<div className="repasGrid">
+{days.map(day => (
+<div key={day} className="dayColumn">
+<h3>{day}</h3>
+{slots.map(slot => {
+const found = meals.filter(m => m.day === day && m.slot === slot);
+return (
+<div key={slot} className="mealSlot">
+<strong>{slot}</strong>
+{found.length === 0 ? (
+<p>Aucun repas <button onClick={() => openModal(day, slot)}>+ Ajouter</button></p>
+) : (
+<ul>
+{found.map(m => (
+<li key={m.id}>{m.name || '(Sans nom)'}</li>
 ))}
-</section>
+<button onClick={() => openModal(day, slot)}>+ Ajouter</button>
+</ul>
+)}
+</div>
+);
+})}
+</div>
 ))}
 </div>
 
-{/* Modale */}
-{showModal && (
+{modalOpen && (
 <CreateMealModal
-closeModal={() => setShowModal(false)}
 defaultDay={selectedDay}
 defaultSlot={selectedSlot}
+closeModal={() => setModalOpen(false)}
 />
 )}
 </div>
-
-{/* Tabbar */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab_icon">🧊</span>
-<span className="tab_label">Frigo</span>
-</Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
-<span className="tab_icon">🍽️</span>
-<span className="tab_label">Repas</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab_icon">⚙️</span>
-<span className="tab_label">Paramètres</span>
-</Link>
-</nav>
-</>
 );
 }
