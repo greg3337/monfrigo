@@ -1,0 +1,58 @@
+* Layout */
+.meals_wrap { padding: 20px 16px 90px; max-width: 1100px; margin: 0 auto; }
+.meals_header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.meals_header .title{ display:flex; gap:12px; align-items:center; }
+.meals_header .ico{ font-size:24px; }
+.meals_header h1{ margin:0; font-size:22px; }
+.meals_header p{ margin:0; color:#6b7280; font-size:13px; }
+
+/* Grid */
+.grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:16px; }
+@media (min-width: 980px){ .grid{ grid-template-columns: repeat(3,1fr); } }
+.day h3{ margin:0 0 8px; font-size:16px; }
+
+.slotCard{ border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
+.slotHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.linkAdd{ font-size:13px; color:#2563eb; background:transparent; border:none; cursor:pointer; }
+.linkAdd:hover{ text-decoration:underline; }
+
+.slotBody .muted{ color:#9ca3af; font-size:13px; }
+
+.mealItem{ padding:8px; border:1px dashed #e5e7eb; border-radius:8px; margin-bottom:8px; background:#fafafa; }
+.mealTitle{ font-weight:600; margin-bottom:4px; }
+.mealSub{ margin:0; padding-left:16px; color:#374151; font-size:13px; }
+
+/* Buttons */
+.btnPrimary{ background:#10b981; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
+.btnPrimary:hover{ filter:brightness(0.95); }
+.btnGhost{ background:#f3f4f6; color:#111827; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
+.alert.error{ background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; margin:8px 0; }
+
+.loading{ color:#6b7280; }
+
+/* Modal */
+.modal{ position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modalCard{ width: min(620px, 92vw); background:#fff; border-radius:14px; padding:14px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.modalHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.modalHead h4{ margin:0; }
+.modalHead .close{ background:#f3f4f6; border:none; border-radius:8px; width:32px; height:32px; cursor:pointer; }
+
+.gridTwo{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.mt8{ margin-top:8px; }
+
+label{ display:block; font-weight:600; font-size:13px; margin-bottom:6px; }
+label input, label select{ width:100%; margin-top:6px; border:1px solid #e5e7eb; border-radius:8px; padding:8px; font-size:14px; outline:none; }
+label input:focus, label select:focus{ border-color:#60a5fa; box-shadow: 0 0 0 3px #dbeafe; }
+
+.sectionTitle{ font-weight:700; margin:14px 0 8px; }
+
+.fridgeList{ list-style:none; margin:0; padding:0; max-height: 220px; overflow:auto; border:1px solid #e5e7eb; border-radius:10px; }
+.checkLine{ padding:8px 10px; border-bottom:1px solid #f3f4f6; }
+.checkLine:last-child{ border-bottom:none; }
+.checkLine label{ display:flex; gap:10px; align-items:center; font-weight:500; }
+.checkLine.active{ background:#f0fdf4; }
+.small{ font-size:12px; }
+.hint{ color:#6b7280; }
+.error{ color:#dc2626; }
+
+.modalActions{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:12px; }
