@@ -23,7 +23,6 @@ serverTimestamp,
 where,
 } from "firebase/firestore";
 
-import "./repas.css"; // Tu peux la supprimer si tu n’as pas ce fichier
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const SLOTS = ["Déjeuner", "Dîner"];
