@@ -1,306 +1,302 @@
+// -------- Next.js: empêcher le prérendu statique de casser le build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 "use client";
 
-/** Empêche le prerender/ISR pour cette page (sinon Vercel plante au build) */
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
-
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-
-// ⬇️ Ajuste ces chemins si besoin (regarde ton arbre de fichiers)
-import { db } from "../firebase/firebase-config"; // <- ../../ si nécessaire
-import useAuth from "../hooks/useAuth"; // <- ../../ si nécessaire
-
 import {
-addDoc,
-collection,
-deleteDoc,
-doc,
-getDocs,
-query,
-serverTimestamp,
-where,
+collection, getDocs, addDoc, writeBatch, doc, serverTimestamp,
 } from "firebase/firestore";
+import { db } from "../firebase/firebase-config"; // <-- chemin OK d'après ta capture
+import useAuth from "../hooks/useAuth"; // <-- ton hook d’auth
 
+// Constantes d’affichage
+const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+const SLOTS = ["Déjeuner","Dîner"];
 
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const SLOTS = ["Déjeuner", "Dîner"];
-
-/* -------------------------------------------------------
-Utilitaires Firestore
-------------------------------------------------------- */
-
-/** Charge les produits du frigo en testant plusieurs noms de collections.
-* Retourne un tableau d'objets: { id, name, __col }
-*/
-async function loadFridgeProducts(db, uid) {
-const candidates = ["fridge", "items", "products"];
-const out = [];
-
-for (const colName of candidates) {
-try {
-const snap = await getDocs(collection(db, "users", uid, colName));
-snap.forEach((d) => {
-const data = d.data() || {};
-// champ "name" ou "title" ou "label" selon tes anciens schémas
-const name = data.name || data.title || data.label || "(sans nom)";
-out.push({ id: d.id, name, __col: colName });
-});
-} catch (_) {
-// ignore: collection inexistante / règles
-}
-}
-return out;
-}
-
-/** Charge les repas enregistrés */
-async function loadMeals(db, uid) {
-const q = query(collection(db, "users", uid, "meals"));
-const snap = await getDocs(q);
-return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
-/* -------------------------------------------------------
-Modal "Créer un repas"
-------------------------------------------------------- */
-function AddMealModal({ open, onClose, user, onSaved }) {
-const [day, setDay] = useState(DAYS[0]);
-const [slot, setSlot] = useState(SLOTS[0]);
+// ---------- Modal interne (aucune dépendance externe)
+function Modal({ open, onClose, defaultDay, defaultSlot, user, onSaved }) {
+const [day, setDay] = useState(defaultDay ?? "Lundi");
+const [slot, setSlot] = useState(defaultSlot ?? "Déjeuner");
 const [name, setName] = useState("");
-const [products, setProducts] = useState([]); // {id,name,__col}
+const [fridge, setFridge] = useState([]);
 const [selectedIds, setSelectedIds] = useState(new Set());
 const [loading, setLoading] = useState(false);
-const [err, setErr] = useState("");
+const [loadErr, setLoadErr] = useState("");
 
+// Charger les produits du frigo
 useEffect(() => {
 if (!open || !user) return;
 let mounted = true;
-setErr("");
+(async () => {
 setLoading(true);
-loadFridgeProducts(db, user.uid)
-.then((rows) => {
-if (mounted) setProducts(rows);
-})
-.catch((e) => setErr(e.message || "Erreur"))
-.finally(() => setLoading(false));
-return () => (mounted = false);
+setLoadErr("");
+try {
+const snap = await getDocs(collection(db, "users", user.uid, "fridge"));
+const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+if (mounted) setFridge(items);
+} catch (e) {
+if (mounted) setLoadErr("Impossible de charger les produits du frigo.");
+} finally {
+if (mounted) setLoading(false);
+}
+})();
+return () => { mounted = false; };
 }, [open, user]);
 
-const toggleProduct = (id) => {
-setSelectedIds((prev) => {
-const next = new Set(prev);
+useEffect(() => {
+// réinitialiser quand on (ré)ouvre
+if (open) {
+setDay(defaultDay ?? "Lundi");
+setSlot(defaultSlot ?? "Déjeuner");
+setName("");
+setSelectedIds(new Set());
+setLoadErr("");
+}
+}, [open, defaultDay, defaultSlot]);
+
+const toggle = (id) => {
+const next = new Set(selectedIds);
 next.has(id) ? next.delete(id) : next.add(id);
-return next;
-});
+setSelectedIds(next);
 };
 
-const selected = useMemo(
-() => products.filter((p) => selectedIds.has(p.id)),
-[products, selectedIds]
+const selectedProducts = useMemo(
+() => fridge.filter(f => selectedIds.has(f.id)),
+[fridge, selectedIds]
 );
 
 const save = async () => {
 if (!user) return;
-setLoading(true);
-setErr("");
+// on autorise : nom OU produits (au moins l’un des deux)
+if (!name.trim() && selectedProducts.length === 0) {
+alert("Ajoute un nom de repas ou sélectionne au moins un produit.");
+return;
+}
 
-try {
-// 1) Créer le repas
-const mealDoc = {
-day,
-slot,
-name: name.trim() || selected.map((p) => p.name).join(" + ") || "(Repas)",
-productIds: selected.map((p) => p.id),
+const payload = {
+day, slot,
+name: name.trim() || null,
+products: selectedProducts.map(p => ({ id: p.id, name: p.name || p.label || p.title || "Produit" })),
 createdAt: serverTimestamp(),
 };
-await addDoc(collection(db, "users", user.uid, "meals"), mealDoc);
 
-// 2) Supprimer les produits utilisés dans leur collection d’origine
-for (const p of selected) {
-try {
-await deleteDoc(doc(db, "users", user.uid, p.__col, p.id));
-} catch (_) {}
-}
+// 1) créer le repas 2) supprimer les produits consommés du frigo
+const batch = writeBatch(db);
+const ref = collection(db, "users", user.uid, "meals");
+const mealRef = await addDoc(ref, payload);
+selectedProducts.forEach(p => {
+batch.delete(doc(db, "users", user.uid, "fridge", p.id));
+});
+await batch.commit();
 
-onSaved?.();
+onSaved?.({ id: mealRef.id, ...payload, createdAt: new Date() });
 onClose?.();
-} catch (e) {
-setErr(e.message || "Impossible d’enregistrer");
-} finally {
-setLoading(false);
-}
 };
 
 if (!open) return null;
 
 return (
-<div className="modalBackdrop" onClick={onClose}>
-<div className="modalCard" onClick={(e) => e.stopPropagation()}>
-<div className="modalHeader">
-<h3>Ajouter un repas</h3>
-<button className="btnIcon" onClick={onClose} aria-label="Fermer">×</button>
+<div style={styles.backdrop} onClick={onClose}>
+<div style={styles.modal} onClick={(e)=>e.stopPropagation()}>
+<div style={styles.modalHeader}>
+<h3 style={{margin:0}}>Ajouter un repas</h3>
+<button onClick={onClose} aria-label="Fermer" style={styles.close}>×</button>
 </div>
 
-<div className="modalBody">
-<div className="gridTwo">
-<label>
-Jour
-<select value={day} onChange={(e) => setDay(e.target.value)}>
-{DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
+<div style={styles.row}>
+<div style={{flex:1, marginRight:8}}>
+<label style={styles.label}>Jour</label>
+<select value={day} onChange={e=>setDay(e.target.value)} style={styles.input}>
+{DAYS.map(d => <option key={d} value={d}>{d}</option>)}
 </select>
-</label>
-<label>
-Créneau
-<select value={slot} onChange={(e) => setSlot(e.target.value)}>
-{SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+</div>
+<div style={{flex:1, marginLeft:8}}>
+<label style={styles.label}>Créneau</label>
+<select value={slot} onChange={e=>setSlot(e.target.value)} style={styles.input}>
+{SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
 </select>
-</label>
+</div>
 </div>
 
-<label>
-Nom du repas (facultatif)
+<div>
+<label style={styles.label}>Nom du repas (facultatif)</label>
 <input
 placeholder="Ex : Salade de poulet"
 value={name}
-onChange={(e) => setName(e.target.value)}
+onChange={e=>setName(e.target.value)}
+style={styles.input}
 />
-</label>
+</div>
 
-<h4>Produits du frigo</h4>
-{loading && <p className="muted">Chargement…</p>}
-{!loading && products.length === 0 && (
-<p className="muted">Aucun produit trouvé. Ajoute d’abord des produits dans l’onglet Frigo.</p>
+<div style={{marginTop:14}}>
+<strong>Produits du frigo</strong>
+<div style={{marginTop:8, maxHeight:180, overflowY:"auto", border:"1px solid #eee", borderRadius:8, padding:8}}>
+{loading && <div style={{opacity:.7}}>Chargement…</div>}
+{!!loadErr && <div style={{color:"#c62828"}}>{loadErr}</div>}
+{!loading && !loadErr && fridge.length === 0 && (
+<div style={{opacity:.7}}>Aucun produit trouvé. Ajoute d’abord des produits dans l’onglet Frigo.</div>
 )}
-{!!err && <p className="error">{err}</p>}
-
-<div className="fridgeList">
-{products.map((p) => (
-<label key={`${p.__col}:${p.id}`} className="checkLine">
-<input
-type="checkbox"
-checked={selectedIds.has(p.id)}
-onChange={() => toggleProduct(p.id)}
-/>
-<span>{p.name}</span>
-<small className="muted">({p.__col})</small>
+{!loading && !loadErr && fridge.map(p => (
+<label key={p.id} style={styles.checkLine}>
+<input type="checkbox" checked={selectedIds.has(p.id)} onChange={()=>toggle(p.id)} />
+<span style={{marginLeft:8}}>
+{(p.name || p.label || p.title || "Produit")}
+{p.expiryDate ? <span style={{opacity:.6}}> — {p.expiryDate}</span> : null}
+</span>
 </label>
 ))}
 </div>
 </div>
 
-<div className="modalActions">
-<button className="btnGhost" onClick={onClose} disabled={loading}>Annuler</button>
-<button className="btnPrimary" onClick={save} disabled={loading}>Sauvegarder</button>
+<div style={styles.actions}>
+<button onClick={onClose} style={styles.btnGhost}>Annuler</button>
+<button onClick={save} style={styles.btnPrimary}>Sauvegarder</button>
 </div>
 </div>
 </div>
 );
 }
 
-/* -------------------------------------------------------
-Page Repas
-------------------------------------------------------- */
-export default function MealsPage() {
+// ---------- Page principale
+export default function RepasPage() {
 const { user } = useAuth();
-const [meals, setMeals] = useState([]); // {id, day, slot, name}
+const [meals, setMeals] = useState([]); // {id, day, slot, name, products[]}
 const [open, setOpen] = useState(false);
-const [loadingMeals, setLoadingMeals] = useState(false);
+const [defaults, setDefaults] = useState({ day: "Lundi", slot: "Déjeuner" });
+const [loading, setLoading] = useState(false);
 
-const reloadMeals = async () => {
+const refreshMeals = async () => {
 if (!user) return;
-setLoadingMeals(true);
+setLoading(true);
 try {
-const rows = await loadMeals(db, user.uid);
-setMeals(rows);
+const snap = await getDocs(collection(db, "users", user.uid, "meals"));
+setMeals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
 } finally {
-setLoadingMeals(false);
+setLoading(false);
 }
 };
 
-useEffect(() => {
-if (!user) return;
-reloadMeals();
-}, [user]);
+useEffect(() => { refreshMeals(); /* au login */ }, [user?.uid]);
 
-const byDaySlot = useMemo(() => {
-const m = new Map();
-for (const d of DAYS) {
-m.set(d, { Déjeuner: [], Dîner: [] });
-}
-for (const meal of meals) {
-if (!m.has(meal.day)) m.set(meal.day, { Déjeuner: [], Dîner: [] });
-const key = SLOTS.includes(meal.slot) ? meal.slot : "Déjeuner";
-m.get(meal.day)[key].push(meal);
-}
-return m;
+const grouped = useMemo(() => {
+const map = {};
+DAYS.forEach(d => {
+map[d] = {};
+SLOTS.forEach(s => (map[d][s] = []));
+});
+meals.forEach(m => {
+const d = m.day || "Lundi";
+const s = m.slot || "Déjeuner";
+if (map[d]?.[s]) map[d][s].push(m);
+});
+return map;
 }, [meals]);
 
+const openModal = (day, slot) => {
+setDefaults({ day, slot });
+setOpen(true);
+};
+
 return (
-<main className="pageWrap">
-<header className="pageHeader">
-<div className="titleLine">
-<span className="emoji" aria-hidden>🍽️</span>
+<div style={styles.page}>
+<header style={styles.header}>
+<div style={{display:"flex", alignItems:"center", gap:10}}>
+<span style={{fontSize:22}}>🍽️</span>
 <div>
-<h1>Mes repas</h1>
-<p className="muted">Planifie tes repas de la semaine</p>
+<h1 style={{margin:"0 0 2px 0", fontSize:22}}>Mes repas</h1>
+<div style={{opacity:.7, fontSize:13}}>Planifie tes repas de la semaine</div>
 </div>
 </div>
-<button className="btnPrimary" onClick={() => setOpen(true)}>+ Ajouter un repas</button>
+<button onClick={()=>openModal("Lundi","Déjeuner")} style={styles.btnPrimarySm}>+ Ajouter un repas</button>
 </header>
 
-<section className="weekGrid">
-{DAYS.map((d) => (
-<div className="dayCard" key={d}>
-<h3>{d}</h3>
+<div style={styles.grid}>
+{DAYS.map(day => (
+<section key={day} style={styles.card}>
+<h3 style={styles.cardTitle}>{day}</h3>
 
-{SLOTS.map((s) => {
-const list = byDaySlot.get(d)?.[s] || [];
-return (
-<div className="slotBox" key={`${d}-${s}`}>
-<div className="slotHead">
-<strong>{s}</strong>
-<button className="btnLink" onClick={() => setOpen(true)}>+ Ajouter</button>
+{SLOTS.map(slot => (
+<div key={slot} style={{marginTop:10}}>
+<div style={styles.slotHeader}>
+<strong>{slot}</strong>
+<button onClick={()=>openModal(day, slot)} style={styles.linkBtn}>+ Ajouter</button>
 </div>
 
-{list.length === 0 && <p className="muted">Aucun repas</p>}
-{list.map((m) => (
-<div className="mealItem" key={m.id}>
-<span>{m.name || "(Repas)"}</span>
+{(grouped[day][slot] ?? []).length === 0 ? (
+<div style={styles.muted}>Aucun repas</div>
+) : (
+<ul style={styles.list}>
+{grouped[day][slot].map(m => (
+<li key={m.id} style={styles.listItem}>
+<div>
+{m.name ? <div><strong>{m.name}</strong></div> : null}
+{m.products?.length ? (
+<div style={{opacity:.8, fontSize:13}}>
+{m.products.map(p => p.name).join(", ")}
 </div>
+) : null}
+</div>
+</li>
 ))}
-</div>
-);
-})}
+</ul>
+)}
 </div>
 ))}
 </section>
+))}
+</div>
 
-{loadingMeals && <p className="muted" style={{ padding: "0 16px" }}>Actualisation…</p>}
-
-{/* Modal */}
-<AddMealModal
+<Modal
 open={open}
-onClose={() => setOpen(false)}
+onClose={()=>setOpen(false)}
+defaultDay={defaults.day}
+defaultSlot={defaults.slot}
 user={user}
-onSaved={reloadMeals}
+onSaved={(created)=> {
+// rafraîchir l’écran de façon simple
+setMeals(prev => [created, ...prev]);
+}}
 />
-
-{/* Onglets (tabbar) */}
-<nav className="tabbar">
-<Link href="/fridge" className="tab">
-<span className="tab_icon" aria-hidden>🔒</span>
-<span>Frigo</span>
-</Link>
-<Link href="/repas" className="tab is-active">
-<span className="tab_icon" aria-hidden>🍽️</span>
-<span>Repas</span>
-</Link>
-<Link href="/settings" className="tab">
-<span className="tab_icon" aria-hidden>⚙️</span>
-<span>Paramètres</span>
-</Link>
-</nav>
-</main>
+</div>
 );
 }
+
+/* ------------------ styles inline sobres (pas de CSS externe) ------------------ */
+const styles = {
+page: { padding: "20px 16px 80px" },
+header: { display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 },
+grid: { display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))", gap:12 },
+
+card: { border:"1px solid #eaeaea", borderRadius:12, padding:12, background:"#fff" },
+cardTitle: { margin:0, fontSize:16 },
+slotHeader: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 },
+
+muted: { opacity:.7, fontSize:13 },
+list: { listStyle:"none", padding:0, margin:"6px 0 0 0" },
+listItem:{ border:"1px solid #eee", borderRadius:8, padding:"8px 10px", marginBottom:8, background:"#fafafa" },
+
+linkBtn: { border:"none", background:"transparent", color:"#0a84ff", cursor:"pointer", fontSize:13 },
+
+btnPrimarySm: {
+background:"#0ea5e9", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px",
+cursor:"pointer", fontWeight:600
+},
+
+// Modal
+backdrop: { position:"fixed", inset:0, background:"rgba(0,0,0,.25)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:50 },
+modal: { width:"min(580px, 92vw)", background:"#fff", borderRadius:12, padding:16, boxShadow:"0 10px 30px rgba(0,0,0,.15)" },
+modalHeader:{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 },
+close: { border:"none", background:"#f3f4f6", width:28, height:28, borderRadius:6, cursor:"pointer", fontSize:18, lineHeight:"26px" },
+
+row: { display:"flex", gap:0, marginTop:8 },
+label: { display:"block", fontSize:12, opacity:.8, margin:"10px 0 6px" },
+input: { width:"100%", border:"1px solid #e5e7eb", borderRadius:8, padding:"10px 12px", outline:"none" },
+
+checkLine: { display:"flex", alignItems:"center", padding:"6px 4px", borderRadius:6 },
+
+actions: { display:"flex", justifyContent:"flex-end", gap:10, marginTop:16 },
+btnGhost: { background:"#f3f4f6", border:"none", borderRadius:8, padding:"10px 14px", cursor:"pointer" },
+btnPrimary:{ background:"#0ea5e9", color:"#fff", border:"none", borderRadius:8, padding:"10px 14px", cursor:"pointer", fontWeight:600 },
+};
