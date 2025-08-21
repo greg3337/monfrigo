@@ -1,73 +1,79 @@
-.repasPage { max-width: 1100px; margin: 0 auto; padding: 20px; }
+/* Espace bas pour que la tabbar fixe ne recouvre pas le contenu */
+.page { padding-bottom: 76px; }
 
-.repasHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-.titleLine { display:flex; align-items:center; gap:10px; }
-.cube { font-size:22px; }
-.hello { color:#666; margin-top:4px; }
+/* en-tête */
+.page-meals .pageHeader {
+display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+justify-content: space-between; margin: 16px 0 12px;
+}
+.page-meals .pageHeader h1 { margin:0; }
+.page-meals .pageHeader p { margin:0; opacity:.7; }
 
-.btnPrimary { background:#0ea5e9; color:#fff; border:0; padding:10px 14px; border-radius:8px; cursor:pointer; }
-.btnPrimary:hover { filter:brightness(0.95); }
-.btnDanger { background:#ef4444; color:#fff; border:0; padding:8px 10px; border-radius:6px; cursor:pointer; }
-.btnDanger.small { padding:6px 8px; font-size:13px; }
-.btnGhost { background:#eee; border:0; padding:8px 12px; border-radius:6px; cursor:pointer; }
-.linkAdd { font-size:13px; color:#0ea5e9; background:transparent; border:0; cursor:pointer; }
-
-.muted { color:#888; }
-
-.weekGrid {
+/* grille semaine */
+.gridWeek {
 display:grid;
-grid-template-columns: repeat(2, minmax(0,1fr));
+grid-template-columns: repeat(2, minmax(280px,1fr));
 gap:16px;
 }
-@media (min-width: 980px) {
-.weekGrid { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 900px){
+.gridWeek { grid-template-columns: repeat(4, minmax(220px,1fr)); }
+}
+.dayCol h3 { margin:8px 0; }
+.slotCard {
+border:1px dashed #ccc;
+border-radius:10px;
+padding:12px;
+background:#fff;
+}
+.slotHead { display:flex; align-items:center; justify-content:space-between; }
+.link {
+background:transparent; border:none; color:#0b74ff; cursor:pointer;
+}
+.muted { opacity:.6; }
+.mealList { margin:8px 0 0; padding-left:18px; }
+
+/* modal */
+.modalOverlay {
+position:fixed; inset:0; background:rgba(0,0,0,.35);
+display:flex; align-items:center; justify-content:center;
+z-index:1000;
+}
+.modalCard {
+width:min(620px, 92vw);
+background:#fff; border-radius:12px; padding:16px 16px 12px;
+box-shadow:0 10px 28px rgba(0,0,0,.2);
+}
+.modalHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.btnClose { background:#eee; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; }
+
+.gridTwo {
+display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;
+}
+label { display:block; font-weight:600; font-size:14px; }
+label select, label input {
+width:100%; margin-top:6px; padding:10px 12px; border:1px solid #ddd; border-radius:8px;
 }
 
-.dayCard { border:1px dashed #e5e7eb; border-radius:12px; padding:12px; background:#fafafa; }
-.dayTitle { font-size:15px; margin:0 0 10px; color:#374151; }
-.slots { display:flex; flex-direction:column; gap:12px; }
-.slotCard { border:1px solid #eee; border-radius:10px; padding:10px; background:#fff; }
-.slotHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-.slotName { font-weight:600; }
-
-.meal { border:1px solid #eee; border-radius:8px; padding:8px; background:#fdfdfd; }
-.mealName { font-weight:600; margin-bottom:4px; }
-.mealItems { margin: 0 0 8px 0; padding-left:16px; }
-
-/* Modal */
-.modalBackdrop {
-position:fixed; inset:0; background:rgba(0,0,0,.28);
-display:flex; align-items:center; justify-content:center; z-index:50;
-}
-.modal {
-width:min(620px, 94vw);
-background:#fff; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.2);
-overflow:hidden;
-}
-.modalHeader { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #eee; }
-.iconBtn { background:#eee; border:0; border-radius:8px; padding:6px 10px; cursor:pointer; }
-.modalBody { padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
-.row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-label > span { display:block; font-size:13px; color:#555; margin-bottom:6px; }
-input[type="text"], select {
-width:100%; border:1px solid #ddd; border-radius:8px; padding:10px; outline:none;
-}
-.modalActions { display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid #eee; }
-
-.fridgeSection { margin-top:4px; }
-.fridgeTitle { font-weight:700; margin-bottom:6px; }
-.productList { list-style:none; margin:0; padding:0; max-height:220px; overflow:auto; border:1px solid #eee; border-radius:8px; }
-.productList li { padding:8px 10px; border-bottom:1px solid #f2f2f2; }
-.productList li:last-child { border-bottom:none; }
+.sectionTitle { font-weight:700; margin:14px 0 6px; }
+.fridgeList { list-style:none; padding-left:0; margin:0; max-height:240px; overflow:auto; }
 .checkLine { display:flex; align-items:center; gap:10px; }
-.error { color:#ef4444; margin-top:6px; }
+.checkLine .name { font-weight:600; }
+.checkLine .muted { margin-left:auto; font-size:12px; opacity:.7; }
 
-/* Tabbar (réutilise ton style global, mais au cas où) */
-.tabbar {
-position: sticky; bottom:0; background:#fff; border-top:1px solid #eee;
-display:flex; justify-content:space-around; padding:8px 10px; margin-top:18px;
+.modalActions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+.btnPrimary {
+background:#0b74ff; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer;
 }
-.tab { text-decoration:none; color:#666; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:13px; padding:6px 10px; border-radius:10px; }
-.tab.is-active { background:#eef6ff; color:#0ea5e9; }
-.tab_icon { font-size:18px; line-height:18px; }
-.tab_label { font-size:12px; }
+.btnPrimary:disabled { opacity:.6; cursor:not-allowed; }
+.btnGhost { background:#eee; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+.error { color:#d00; }
+
+/* --- tabbar fixée en bas (si pas déjà dans tabbar.css) --- */
+.tabbar {
+position:fixed; left:0; right:0; bottom:0; height:60px;
+display:flex; align-items:center; justify-content:space-around;
+border-top:1px solid #e6e6e6; background:#fff; z-index:999;
+}
+.tab { display:flex; gap:8px; align-items:center; padding:8px 10px; text-decoration:none; color:#444; }
+.tab.is-active { font-weight:700; }
+.tab_icon { font-size:18px; }
