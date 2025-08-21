@@ -1,184 +1,79 @@
 /* ===========================
-Page Repas — Styles globaux
-src/app/repas/repas.css
+/repas — styles complets
 =========================== */
 
-/* Variables de thème (tu peux adapter aux couleurs de l’app) */
-:root {
---bg: #fafafa;
---card: #ffffff;
---muted: #6b7280; /* gris texte secondaire */
---text: #111827; /* gris très foncé */
---primary: #1976d2; /* bleu bouton */
---primary-600: #125ca1;
---border: #e5e7eb; /* gris bordures */
---ring: rgba(25, 118, 210, .18);
---success: #10b981;
---danger: #dc3545;
---shadow-1: 0 1px 3px rgba(16, 24, 40, .08), 0 1px 2px rgba(16, 24, 40, .06);
---shadow-2: 0 8px 24px rgba(16, 24, 40, .10);
+/* Thème (modifiable) */
+:root{
+--bg:#fafafa; --card:#fff; --text:#111827; --muted:#6b7280;
+--border:#e5e7eb; --primary:#1976d2; --primary-600:#125ca1;
+--danger:#dc3545; --shadow-1:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
+--shadow-2:0 8px 24px rgba(16,24,40,.10);
 }
 
-/* Conteneur principal de la page /repas */
-.wrap {
-padding: 16px;
-padding-bottom: 88px; /* espace pour la tabbar */
-max-width: 1100px;
-margin: 0 auto;
-color: var(--text);
+/* Page wrap */
+.wrap{ padding:16px; padding-bottom:88px; max-width:1100px; margin:0 auto; color:var(--text); }
+
+/* Header */
+.repasHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.repasHeader h2{ margin:0 0 4px; font-size:1.25rem; font-weight:700; }
+.muted{ color:var(--muted); }
+
+/* Boutons */
+.primary{ background:var(--primary); color:#fff; border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-1); }
+.primary:hover{ background:var(--primary-600); box-shadow:var(--shadow-2); }
+.btnGhost{ background:#f3f4f6; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 12px; cursor:pointer; }
+.btnGhost:hover{ background:#edeff2; }
+
+/* Grille semaine */
+.mealPlanner{ display:grid; grid-template-columns:1fr; gap:14px; }
+@media (min-width:700px){ .mealPlanner{ grid-template-columns:1fr 1fr; } }
+@media (min-width:1080px){ .mealPlanner{ grid-template-columns:repeat(4,1fr); } }
+
+/* Carte jour */
+.dayCard{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow:var(--shadow-1); }
+.dayCard:hover{ box-shadow:var(--shadow-2); }
+.dayTitle{ margin:0 0 10px; font-size:1rem; font-weight:700; }
+
+/* Slots */
+.slots{ display:grid; gap:10px; }
+.slotCard{ border:1px dashed #cfd5dc; border-radius:12px; padding:12px; background:#fcfcfd; }
+.slotName{ margin:0 0 6px; font-weight:700; font-size:.95rem; }
+.slotPlaceholder{ margin:0; color:var(--muted); font-size:.9rem; }
+.slotAdd{ display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--primary); background:rgba(25,118,210,.08); border:1px solid rgba(25,118,210,.20); padding:6px 10px; border-radius:8px; cursor:pointer; }
+.slotAdd:hover{ background:rgba(25,118,210,.12); }
+.slotContent{ margin-top:6px; font-size:.92rem; }
+.slotContent ul{ margin:6px 0 0 18px; }
+
+/* ========== Modale ========== */
+.modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.modal{ width:min(720px,92vw); background:#fff; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.18); padding:0; overflow:hidden; }
+.modalHeader{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+.modalBody{ padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+.modalActions{ padding:12px 16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); }
+
+/* Form modale */
+.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+label{ font-weight:600; }
+input[type="text"], select{
+width:100%; border:1px solid #d1d5db; border-radius:10px; padding:9px 10px; font:inherit; background:#fff;
 }
 
-/* Entête (titre + bouton) */
-.repasHeader {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12px;
-margin-bottom: 14px;
-}
+/* Liste produits (modale) */
+.productList{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:260px; overflow:auto; }
+.productList li{ background:#fafafa; border:1px solid #eee; padding:8px; border-radius:8px; }
+.productList label{ display:flex; align-items:center; gap:10px; }
+.productList .pill{ margin-left:auto; font-size:.82rem; opacity:.7; }
 
-.repasHeader .title h2 {
-margin: 0 0 6px 0;
-font-size: 1.25rem;
-font-weight: 700;
-}
-.repasHeader .title p {
-margin: 0;
-color: var(--muted);
-font-size: .95rem;
-}
+/* Tabbar (fallback si pas de style global) */
+.tabbar{ position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; gap:8px; background:#fff; border-top:1px solid var(--border); padding:10px 8px; z-index:999; }
+.tab{ display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:#333; padding:6px 10px; border-radius:10px; }
+.tab.is-active{ background:#e9f1ff; }
+.tab_icon{ font-size:18px; line-height:18px; }
+.tab_label{ font-size:.85rem; }
 
-/* Boutons génériques */
-.primary {
-background: var(--primary);
-color: #fff;
-border: none;
-border-radius: 10px;
-padding: 10px 14px;
-font-weight: 600;
-cursor: pointer;
-box-shadow: var(--shadow-1);
-transition: background .15s ease, transform .05s ease, box-shadow .2s ease;
+/* Mobile tweaks */
+@media (max-width:420px){
+.wrap{ padding:12px; padding-bottom:88px; }
+.modalBody{ padding:12px; }
+.modalHeader, .modalActions{ padding:10px 12px; }
 }
-.primary:hover { background: var(--primary-600); box-shadow: var(--shadow-2); }
-.primary:active { transform: translateY(1px); }
-
-.btnGhost {
-background: #f3f4f6;
-color: var(--text);
-border: 1px solid var(--border);
-border-radius: 10px;
-padding: 8px 12px;
-font-weight: 500;
-cursor: pointer;
-transition: background .15s ease, border-color .15s ease;
-}
-.btnGhost:hover { background: #edeff2; border-color: #d8dce1; }
-
-/* Grille semaine 2 colonnes (mobile), 4 colonnes (desktop) */
-.mealPlanner {
-display: grid;
-grid-template-columns: 1fr;
-gap: 14px;
-}
-
-@media (min-width: 700px) {
-.mealPlanner { grid-template-columns: 1fr 1fr; }
-}
-@media (min-width: 1080px) {
-.mealPlanner { grid-template-columns: repeat(4, 1fr); }
-}
-
-/* Carte d’un jour */
-.dayCard {
-background: var(--card);
-border: 1px solid var(--border);
-border-radius: 14px;
-padding: 12px;
-box-shadow: var(--shadow-1);
-transition: box-shadow .2s ease, border-color .2s ease, transform .05s ease;
-}
-.dayCard:hover { box-shadow: var(--shadow-2); border-color: #d9dde3; }
-.dayCard:active { transform: translateY(1px); }
-
-.dayTitle {
-margin: 0 0 10px 0;
-font-size: 1rem;
-font-weight: 700;
-}
-
-/* Slots (Déjeuner / Dîner) */
-.slots {
-display: grid;
-gap: 10px;
-}
-
-.slotCard {
-border: 1px dashed #cfd5dc;
-border-radius: 12px;
-padding: 12px;
-min-height: 84px;
-display: flex;
-align-items: flex-start;
-justify-content: space-between;
-gap: 10px;
-background: #fcfcfd;
-transition: border-color .15s ease, background .15s ease;
-}
-.slotCard:hover { border-color: #bfc6cf; background: #f8fafc; }
-
-.slotName {
-margin: 0 0 6px 0;
-font-weight: 700;
-font-size: .95rem;
-}
-
-.slotPlaceholder {
-margin: 0;
-color: var(--muted);
-font-size: .9rem;
-}
-
-/* Bouton “+ Ajouter” dans un slot (si tu l’utilises en lien/bouton séparé) */
-.slotAdd {
-display: inline-flex;
-align-items: center;
-gap: 6px;
-font-weight: 600;
-color: var(--primary);
-background: rgba(25, 118, 210, 0.08);
-border: 1px solid rgba(25,118,210,0.20);
-padding: 6px 10px;
-border-radius: 8px;
-cursor: pointer;
-}
-.slotAdd:hover { background: rgba(25,118,210,0.12); }
-
-/* État “rempli” d’un slot (si tu listes les produits) */
-.slotContent {
-margin: 6px 0 0 0;
-font-size: .92rem;
-}
-.slotContent ul {
-margin: 6px 0 0 18px;
-}
-
-/* Petites helpers */
-.muted { color: var(--muted); }
-
-/* ===========
-Responsive
-=========== */
-@media (max-width: 420px) {
-.primary { padding: 9px 12px; }
-.slotCard { padding: 10px; min-height: 74px; }
-.wrap { padding: 12px; padding-bottom: 88px; }
-}
-
-/* Optionnel : petite “baguette” de focus */
-:focus-visible {
-outline: 2px solid var(--ring);
-outline-offset: 2px;
-border-radius: 10px;
-}
-

@@ -1,81 +1,104 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
+import Link from 'next/link';
+import { auth, db } from '../firebase/firebase-config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import CreateMealModal from './CreateMealModal.jsx';
-import '../styles/tabbar.css'; // si tu as déjà la tabbar, garde cet import
-
-import { auth } from '../firebase/firebase-config'; // <- chemin depuis /repas/
-import './repas.css'; // ton CSS de la page si tu en as un
+import './repas.css';
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SLOTS = ['Déjeuner','Dîner'];
 
-export default function RepasPage() {
+export default function RepasPage(){
 const pathname = usePathname();
-const [showModal, setShowModal] = useState(false);
-const [selectedDay, setSelectedDay] = useState(DAYS[0]);
-const [selectedSlot, setSelectedSlot] = useState(SLOTS[0]);
+const [user, setUser] = useState(null);
+const [meals, setMeals] = useState([]);
+const [isOpen, setIsOpen] = useState(false);
+const [pendingDay, setPendingDay] = useState(null);
+const [pendingSlot, setPendingSlot] = useState(null);
 
-const userId = auth?.currentUser?.uid || null;
+// 1) état auth
+useEffect(() => {
+const unsub = onAuthStateChanged(auth, u => setUser(u));
+return () => unsub();
+}, []);
 
-const openModal = (day, slot) => {
-setSelectedDay(day);
-setSelectedSlot(slot);
-setShowModal(true);
+// 2) abonnement temps réel aux repas de l’utilisateur
+useEffect(() => {
+if (!user) return;
+const q = query(
+collection(db, 'meals'),
+where('userId', '==', user.uid),
+orderBy('createdAt', 'asc')
+);
+const unsub = onSnapshot(q, (snap) => {
+const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+setMeals(rows);
+});
+return () => unsub();
+}, [user]);
+
+const openAddMeal = (day, slot) => {
+setPendingDay(day);
+setPendingSlot(slot);
+setIsOpen(true);
 };
 
 return (
 <>
 <div className="wrap">
-<header className="header" style={{marginBottom: 16}}>
-<div className="brandTitle">
-<span role="img" aria-label="plate">🍽️</span> Mes repas
+<div className="repasHeader">
+<div className="title">
+<h2>Mes repas</h2>
+<p className="muted">Planifie tes repas de la semaine</p>
 </div>
-<div className="brandSub">Planifie tes repas de la semaine</div>
-<button
-className="primary"
-style={{marginLeft:'auto'}}
-onClick={() => openModal(DAYS[0], SLOTS[0])}
->
-+ Ajouter un repas
-</button>
-</header>
-
-{/* Planning hebdo */}
-<div className="grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
-{DAYS.map(day => (
-<section key={day} className="dayCard" style={{background:'#fff', border:'1px dashed #ddd', borderRadius:12, padding:12}}>
-<h3 style={{margin:'4px 0 8px 0'}}>{day}</h3>
-{SLOTS.map(slot => (
-<div key={slot} style={{borderTop:'1px dashed #eee', paddingTop:10, marginTop:10}}>
-<div style={{fontWeight:600, fontSize:13, color:'#666'}}>{slot}</div>
-<button
-className="btnGhost"
-onClick={() => openModal(day, slot)}
->
-+ Ajouter
-</button>
-</div>
-))}
-</section>
-))}
-</div>
+<button className="primary" onClick={() => openAddMeal('Lundi','Déjeuner')}>Ajouter un repas</button>
 </div>
 
-{/* Modale */}
-{showModal && (
-<CreateMealModal
-onClose={() => setShowModal(false)}
-defaultDay={selectedDay}
-defaultSlot={selectedSlot}
-userId={userId}
-/>
+<div className="mealPlanner">
+{DAYS.map((day) => (
+<div className="dayCard" key={day}>
+<h3 className="dayTitle">{day}</h3>
+
+<div className="slots">
+{SLOTS.map((slot) => {
+const items = meals.filter(m => m.day === day && m.slot === slot);
+return (
+<div className="slotCard" key={slot}>
+<div>
+<p className="slotName">{slot}</p>
+
+{items.length === 0 ? (
+<p className="slotPlaceholder">Aucun repas • <button className="slotAdd" onClick={() => openAddMeal(day, slot)}>+ Ajouter</button></p>
+) : (
+<div className="slotContent">
+{items.map(m => (
+<div key={m.id} style={{marginBottom: '6px'}}>
+<strong>{m.name || 'Repas'}</strong>
+{Array.isArray(m.products) && m.products.length > 0 && (
+<ul>
+{m.products.map(p => <li key={p.id || p}>{p.name || p}</li>)}
+</ul>
 )}
+</div>
+))}
+<button className="slotAdd" onClick={() => openAddMeal(day, slot)}>+ Ajouter</button>
+</div>
+)}
+</div>
+</div>
+);
+})}
+</div>
+</div>
+))}
+</div>
+</div>
 
-{/* Tabbar en bas */}
+{/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
 <span className="tab_icon">🧊</span><span className="tab_label">Frigo</span>
