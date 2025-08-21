@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { db, auth } from '../../firebase/firebase-config';
+import { db, auth } from '../firebase/firebase-config';
 import {
 collection,
 query,
