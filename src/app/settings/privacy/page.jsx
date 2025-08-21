@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import './privacy.css'; // <-- le CSS ci-dessous
+import './privacy.css';
 
 export default function PrivacyPage() {
 const pathname = usePathname();

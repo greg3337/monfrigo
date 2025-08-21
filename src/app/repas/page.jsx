@@ -4,10 +4,7 @@ export const revalidate = 0;
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { auth, db } from '../firebase/firebase-config';
-import {
-collection, onSnapshot, getDocs, addDoc,
-serverTimestamp, writeBatch, doc, deleteDoc
-} from 'firebase/firestore';
+import {collection, onSnapshot, getDocs, addDoc,serverTimestamp, writeBatch, doc, deleteDoc} from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
