@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebase-config";
 import { useAuth } from "../hooks/useAuth";
 import CreateMealModal from "./CreateMealModal";
-import "../styles/repas.css"; // styles de la page
+import "./repas.css"; // styles de la page
 import "../styles/tabbar.css"; // assure la tabbar en bas
 
 const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
