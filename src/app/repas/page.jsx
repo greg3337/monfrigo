@@ -1,63 +1,175 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase";
-import TabBar from "../components/TabBar";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { db } from "../firebase/firebase-config";
+import {collection,getDocs,addDoc,deleteDoc,doc,} from "firebase/firestore";
+import useAuth from "../hooks/useAuth";
+import "./repas.css";
 
 export default function RepasPage() {
+const pathname = usePathname();
+const { user } = useAuth();
+
+const [fridgeItems, setFridgeItems] = useState([]);
 const [meals, setMeals] = useState([]);
-const [newMeal, setNewMeal] = useState("");
+const [isOpen, setIsOpen] = useState(false);
+const [selectedProducts, setSelectedProducts] = useState([]);
+const [selectedDay, setSelectedDay] = useState(null);
+const [selectedSlot, setSelectedSlot] = useState(null);
 
-// Charger les repas depuis Firestore
+// Charger les produits du frigo
 useEffect(() => {
-const fetchMeals = async () => {
-try {
-const querySnapshot = await getDocs(collection(db, "meals"));
-setMeals(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-} catch (error) {
-console.error("Erreur lors du chargement des repas:", error);
-}
+if (!user) return;
+const load = async () => {
+const snap = await getDocs(collection(db, "users", user.uid, "fridge"));
+setFridgeItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
 };
-fetchMeals();
-}, []);
+load();
+}, [user]);
 
-// Ajouter un repas
-const addMeal = async () => {
-if (!newMeal.trim()) return;
+// Ouvrir la modale
+const openAddMeal = (day, slot) => {
+setSelectedDay(day);
+setSelectedSlot(slot);
+setSelectedProducts([]);
+setIsOpen(true);
+};
 
-try {
-const docRef = await addDoc(collection(db, "meals"), {
-name: newMeal,
-createdAt: serverTimestamp(),
+// Toggle produit sélectionné
+const toggleProduct = (item) => {
+setSelectedProducts((prev) =>
+prev.find((p) => p.id === item.id)
+? prev.filter((p) => p.id !== item.id)
+: [...prev, item]
+);
+};
+
+// Sauvegarder repas
+const saveMeal = async () => {
+if (!user || !selectedDay || !selectedSlot) return;
+
+// Enregistrer le repas
+await addDoc(collection(db, "users", user.uid, "meals"), {
+day: selectedDay,
+slot: selectedSlot,
+products: selectedProducts,
+createdAt: new Date(),
 });
-setMeals([...meals, { id: docRef.id, name: newMeal }]);
-setNewMeal("");
-} catch (error) {
-console.error("Erreur lors de l'ajout du repas:", error);
+
+// Supprimer du frigo les produits utilisés
+for (const p of selectedProducts) {
+await deleteDoc(doc(db, "users", user.uid, "fridge", p.id));
 }
+
+// Rafraîchir frigo
+const snap = await getDocs(collection(db, "users", user.uid, "fridge"));
+setFridgeItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+setIsOpen(false);
 };
 
 return (
-<div style={{ padding: "20px" }}>
-<h1>🍽️ Mes Repas</h1>
-<div style={{ marginBottom: "20px" }}>
-<input
-type="text"
-value={newMeal}
-onChange={(e) => setNewMeal(e.target.value)}
-placeholder="Ajouter un repas"
-/>
-<button onClick={addMeal}>Ajouter</button>
+<>
+<div className="repasSimple">
+<div className="repasHeader">
+<div className="title">
+<div className="titleLine">
+<span className="cube">🍽️</span>
+<h2>Mes repas</h2>
 </div>
-<ul>
-{meals.map((meal) => (
-<li key={meal.id}>{meal.name}</li>
+<p className="hello">Planifie tes repas de la semaine</p>
+</div>
+</div>
+
+{/* Planning hebdo */}
+<div className="mealPlanner">
+{["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map(
+(day, i) => (
+<div key={i} className="dayCard">
+<h3 className="dayTitle">{day}</h3>
+<div className="slots">
+{["Déjeuner", "Dîner"].map((slot, j) => (
+<div
+key={j}
+className="slotCard"
+onClick={() => openAddMeal(day, slot)}
+>
+<p className="slotName">{slot}</p>
+<p className="slotPlaceholder">➕ Ajouter</p>
+</div>
+))}
+</div>
+</div>
+)
+)}
+</div>
+
+{/* Modale */}
+{isOpen && (
+<div className="modal">
+<div className="modalContent">
+<h3>
+Ajouter {selectedSlot} du {selectedDay}
+</h3>
+<ul className="product-list">
+{fridgeItems.length === 0 && (
+<p className="emptyRow">Aucun produit dans ton frigo</p>
+)}
+{fridgeItems.map((item) => (
+<li
+key={item.id}
+className={
+selectedProducts.find((p) => p.id === item.id)
+? "is-selected"
+: ""
+}
+onClick={() => toggleProduct(item)}
+>
+{item.name}
+</li>
 ))}
 </ul>
-
-{/* Onglet en bas */}
-<TabBar />
+<button className="btnPrimary" onClick={saveMeal}>
+✅ Valider
+</button>
+<button className="btnSecondary" onClick={() => setIsOpen(false)}>
+❌ Annuler
+</button>
 </div>
+</div>
+)}
+</div>
+
+{/* Tabbar */}
+<nav
+className="tabbar"
+role="navigation"
+aria-label="Navigation principale"
+>
+<Link
+href="/fridge"
+className={`tab ${pathname?.startsWith("/fridge") ? "is-active" : ""}`}
+>
+<span className="tab_icon">🧊</span>
+<span className="tab_label">Frigo</span>
+</Link>
+<Link
+href="/repas"
+className={`tab ${pathname?.startsWith("/repas") ? "is-active" : ""}`}
+>
+<span className="tab_icon">🍽️</span>
+<span className="tab_label">Repas</span>
+</Link>
+<Link
+href="/settings"
+className={`tab ${pathname?.startsWith("/settings") ? "is-active" : ""}`}
+>
+<span className="tab_icon">⚙️</span>
+<span className="tab_label">Paramètres</span>
+</Link>
+</nav>
+</>
 );
 }

@@ -1,0 +1,190 @@
+/* ===== Mise en page générale ===== */
+.repasSimple {
+padding: 16px;
+padding-bottom: 80px; /* espace pour la tabbar */
+background: #f9fbfd;
+min-height: 100vh;
+box-sizing: border-box;
+}
+
+.repasHeader {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+
+.repasHeader .titleLine {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.repasHeader .cube {
+font-size: 22px;
+}
+
+.repasHeader .hello {
+font-size: 0.9rem;
+opacity: 0.7;
+}
+
+/* ===== Planning hebdo ===== */
+.mealPlanner {
+display: grid;
+gap: 16px;
+}
+
+.dayCard {
+background: #fff;
+border-radius: 10px;
+padding: 12px;
+box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.dayTitle {
+font-size: 1.1rem;
+font-weight: bold;
+margin-bottom: 10px;
+}
+
+.slots {
+display: grid;
+gap: 10px;
+}
+
+.slotCard {
+padding: 12px;
+border: 1px solid #cfe3ff;
+border-radius: 8px;
+background: #f5f9ff;
+cursor: pointer;
+transition: 0.2s;
+}
+
+.slotCard:hover {
+background: #e1efff;
+}
+
+.slotName {
+font-weight: 600;
+}
+
+.slotPlaceholder {
+font-size: 0.85rem;
+opacity: 0.7;
+}
+
+/* ===== Modale ===== */
+.modal {
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0,0,0,0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+}
+
+.modalContent {
+background: #fff;
+padding: 20px;
+border-radius: 12px;
+width: min(95%, 400px);
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.product-list {
+list-style: none;
+padding: 0;
+margin: 16px 0;
+max-height: 200px;
+overflow-y: auto;
+}
+
+.product-list li {
+padding: 10px;
+margin-bottom: 8px;
+background: #f5f5f5;
+border-radius: 8px;
+cursor: pointer;
+transition: 0.2s;
+}
+
+.product-list li:hover {
+background: #e9f0ff;
+}
+
+.product-list li.is-selected {
+background: #cfe3ff;
+font-weight: bold;
+}
+
+.emptyRow {
+text-align: center;
+font-size: 0.9rem;
+opacity: 0.7;
+}
+
+/* ===== Boutons ===== */
+.btnPrimary {
+background: #0d6efd;
+color: white;
+border: none;
+padding: 10px 14px;
+border-radius: 6px;
+cursor: pointer;
+transition: 0.2s;
+margin-right: 8px;
+}
+
+.btnPrimary:hover {
+background: #0b5ed7;
+}
+
+.btnSecondary {
+background: #f1f1f1;
+color: #333;
+border: none;
+padding: 10px 14px;
+border-radius: 6px;
+cursor: pointer;
+transition: 0.2s;
+}
+
+.btnSecondary:hover {
+background: #e1e1e1;
+}
+
+/* ===== Tabbar ===== */
+.tabbar {
+position: fixed;
+bottom: 0; left: 0; right: 0;
+height: 56px;
+background: #fff;
+border-top: 1px solid #ddd;
+display: flex;
+justify-content: space-around;
+align-items: center;
+z-index: 1001;
+}
+
+.tab {
+text-align: center;
+flex: 1;
+padding: 6px 0;
+color: #666;
+text-decoration: none;
+font-size: 0.85rem;
+}
+
+.tab_icon {
+display: block;
+font-size: 18px;
+}
+
+.tab.is-active {
+color: #0d6efd;
+font-weight: bold;
+}
