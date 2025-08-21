@@ -1,72 +1,41 @@
-.repasPage {
-padding: 20px;
-}
+.repasPage { padding: 20px; }
 
 .repasGrid {
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
 gap: 16px;
 }
-
 .dayColumn {
-background: #fafafa;
+background: #fafafa; border: 1px solid #e6e6e6; border-radius: 10px;
 padding: 12px;
-border-radius: 8px;
-border: 1px solid #ddd;
 }
 
-.mealSlot {
-margin-bottom: 12px;
-}
-
-.mealSlot button {
-margin-top: 6px;
-font-size: .9rem;
-}
+.mealSlot { margin-top: 10px; }
+.mealList { list-style: none; margin: 6px 0 0; padding: 0; }
+.mealName { font-weight: 600; }
+.linkBtn { margin-left: 8px; background: none; border: 0; color: #1976d2; cursor: pointer; }
+.empty { display: flex; align-items: center; gap: 6px; }
 
 /* === Modal === */
-.modalOverlay {
-position: fixed; inset: 0;
-background: rgba(0,0,0,.35);
-display: flex; align-items: center; justify-content: center;
-z-index: 1000;
-}
-
-.modalCard {
-background: #fff; border-radius: 12px;
-width: min(520px, 92vw);
-box-shadow: 0 12px 40px rgba(0,0,0,.2);
-overflow: hidden;
-}
-
-.modalHeader {
-display: flex; align-items: center; justify-content: space-between;
-padding: 14px 16px; border-bottom: 1px solid #eee;
-}
-.modalClose {
-background: transparent; border: 0; font-size: 22px;
-cursor: pointer; padding: 4px 8px;
-}
-
+.modalOverlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); z-index: 1000; }
+.modalCard { background: #fff; width: min(560px, 92vw); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.2); overflow: hidden; }
+.modalHeader { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #eee; }
+.modalClose { background: transparent; border: 0; font-size: 22px; cursor: pointer; padding: 4px 8px; }
 .modalBody { padding: 16px; }
 .modalBody .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .modalBody label { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
-.modalBody input, .modalBody select {
-padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
-}
+.modalBody input, .modalBody select { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; }
 .modalBody label.full { grid-column: 1 / -1; }
 
 .productList { list-style: none; padding: 0; margin: 8px 0 0; max-height: 220px; overflow: auto; }
 .checkline { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
 .checkline .name { font-weight: 600; }
 .checkline .meta { margin-left: auto; opacity: .6; font-size: .85rem; }
-
 .error { color: #d33; margin-top: 6px; }
 
-.modalActions {
-display: flex; gap: 8px; justify-content: flex-end;
-padding: 12px 16px; border-top: 1px solid #eee;
-}
+.modalActions { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid #eee; }
 .btnPrimary { background: #1976d2; color: #fff; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
 .btnPrimary:disabled { opacity: .6; cursor: not-allowed; }
 .btnGhost { background: #eee; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+
+/* la tabbar utilise déjà styles/tabbar.css */
