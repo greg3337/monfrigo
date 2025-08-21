@@ -1,130 +1,165 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { db } from "../firebase/firebase-config";
+import { useAuth } from "../hooks/useAuth";
+import {
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDocs,
+serverTimestamp,
+} from "firebase/firestore";
 
-const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const SLOTS = ['Déjeuner','Dîner'];
+const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const SLOTS = ["Déjeuner", "Dîner"];
 
 export default function CreateMealModal({
-userId,
-defaultDay = 'Lundi',
-defaultSlot = 'Déjeuner',
-loadFridge, // (userId) => { items:[{id,name,_collection}], tried:[...] }
-onSaveMeal, // ({day,slot,name,selectedItems}) => Promise
+defaultDay = DAYS[0],
+defaultSlot = SLOTS[0],
 onClose,
 }) {
+const { user } = useAuth();
 const [day, setDay] = useState(defaultDay);
 const [slot, setSlot] = useState(defaultSlot);
-const [name, setName] = useState('');
+const [name, setName] = useState("");
 const [loading, setLoading] = useState(true);
-const [fridge, setFridge] = useState([]);
-const [triedCols, setTriedCols] = useState([]);
-const [err, setErr] = useState('');
+const [fridge, setFridge] = useState([]); // [{id, name}]
+const [selectedIds, setSelectedIds] = useState(new Set());
+const [error, setError] = useState("");
 
+// Charger les produits du frigo
 useEffect(() => {
-let stop = false;
-(async () => {
-try {
+let cancelled = false;
+async function load() {
+if (!user) return;
 setLoading(true);
-const { items, tried } = await loadFridge(userId);
-if (!stop) {
+setError("");
+try {
+const snap = await getDocs(collection(db, "users", user.uid, "fridge"));
+if (cancelled) return;
+const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 setFridge(items);
-setTriedCols(tried);
-}
 } catch (e) {
-if (!stop) setErr("Impossible de charger les produits du frigo.");
+setError("Impossible de charger les produits du frigo.");
 } finally {
-if (!stop) setLoading(false);
+if (!cancelled) setLoading(false);
 }
-})();
-return () => { stop = true; };
-}, [userId, loadFridge]);
-
-const [checked, setChecked] = useState({});
-const selectedItems = useMemo(() =>
-fridge.filter(f => checked[f.id]).map(f => ({ id: f.id, name: f.name, _collection: f._collection }))
-, [fridge, checked]);
-
-function toggle(id) {
-setChecked(prev => ({ ...prev, [id]: !prev[id] }));
 }
+load();
+return () => {
+cancelled = true;
+};
+}, [user]);
 
-async function save() {
-await onSaveMeal({ day, slot, name, selectedItems });
+const toggleSelect = (id) => {
+setSelectedIds((prev) => {
+const n = new Set(prev);
+if (n.has(id)) n.delete(id);
+else n.add(id);
+return n;
+});
+};
+
+const handleSave = async () => {
+if (!user) return;
+try {
+const selectedItems = fridge
+.filter((f) => selectedIds.has(f.id))
+.map((f) => ({ id: f.id, name: f.name || f.label || f.product || "Produit" }));
+
+// 1) créer le repas
+await addDoc(collection(db, "users", user.uid, "meals"), {
+day,
+slot,
+name: name.trim(),
+items: selectedItems,
+createdAt: serverTimestamp(),
+});
+
+// 2) supprimer du frigo les items sélectionnés
+await Promise.all(
+selectedItems.map((it) =>
+deleteDoc(doc(db, "users", user.uid, "fridge", it.id))
+)
+);
+
 onClose?.();
+} catch (e) {
+setError("Erreur lors de l’enregistrement.");
 }
+};
 
 return (
-<div className="modal">
-<div className="modalCard">
-<div className="modalHead">
-<h4>Ajouter un repas</h4>
-<button className="close" onClick={onClose}>×</button>
+<div className="modal_backdrop" onClick={onClose}>
+<div className="modal" onClick={(e) => e.stopPropagation()}>
+<div className="modal_head">
+<h3>Ajouter un repas</h3>
+<button className="btn_close" onClick={onClose}>×</button>
 </div>
 
-<div className="formRow gridTwo">
-<label>
-Jour
-<select value={day} onChange={e => setDay(e.target.value)}>
-{DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+<div className="modal_body">
+<div className="row">
+<div className="field">
+<label>Jour</label>
+<select value={day} onChange={(e) => setDay(e.target.value)}>
+{DAYS.map((d) => (
+<option key={d} value={d}>{d}</option>
+))}
 </select>
-</label>
-<label>
-Créneau
-<select value={slot} onChange={e => setSlot(e.target.value)}>
-{SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
+</div>
+<div className="field">
+<label>Créneau</label>
+<select value={slot} onChange={(e) => setSlot(e.target.value)}>
+{SLOTS.map((s) => (
+<option key={s} value={s}>{s}</option>
+))}
 </select>
-</label>
+</div>
 </div>
 
-<label className="mt8">
-Nom du repas (facultatif)
+<div className="field">
+<label>Nom du repas (facultatif)</label>
 <input
-placeholder="Ex : Salade de poulet"
 value={name}
-onChange={e => setName(e.target.value)}
+onChange={(e) => setName(e.target.value)}
+placeholder="Ex : Salade de poulet"
 />
-</label>
+</div>
 
-<div className="sectionTitle">Produits du frigo</div>
+<div className="field">
+<label>Produits du frigo</label>
 
-{loading ? (
-<p className="muted">Chargement des produits…</p>
-) : fridge.length === 0 ? (
-<>
-{err ? <p className="error">{err}</p> : null}
-<p className="muted">Aucun produit trouvé dans le frigo.</p>
-<p className="hint small">
-Collections testées : {triedCols.join(', ') || 'aucune'}.
-</p>
-</>
-) : (
-<ul className="fridgeList">
-{fridge.map(p => (
-<li key={p.id} className={`checkLine ${checked[p.id] ? 'active' : ''}`}>
+{loading && <div className="muted">Chargement…</div>}
+{!loading && fridge.length === 0 && (
+<div className="muted">Aucun produit trouvé dans le frigo.</div>
+)}
+
+{!loading && fridge.length > 0 && (
+<ul className="checklist">
+{fridge.map((p) => (
+<li key={p.id}>
 <label>
 <input
 type="checkbox"
-checked={!!checked[p.id]}
-onChange={() => toggle(p.id)}
+checked={selectedIds.has(p.id)}
+onChange={() => toggleSelect(p.id)}
 />
-<span>{p.name}</span>
-<em className="muted small">({p._collection})</em>
+<span>{p.name || p.label || p.product}</span>
 </label>
 </li>
 ))}
 </ul>
 )}
 
-<div className="modalActions">
-<button className="btnGhost" onClick={onClose}>Annuler</button>
-<button
-className="btnPrimary"
-onClick={save}
-disabled={loading}
->
-Sauvegarder
-</button>
+{error && <div className="error">{error}</div>}
+</div>
+</div>
+
+<div className="modal_actions">
+<button className="btn_ghost" onClick={onClose}>Annuler</button>
+<button className="btn_primary" onClick={handleSave}>Sauvegarder</button>
 </div>
 </div>
 </div>

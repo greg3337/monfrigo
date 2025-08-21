@@ -1,58 +1,54 @@
-* Layout */
-.meals_wrap { padding: 20px 16px 90px; max-width: 1100px; margin: 0 auto; }
-.meals_header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
-.meals_header .title{ display:flex; gap:12px; align-items:center; }
-.meals_header .ico{ font-size:24px; }
-.meals_header h1{ margin:0; font-size:22px; }
-.meals_header p{ margin:0; color:#6b7280; font-size:13px; }
+/* --- Layout de la page --- */
+.repas_page { padding: 20px 16px 90px; max-width: 1100px; margin: 0 auto; }
+.repas_header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.repas_title { display:flex; gap:12px; align-items:center; }
+.repas_title h1 { margin:0; font-size:22px; }
+.repas_title p { margin:2px 0 0; color:#666; font-size:14px; }
+.emoji { font-size:24px; }
 
-/* Grid */
-.grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:16px; }
-@media (min-width: 980px){ .grid{ grid-template-columns: repeat(3,1fr); } }
-.day h3{ margin:0 0 8px; font-size:16px; }
+.btn_primary { background:#0ea5e9; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.btn_primary:hover { filter:brightness(0.95); }
+.link_add { background:transparent; border:none; color:#0ea5e9; cursor:pointer; font-size:14px; }
 
-.slotCard{ border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
-.slotHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-.linkAdd{ font-size:13px; color:#2563eb; background:transparent; border:none; cursor:pointer; }
-.linkAdd:hover{ text-decoration:underline; }
+/* --- Grille semaine --- */
+.week_grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+@media (min-width: 900px) { .week_grid { grid-template-columns: repeat(3, 1fr); } }
+.day_col { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; }
+.day_title { margin:0 0 8px; font-size:16px; }
+.slot_card { border:1px dashed #e5e7eb; border-radius:10px; padding:10px; margin-bottom:10px; background:#fafafa; }
+.slot_head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.empty_meal { color:#777; font-size:13px; }
 
-.slotBody .muted{ color:#9ca3af; font-size:13px; }
+.meal_chip { background:#fff; border:1px solid #eee; border-radius:10px; padding:8px; margin:6px 0; }
+.meal_name { font-weight:600; margin-bottom:4px; }
+.meal_items { margin:0; padding-left:18px; color:#444; }
 
-.mealItem{ padding:8px; border:1px dashed #e5e7eb; border-radius:8px; margin-bottom:8px; background:#fafafa; }
-.mealTitle{ font-weight:600; margin-bottom:4px; }
-.mealSub{ margin:0; padding-left:16px; color:#374151; font-size:13px; }
+/* --- Modale --- */
+.modal_backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal { width:92%; max-width:620px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
+.modal_head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee; }
+.modal_body { padding:14px 16px; }
+.modal_actions { display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid #eee; }
 
-/* Buttons */
-.btnPrimary{ background:#10b981; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
-.btnPrimary:hover{ filter:brightness(0.95); }
-.btnGhost{ background:#f3f4f6; color:#111827; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
-.alert.error{ background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; margin:8px 0; }
+.btn_close { border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; }
+.btn_ghost { background:#f3f4f6; border:1px solid #e5e7eb; padding:8px 12px; border-radius:8px; }
+.btn_ghost:hover { filter:brightness(0.97); }
 
-.loading{ color:#6b7280; }
+.row { display:flex; gap:10px; }
+.row .field { flex:1; }
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:13px; color:#555; margin-bottom:6px; }
+.field input, .field select { width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; }
 
-/* Modal */
-.modal{ position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; z-index:50; }
-.modalCard{ width: min(620px, 92vw); background:#fff; border-radius:14px; padding:14px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
-.modalHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.modalHead h4{ margin:0; }
-.modalHead .close{ background:#f3f4f6; border:none; border-radius:8px; width:32px; height:32px; cursor:pointer; }
+.checklist { list-style:none; padding:0; margin:6px 0 0; max-height:210px; overflow:auto; }
+.checklist li { padding:6px 0; border-bottom:1px dashed #eee; }
+.checklist label { display:flex; gap:10px; align-items:center; }
 
-.gridTwo{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-.mt8{ margin-top:8px; }
+.muted { color:#888; font-size:13px; }
+.error { color:#b91c1c; margin-top:6px; }
 
-label{ display:block; font-weight:600; font-size:13px; margin-bottom:6px; }
-label input, label select{ width:100%; margin-top:6px; border:1px solid #e5e7eb; border-radius:8px; padding:8px; font-size:14px; outline:none; }
-label input:focus, label select:focus{ border-color:#60a5fa; box-shadow: 0 0 0 3px #dbeafe; }
-
-.sectionTitle{ font-weight:700; margin:14px 0 8px; }
-
-.fridgeList{ list-style:none; margin:0; padding:0; max-height: 220px; overflow:auto; border:1px solid #e5e7eb; border-radius:10px; }
-.checkLine{ padding:8px 10px; border-bottom:1px solid #f3f4f6; }
-.checkLine:last-child{ border-bottom:none; }
-.checkLine label{ display:flex; gap:10px; align-items:center; font-weight:500; }
-.checkLine.active{ background:#f0fdf4; }
-.small{ font-size:12px; }
-.hint{ color:#6b7280; }
-.error{ color:#dc2626; }
-
-.modalActions{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:12px; }
+/* --- Tabbar (si jamais le layout global ne l’injecte pas) --- */
+.tabbar { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; padding:10px 0; z-index:40; }
+.tab { text-decoration:none; color:#444; display:flex; flex-direction:column; align-items:center; font-size:12px; }
+.tab_icon { font-size:18px; }
+.tab.is-active { color:#0ea5e9; font-weight:600; }
