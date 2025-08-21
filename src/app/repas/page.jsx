@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { auth, db } from '../../firebase/firebase-config';
+import { auth, db } from '../firebase/firebase-config';
 import { onAuthStateChanged } from 'firebase/auth';
 import {collection,query,where,onSnapshot,addDoc,serverTimestamp,deleteDoc,doc,} from 'firebase/firestore';
 import CreateMealModal from './CreateMealModal.jsx';
