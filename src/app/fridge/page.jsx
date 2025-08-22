@@ -183,9 +183,7 @@ Ajouter un produit
 <Link href="/fridge" className={`tab ${pathname.includes('/fridge') ? 'is-active' : ''}`}>
 <span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
 </Link>
-<Link href="/repas" className={`tab ${pathname.includes('/repas') ? 'is-active' : ''}`}>
-<span className="tab__icon">🍽️</span><span className="tab__label">Repas</span>
-</Link>
+
 <Link href="/settings" className={`tab ${pathname.includes('/settings') ? 'is-active' : ''}`}>
 <span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
 </Link>

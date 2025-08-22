@@ -110,10 +110,7 @@ Besoin d’autre chose ? <a href="mailto:smonfrigo@gmail.com">Contacte-nous</a>,
 <span className="tab_icon">🧊</span>
 <span className="tab_label">Frigo</span>
 </Link>
-<Link href="/repas" className={`tab ${pathname?.startsWith('/repas') ? 'is-active' : ''}`}>
-<span className="tab_icon">🍽️</span>
-<span className="tab_label">Repas</span>
-</Link>
+
 <Link href="/settings" className={`tab ${pathname?.startsWith('/settings') && !pathname?.includes('/faq') && !pathname?.includes('/privacy') ? 'is-active' : ''}`}>
 <span className="tab_icon">⚙️</span>
 <span className="tab_label">Paramètres</span>
