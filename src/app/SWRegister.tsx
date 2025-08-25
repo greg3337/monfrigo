@@ -1,46 +1,57 @@
 "use client";
 
 import { useEffect } from "react";
-import { requestForToken, onForegroundMessage } from "./firebase/messaging";
+import {
+requestFcmToken,
+onForegroundMessage,
+} from "./firebase/messaging.js"; // <-- .js extension
 
 export default function SWRegister() {
-// 1) Enregistrer le Service Worker (public/firebase-messaging-sw.js)
+// Enregistrer le Service Worker (une seule fois)
 useEffect(() => {
-if ("serviceWorker" in navigator) {
+if (typeof window === "undefined") return;
+if (!("serviceWorker" in navigator)) return;
+
 navigator.serviceWorker
 .register("/firebase-messaging-sw.js")
-.then(() => console.log("[SW] firebase-messaging-sw.js enregistré"))
-.catch((err) => console.warn("[SW] échec d’enregistrement :", err));
-}
+.catch((err) => console.warn("SW registration failed:", err));
 }, []);
 
-// 2) Demander le token FCM + écouter les notifs en premier plan
+// Initialiser FCM + écouter les notifs en foreground
 useEffect(() => {
+let unsubscribe = () => {};
+
 (async () => {
-const token = await requestForToken();
-if (token) {
-console.log("[FCM] Token :", token);
-// TODO: si tu veux, envoie ce token dans Firestore pour l’utilisateur courant
-} else {
-console.log("[FCM] Pas de token (permissions refusées ?)");
+try {
+// Demande la permission + récupère/renvoie le token
+await requestFcmToken();
+
+// Ecoute des messages reçus quand l’onglet est ouvert
+unsubscribe = onForegroundMessage((payload: any) => {
+const title =
+payload?.notification?.title || "Mon Frigo 🔔 Rappel";
+const body =
+payload?.notification?.body ||
+"Un produit arrive à expiration.";
+
+if (
+typeof Notification !== "undefined" &&
+Notification.permission === "granted"
+) {
+new Notification(title, { body, icon: "/favicon.ico" });
+}
+});
+} catch (e) {
+console.warn("FCM init error:", e);
 }
 })();
 
-// Afficher une notif quand l’app est ouverte (optionnel)
-onForegroundMessage((payload) => {
-const { title, body, icon } = payload?.notification || {};
-if (typeof window !== "undefined" && "Notification" in window) {
-if (Notification.permission === "granted") {
-new Notification(title || "Mon Frigo", {
-body: body || "Nouvelle notification",
-icon: icon || "/favicon.ico",
-});
-}
-}
-console.log("[FCM] Message foreground :", payload);
-});
+return () => {
+try {
+unsubscribe && unsubscribe();
+} catch {}
+};
 }, []);
 
 return null;
 }
-
