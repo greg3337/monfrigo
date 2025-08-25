@@ -1,73 +1,76 @@
-// ⚠️ FICHIER 100% JS (pas .ts)
-// Chemin: src/app/firebase/messaging.js
+import { isSupported, getMessaging, getToken, onMessage } from "firebase/messaging";
+import { doc, setDoc, arrayUnion } from "firebase/firestore";
+import { auth, db, app } from "./firebase-config";
 
-import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
-import { app } from "../firebase/firebase-config"; // tu as déjà `export const app = initializeApp(...)`
-
-/** Retourne true si on peut utiliser FCM dans ce navigateur. */
-async function fcmAvailable() {
-try {
-return typeof window !== "undefined" && (await isSupported());
-} catch {
-return false;
-}
-}
-
-/** Demande la permission si besoin et retourne le token FCM (ou null). */
 export async function requestFcmToken() {
-if (!(await fcmAvailable())) return null;
-
-// Demande la permission (si pas encore décidée)
 try {
-if (typeof Notification !== "undefined" && Notification.permission === "default") {
-const res = await Notification.requestPermission();
-if (res !== "granted") return null;
-}
-} catch {
-// pas bloquant
-}
+if (typeof window === "undefined") return null;
+const supported = await isSupported().catch(() => false);
+if (!supported) return null;
 
-// Récupère le token
-try {
+// Permission navigateur
+let permission = (typeof Notification !== "undefined" && Notification.permission) || "default";
+if (permission === "default" && typeof Notification !== "undefined") {
+permission = await Notification.requestPermission();
+}
+if (permission !== "granted") return null;
+
+// Enregistrer le Service Worker (au cas où)
+const swReg = await navigator.serviceWorker
+.register("/firebase-messaging-sw.js")
+.catch((e) => {
+console.warn("SW register in messaging.js failed:", e);
+return undefined;
+});
+
 const messaging = getMessaging(app);
-const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
-if (!vapidKey) {
-console.warn("NEXT_PUBLIC_FCM_VAPID_KEY manquant dans les variables d'env.");
+const token = await getToken(messaging, {
+vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY,
+serviceWorkerRegistration: swReg,
+}).catch((e) => {
+console.warn("getToken error:", e);
 return null;
+});
+
+// Sauver le token dans Firestore (si connecté)
+const user = auth.currentUser;
+if (token && user) {
+const userRef = doc(db, "users", user.uid);
+await setDoc(userRef, { fcmTokens: arrayUnion(token) }, { merge: true }).catch((e) =>
+console.warn("save token error:", e)
+);
 }
-const token = await getToken(messaging, { vapidKey });
+
 return token || null;
 } catch (e) {
-console.warn("Erreur getToken FCM:", e);
+console.warn("requestFcmToken error:", e);
 return null;
 }
 }
 
-/**
-* Écoute les messages reçus quand l’onglet est OUVERT.
-* @param {(payload: any) => void} callback
-* @returns {() => void} fonction pour désabonner
-*/
 export function onForegroundMessage(callback) {
-// si FCM indisponible, renvoyer un noop
+if (typeof window === "undefined") return () => {};
 let unsub = () => {};
-(async () => {
-if (!(await fcmAvailable())) return;
-try {
+
+isSupported()
+.then((ok) => {
+if (!ok) return;
 const messaging = getMessaging(app);
 unsub = onMessage(messaging, (payload) => {
 try {
 if (typeof callback === "function") callback(payload);
-} catch (err) {
-console.warn("Callback FCM erreur:", err);
+} catch (e) {
+console.warn("callback FCM error:", e);
 }
 });
-} catch (e) {
-console.warn("Erreur onMessage FCM:", e);
-}
-})();
+})
+.catch((e) => console.warn("isSupported() error:", e));
 
 return () => {
-try { unsub && unsub(); } catch {}
+try {
+unsub && unsub();
+} catch (e) {
+console.warn("unsub FCM error:", e);
+}
 };
 }

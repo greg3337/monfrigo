@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-requestFcmToken,
-onForegroundMessage,
-} from "./firebase/messaging.js"; // <-- .js extension
+import {requestFcmToken,onForegroundMessage,} from "./firebase/messaging.js"; // garde bien le .js
+
+// Petit type minimal pour éviter le "no-explicit-any"
+type FcmPayload = {
+notification?: {
+title?: string;
+body?: string;
+};
+};
 
 export default function SWRegister() {
-// Enregistrer le Service Worker (une seule fois)
+// 1) Enregistrer le Service Worker
 useEffect(() => {
 if (typeof window === "undefined") return;
 if (!("serviceWorker" in navigator)) return;
@@ -17,21 +22,19 @@ navigator.serviceWorker
 .catch((err) => console.warn("SW registration failed:", err));
 }, []);
 
-// Initialiser FCM + écouter les notifs en foreground
+// 2) Demander la permission + écouter les messages en foreground
 useEffect(() => {
-let unsubscribe = () => {};
+let unsubscribe: () => void = () => {};
 
 (async () => {
 try {
-// Demande la permission + récupère/renvoie le token
-await requestFcmToken();
+await requestFcmToken(); // permission + token + save Firestore
 
-// Ecoute des messages reçus quand l’onglet est ouvert
-unsubscribe = onForegroundMessage((payload: any) => {
+unsubscribe = onForegroundMessage((payload: FcmPayload) => {
 const title =
-payload?.notification?.title || "Mon Frigo 🔔 Rappel";
+payload?.notification?.title ?? "Mon Frigo 🔔 Rappel";
 const body =
-payload?.notification?.body ||
+payload?.notification?.body ??
 "Un produit arrive à expiration.";
 
 if (
@@ -48,7 +51,7 @@ console.warn("FCM init error:", e);
 
 return () => {
 try {
-unsubscribe && unsubscribe();
+unsubscribe();
 } catch {}
 };
 }, []);
