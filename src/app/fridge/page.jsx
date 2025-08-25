@@ -9,6 +9,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/firebase-config';
 import {collection,deleteDoc,doc,getDoc,onSnapshot,orderBy,query,} from 'firebase/firestore';
 import '../styles/tabbar.css';
+import { requestFcmToken, onForegroundFcm } from "../firebase/messaging";
+import { doc, setDoc, arrayUnion } from "firebase/firestore";
+
 
 export default function FridgePage() {
 // Auth + user doc
@@ -58,6 +61,57 @@ setLoading(false);
 });
 return () => unsub();
 }, []);
+
+// --- Notifications push Web (FCM) ---
+useEffect(() => {
+if (typeof window === "undefined") return;
+if (!("Notification" in window)) return;
+if (!user) return;
+
+let cancelled = false;
+
+(async () => {
+try {
+let permission = Notification.permission;
+if (permission === "default") {
+permission = await Notification.requestPermission();
+}
+if (permission !== "granted" || cancelled) return;
+
+const swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
+const token = await getToken(undefined, {
+vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY,
+serviceWorkerRegistration: swReg,
+});
+
+if (!token || cancelled) return;
+
+const userRef = doc(db, "users", user.uid);
+await setDoc(userRef, { fcmTokens: arrayUnion(token) }, { merge: true });
+
+const unsubOnMessage = onMessage((payload) => {
+const title = payload?.notification?.title || "Mon Frigo – Rappel";
+const body = payload?.notification?.body || "Un produit arrive à expiration.";
+if (Notification.permission === "granted") {
+new Notification(title, { body, icon: "/favicon.ico" });
+}
+});
+
+return () => {
+cancelled = true;
+unsubOnMessage?.();
+};
+} catch (err) {
+console.warn("FCM error", err);
+}
+})();
+
+return () => {
+cancelled = true;
+};
+}, [user]);
+
 
 // Suppression
 const deleteProduct = async (id) => {
