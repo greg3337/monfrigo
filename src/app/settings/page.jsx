@@ -1,138 +1,156 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-import useAuth from '../hooks/useAuth';
-import { auth } from '../firebase/firebase-config';
-import { signOut } from 'firebase/auth';
-
-import './settings.css';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { onAuthStateChanged, sendPasswordResetEmail, updateProfile } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase/firebase-config";
+import "./settings.css";
 
 export default function SettingsPage() {
-const pathname = usePathname();
-const user = useAuth();
+const [user, setUser] = useState(null);
+const [displayName, setDisplayName] = useState("");
+const [saving, setSaving] = useState(false);
+const [info, setInfo] = useState("");
 
-const [expNotif, setExpNotif] = useState(false);
-const [soundNotif, setSoundNotif] = useState(false);
+// Charge l'utilisateur + son profil (Firestore si dispo)
+useEffect(() => {
+const unsub = onAuthStateChanged(auth, async (u) => {
+setUser(u || null);
+setInfo("");
 
-const handleLogout = async () => {
+if (!u) return;
+
+// nom depuis Auth par défaut
+let name = typeof u.displayName === "string" ? u.displayName : "";
+
+// si tu stockes aussi le profil dans Firestore: users/{uid}
 try {
-await signOut(auth);
+const ref = doc(db, "users", u.uid);
+const snap = await getDoc(ref);
+if (snap.exists() && typeof snap.data()?.name === "string") {
+name = snap.data().name;
+}
 } catch (e) {
-alert('Échec de la déconnexion');
+console.warn("Lecture profil Firestore:", e);
+}
+
+setDisplayName(name || "");
+});
+
+return () => unsub();
+}, []);
+
+// Enregistre le nom d’affichage (Auth + Firestore)
+const saveProfile = async (e) => {
+e.preventDefault();
+if (!user) return;
+
+setSaving(true);
+setInfo("");
+
+try {
+// 1) Auth
+await updateProfile(user, { displayName: displayName || "" });
+
+// 2) Firestore (merge)
+await setDoc(
+doc(db, "users", user.uid),
+{ name: displayName || "" },
+{ merge: true }
+);
+
+setInfo("Profil mis à jour ✅");
+} catch (e) {
 console.error(e);
+setInfo("Erreur lors de l’enregistrement du profil.");
+} finally {
+setSaving(false);
 }
 };
 
-const handleDeleteAccount = () => {
-alert('Suppression de compte : à brancher côté serveur / Firestore.');
+// Lien reset mot de passe (envoie un email)
+const resetPassword = async () => {
+if (!user?.email) return;
+try {
+await sendPasswordResetEmail(auth, user.email);
+setInfo("Email de réinitialisation envoyé 📧");
+} catch (e) {
+console.error(e);
+setInfo("Impossible d’envoyer l’email de réinitialisation.");
+}
 };
 
+if (!user) {
 return (
-<>
-<div className="settings-container">
-<header className="settings-header">
-<div className="icon">⚙️</div>
-<div>
+<div className="wrap">
+<h1>Paramètres</h1>
+<p>Veuillez vous connecter pour gérer votre profil.</p>
+<Link href="/login" className="primary">Se connecter</Link>
+</div>
+);
+}
+
+return (
+<div className="wrap">
 <h1>Paramètres</h1>
 <p>Personnalisez votre expérience</p>
-</div>
-</header>
 
-{/* Profil */}
-<section className="settings-section">
+{/* Carte Profil */}
+<section className="card">
+<div className="cardHeader">
 <h2>Profil</h2>
-<div className="row between">
-<div>
-<div className="userName">
-{user?.displayName || user?.email?.split('@')[0] || 'Utilisateur'}
 </div>
-<div className="userEmail">{user?.email || '—'}</div>
-</div>
-<button
-className="btn ghost"
-type="button"
-onClick={() => alert('Édition profil à venir')}
->
-Modifier
+
+<form onSubmit={saveProfile} className="form">
+<label className="label">Adresse e-mail</label>
+<input className="input" type="email" value={user.email || ""} disabled />
+
+<label className="label">Nom d’affichage</label>
+<input
+className="input"
+type="text"
+placeholder="Ex. Grégoire"
+value={displayName}
+onChange={(e) => setDisplayName(e.target.value)}
+/>
+
+<div className="row">
+<button type="submit" className="primary" disabled={saving}>
+{saving ? "Enregistrement..." : "Enregistrer"}
+</button>
+
+<button type="button" className="secondary" onClick={resetPassword}>
+Modifier le mot de passe
 </button>
 </div>
+
+{info && <p className="hint" style={{ marginTop: 8 }}>{info}</p>}
+</form>
 </section>
 
-{/* Notifications */}
-<section className="settings-section">
-<h2>Notifications</h2>
-
-<label className="switchRow">
-<input
-type="checkbox"
-checked={expNotif}
-onChange={(e) => setExpNotif(e.target.checked)}
-/>
-<div>
-<div className="label">Notifications d’expiration</div>
-<div className="sub">Recevoir des alertes pour les produits qui expirent</div>
-</div>
-</label>
-
-<label className="switchRow">
-<input
-type="checkbox"
-checked={soundNotif}
-onChange={(e) => setSoundNotif(e.target.checked)}
-/>
-<div>
-<div className="label">Son des notifications</div>
-<div className="sub">Jouer un son lors des notifications</div>
-</div>
-</label>
-</section>
-
-{/* Support (liens cliquables) */}
-<section className="settings-section">
+{/* Support */}
+<section className="card">
+<div className="cardHeader">
 <h2>Support</h2>
-<ul className="links">
-<li>
-<Link href="/settings/faq">Aide et FAQ</Link>
-</li>
-<li>
-<Link href="/settings/contact" onClick={(e)=>{e.preventDefault(); alert('Contact : à venir (formulaire / mail)')}}>
-Nous contacter
-</Link>
-</li>
-<li>
-<Link href="/settings/privacy">Confidentialité</Link>
-</li>
+</div>
+<ul className="list">
+<li><Link href="/faq">Aide et FAQ</Link></li>
+<li><Link href="/privacy">Confidentialité</Link></li>
+<li><a href="mailto:contact@monfrigo.app">Nous contacter</a></li>
 </ul>
 </section>
 
-{/* Zone danger */}
-<section className="settings-section dangerBox">
-<div className="row">
-<button className="btn ghost" type="button" onClick={handleLogout}>
-Se déconnecter
-</button>
+{/* Danger zone – si tu as déjà ces actions ailleurs, garde-les là */}
+<section className="card">
+<div className="cardHeader">
+<h2>Compte</h2>
 </div>
-<button className="btn danger" type="button" onClick={handleDeleteAccount}>
-Supprimer mon compte
-</button>
+<div className="row">
+<Link href="/logout" className="secondary">Se déconnecter</Link>
+{/* si tu as déjà ton bouton supprimer compte, garde-le ici */}
+</div>
 </section>
 </div>
-
-{/* Tabbar */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab_icon">🧊</span>
-<span className="tab_label">Frigo</span>
-</Link>
-
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab_icon">⚙️</span>
-<span className="tab_label">Paramètres</span>
-</Link>
-</nav>
-</>
 );
 }
