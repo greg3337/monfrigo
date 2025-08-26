@@ -131,8 +131,8 @@ Modifier le mot de passe
 
 <div className="support-card">
 <div style={{ marginBottom: 8, color: '#555', fontWeight: 600 }}>Support</div>
-<a href="/faq">Aide et FAQ</a>
-<a href="/privacy">Confidentialité</a>
+<a href="/settings/faq">Aide et FAQ</a>
+<a href="/settings/privacy">Confidentialité</a>
 <a href="mailto:contact@monfrigo.app">Nous contacter</a>
 </div>
 
