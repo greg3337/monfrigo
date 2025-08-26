@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { auth, db } from "../firebase-config";
+import { auth, db } from "../firebase/firebase-config";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, sendPasswordResetEmail, signOut } from "firebase/auth";
 import "./settings.css";
