@@ -2,95 +2,109 @@
 max-width: 600px;
 margin: 40px auto;
 padding: 20px;
-font-family: Arial, sans-serif;
+font-family: "Segoe UI", Tahoma, sans-serif;
 color: #333;
 }
 
 /* Titre */
 .settings-container h1 {
-font-size: 26px;
-margin-bottom: 5px;
+font-size: 24px;
+margin-bottom: 8px;
+text-align: center;
 }
 
 .settings-container p {
 color: #666;
-margin-bottom: 20px;
+text-align: center;
+margin-bottom: 25px;
 }
 
-/* Les cartes (sections Profil, Support, etc.) */
-.card {
-background: #fff;
-border-radius: 10px;
+/* Section profil */
+.profile-card {
+background: #ffffff;
+border-radius: 12px;
 padding: 20px;
 margin-bottom: 20px;
-box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
-/* Labels */
-.card label {
-display: block;
-font-weight: bold;
-margin-bottom: 8px;
-}
-
-/* Inputs */
-.card input {
+.profile-card input {
 width: 100%;
-padding: 10px;
+padding: 12px;
 border: 1px solid #ddd;
-border-radius: 6px;
-margin-bottom: 12px;
-font-size: 14px;
+border-radius: 8px;
+margin-bottom: 15px;
+font-size: 15px;
+}
+
+.profile-card .actions {
+display: flex;
+justify-content: space-between;
+align-items: center;
 }
 
 /* Boutons */
-.card button {
+button {
 background: #2563eb;
 color: white;
 border: none;
-padding: 10px 18px;
+padding: 10px 16px;
 border-radius: 6px;
 cursor: pointer;
 font-size: 14px;
-margin-right: 10px;
 transition: background 0.2s;
 }
 
-.card button:hover {
+button:hover {
 background: #1d4ed8;
 }
 
-.card button.secondary {
-background: #e5e7eb;
+button.secondary {
+background: #f3f4f6;
 color: #333;
 }
 
-.card button.secondary:hover {
-background: #d1d5db;
+button.secondary:hover {
+background: #e5e7eb;
 }
 
-/* Liens Support */
-.support-links a {
-display: inline-block;
-margin-right: 15px;
+/* Support */
+.support-card {
+background: #ffffff;
+border-radius: 12px;
+padding: 20px;
+margin-bottom: 20px;
+box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+text-align: center;
+}
+
+.support-card a {
+display: block;
+margin: 5px 0;
 color: #2563eb;
 text-decoration: none;
 font-size: 14px;
 }
 
-.support-links a:hover {
+.support-card a:hover {
 text-decoration: underline;
 }
 
-/* Bouton "Se déconnecter" */
-.logout {
-display: inline-block;
-margin-top: 10px;
-color: #dc2626;
-font-weight: bold;
-cursor: pointer;
+/* Déconnexion */
+.logout-card {
+background: #fff5f5;
+border-radius: 12px;
+padding: 15px;
+text-align: center;
+border: 1px solid #fca5a5;
+box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.logout:hover {
-text-decoration: underline;
+.logout-card button {
+background: #dc2626;
+color: white;
+}
+
+.logout-card button:hover {
+background: #b91c1c;
 }

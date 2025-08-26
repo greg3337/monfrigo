@@ -1,156 +1,144 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { onAuthStateChanged, sendPasswordResetEmail, updateProfile } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "../firebase/firebase-config";
-import "./settings.css";
+import React, { useEffect, useState } from 'react';
+import { onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/firebase-config';
+import './settings.css';
 
 export default function SettingsPage() {
 const [user, setUser] = useState(null);
-const [displayName, setDisplayName] = useState("");
+const [displayName, setDisplayName] = useState('');
+const [email, setEmail] = useState('');
 const [saving, setSaving] = useState(false);
-const [info, setInfo] = useState("");
+const [msg, setMsg] = useState('');
 
-// Charge l'utilisateur + son profil (Firestore si dispo)
+// Charge l’utilisateur + son doc Firestore
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
-setInfo("");
-
+setMsg('');
 if (!u) return;
 
-// nom depuis Auth par défaut
-let name = typeof u.displayName === "string" ? u.displayName : "";
-
-// si tu stockes aussi le profil dans Firestore: users/{uid}
+setEmail(u.email || '');
+// récupère le nom depuis Firestore si présent
 try {
-const ref = doc(db, "users", u.uid);
-const snap = await getDoc(ref);
-if (snap.exists() && typeof snap.data()?.name === "string") {
-name = snap.data().name;
+const snap = await getDoc(doc(db, 'users', u.uid));
+const nameFromDb = snap.exists() ? snap.data().name : '';
+setDisplayName(nameFromDb || u.displayName || '');
+} catch {
+setDisplayName(u.displayName || '');
 }
-} catch (e) {
-console.warn("Lecture profil Firestore:", e);
-}
-
-setDisplayName(name || "");
 });
-
 return () => unsub();
 }, []);
 
-// Enregistre le nom d’affichage (Auth + Firestore)
-const saveProfile = async (e) => {
-e.preventDefault();
+// Enregistrer le nom
+const handleSave = async () => {
 if (!user) return;
-
 setSaving(true);
-setInfo("");
-
+setMsg('');
 try {
-// 1) Auth
-await updateProfile(user, { displayName: displayName || "" });
-
-// 2) Firestore (merge)
+// maj auth (facultatif mais propre)
+await updateProfile(user, { displayName: displayName || '' });
+// maj firestore
 await setDoc(
-doc(db, "users", user.uid),
-{ name: displayName || "" },
+doc(db, 'users', user.uid),
+{ name: displayName || '' },
 { merge: true }
 );
-
-setInfo("Profil mis à jour ✅");
+setMsg('✅ Modifications enregistrées.');
 } catch (e) {
-console.error(e);
-setInfo("Erreur lors de l’enregistrement du profil.");
+setMsg("❌ Impossible d'enregistrer. Réessaie.");
+console.warn(e);
 } finally {
 setSaving(false);
+setTimeout(() => setMsg(''), 3000);
 }
 };
 
-// Lien reset mot de passe (envoie un email)
-const resetPassword = async () => {
-if (!user?.email) return;
+// Lien de reset mot de passe
+const handleChangePassword = async () => {
+if (!email) return;
 try {
-await sendPasswordResetEmail(auth, user.email);
-setInfo("Email de réinitialisation envoyé 📧");
+await sendPasswordResetEmail(auth, email);
+setMsg('📨 Email de réinitialisation envoyé.');
 } catch (e) {
-console.error(e);
-setInfo("Impossible d’envoyer l’email de réinitialisation.");
+setMsg("❌ Envoi impossible. Vérifie l'email.");
+console.warn(e);
+} finally {
+setTimeout(() => setMsg(''), 3500);
+}
+};
+
+// Déconnexion
+const handleLogout = async () => {
+try {
+await signOut(auth);
+} catch (e) {
+console.warn(e);
 }
 };
 
 if (!user) {
 return (
-<div className="wrap">
+<div className="settings-container">
 <h1>Paramètres</h1>
-<p>Veuillez vous connecter pour gérer votre profil.</p>
-<Link href="/login" className="primary">Se connecter</Link>
+<p>Connecte-toi pour gérer ton profil.</p>
 </div>
 );
 }
 
 return (
-<div className="wrap">
+<div className="settings-container">
 <h1>Paramètres</h1>
 <p>Personnalisez votre expérience</p>
 
-{/* Carte Profil */}
-<section className="card">
-<div className="cardHeader">
-<h2>Profil</h2>
-</div>
+<div className="profile-card">
+<div style={{ marginBottom: 12, color: '#555', fontWeight: 600 }}>Profil</div>
 
-<form onSubmit={saveProfile} className="form">
-<label className="label">Adresse e-mail</label>
-<input className="input" type="email" value={user.email || ""} disabled />
-
-<label className="label">Nom d’affichage</label>
 <input
-className="input"
-type="text"
-placeholder="Ex. Grégoire"
-value={displayName}
-onChange={(e) => setDisplayName(e.target.value)}
+type="email"
+value={email}
+readOnly
+placeholder="Adresse e-mail"
+aria-label="Adresse e-mail"
 />
 
-<div className="row">
-<button type="submit" className="primary" disabled={saving}>
-{saving ? "Enregistrement..." : "Enregistrer"}
-</button>
+<input
+type="text"
+value={displayName}
+onChange={(e) => setDisplayName(e.target.value)}
+placeholder="Ex. Grégoire"
+aria-label="Nom à afficher"
+/>
 
-<button type="button" className="secondary" onClick={resetPassword}>
+<div className="actions">
+<button onClick={handleSave} disabled={saving}>
+{saving ? 'Sauvegarde…' : 'Enregistrer'}
+</button>
+<button className="secondary" type="button" onClick={handleChangePassword}>
 Modifier le mot de passe
 </button>
 </div>
 
-{info && <p className="hint" style={{ marginTop: 8 }}>{info}</p>}
-</form>
-</section>
+{msg ? (
+<div style={{ marginTop: 10, fontSize: 13, color: msg.startsWith('✅') || msg.startsWith('📨') ? '#065f46' : '#b91c1c' }}>
+{msg}
+</div>
+) : null}
+</div>
 
-{/* Support */}
-<section className="card">
-<div className="cardHeader">
-<h2>Support</h2>
+<div className="support-card">
+<div style={{ marginBottom: 8, color: '#555', fontWeight: 600 }}>Support</div>
+<a href="/faq">Aide et FAQ</a>
+<a href="/privacy">Confidentialité</a>
+<a href="mailto:contact@monfrigo.app">Nous contacter</a>
 </div>
-<ul className="list">
-<li><Link href="/faq">Aide et FAQ</Link></li>
-<li><Link href="/privacy">Confidentialité</Link></li>
-<li><a href="mailto:contact@monfrigo.app">Nous contacter</a></li>
-</ul>
-</section>
 
-{/* Danger zone – si tu as déjà ces actions ailleurs, garde-les là */}
-<section className="card">
-<div className="cardHeader">
-<h2>Compte</h2>
+<div className="logout-card">
+<button type="button" onClick={handleLogout}>Se déconnecter</button>
 </div>
-<div className="row">
-<Link href="/logout" className="secondary">Se déconnecter</Link>
-{/* si tu as déjà ton bouton supprimer compte, garde-le ici */}
-</div>
-</section>
 </div>
 );
 }
