@@ -1,110 +1,176 @@
-.settings-container {
-max-width: 600px;
-margin: 40px auto;
-padding: 20px;
-font-family: "Segoe UI", Tahoma, sans-serif;
-color: #333;
-}
-
-/* Titre */
-.settings-container h1 {
-font-size: 24px;
-margin-bottom: 8px;
-text-align: center;
-}
-
-.settings-container p {
-color: #666;
-text-align: center;
-margin-bottom: 25px;
-}
-
-/* Section profil */
-.profile-card {
-background: #ffffff;
-border-radius: 12px;
-padding: 20px;
-margin-bottom: 20px;
-box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-}
-
-.profile-card input {
-width: 100%;
-padding: 12px;
-border: 1px solid #ddd;
-border-radius: 8px;
-margin-bottom: 15px;
-font-size: 15px;
-}
-
-.profile-card .actions {
+.settings h1 {
 display: flex;
-justify-content: space-between;
 align-items: center;
+gap: 10px;
+font-weight: 700;
+letter-spacing: .2px;
+}
+.settings h1::before {
+content: "⚙️";
+font-size: 1.05em;
 }
 
-/* Boutons */
-button {
-background: #2563eb;
-color: white;
+.settings .subtitle,
+.settings p.subtitle {
+margin-top: 2px;
+color: #737373;
+font-size: .95rem;
+}
+
+/* Cartes (profil / support / logout) */
+.settings .card,
+.settings .profile-card,
+.settings .support-card,
+.settings .logout-card {
+border-radius: 12px;
+border: 1px solid rgba(0,0,0,.06);
+background: rgba(255,255,255,.72);
+box-shadow: 0 8px 24px rgba(0,0,0,.06);
+backdrop-filter: blur(6px);
+margin-top: 14px;
+}
+
+.settings .card,
+.settings .profile-card { padding: 16px 18px; }
+.settings .support-card { padding: 14px 18px; }
+.settings .logout-card { padding: 12px; }
+
+/* Libellés */
+.settings .block-label {
+display: block;
+font-size: .9rem;
+color: #666;
+margin-bottom: 6px;
+}
+
+/* Inputs */
+.settings input[type="text"],
+.settings input[type="email"],
+.settings input[type="password"] {
+width: 100%;
+height: 40px;
+padding: 0 12px;
+border-radius: 8px;
+border: 1px solid #e6e6e6;
+background: #fff;
+transition: border-color .15s ease, box-shadow .15s ease;
+margin-bottom: 10px;
+}
+
+.settings input:focus {
+outline: none;
+border-color: #3b82f6;
+box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* Ligne email + bouton mdp */
+.settings .row {
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 10px;
+margin-top: 4px;
+margin-bottom: 8px;
+}
+
+/* Actions (Enregistrer) */
+.settings .actions {
+display: flex;
+gap: 10px;
+}
+
+/* Bouton primaire */
+.settings .btn-primary,
+.settings button[type="submit"],
+.settings button.primary {
+height: 36px;
+padding: 0 14px;
 border: none;
-padding: 10px 16px;
-border-radius: 6px;
+border-radius: 8px;
+background: #2563eb;
+color: #fff;
+font-weight: 600;
 cursor: pointer;
-font-size: 14px;
-transition: background 0.2s;
+transition: transform .05s ease, box-shadow .15s ease, background .15s ease;
 }
+.settings .btn-primary:hover { background:#1e40af; box-shadow:0 6px 14px rgba(37,99,235,.25); }
+.settings .btn-primary:active{ transform: translateY(1px); }
 
-button:hover {
-background: #1d4ed8;
+/* Bouton ghost (modifier mot de passe) */
+.settings .btn-ghost {
+height: 36px;
+padding: 0 12px;
+border-radius: 8px;
+border: 1px solid #e6e6e6;
+background: #fff;
+color: #555;
+font-weight: 500;
+transition: background .15s ease, border-color .15s ease;
 }
-
-button.secondary {
-background: #f3f4f6;
-color: #333;
-}
-
-button.secondary:hover {
-background: #e5e7eb;
-}
+.settings .btn-ghost:hover { background:#f7f7f7; border-color:#dcdcdc; }
 
 /* Support */
-.support-card {
-background: #ffffff;
-border-radius: 12px;
-padding: 20px;
-margin-bottom: 20px;
-box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-text-align: center;
+.settings .support-card .links {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
 }
-
-.support-card a {
-display: block;
-margin: 5px 0;
+.settings .support-card a {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+font-size: .95rem;
 color: #2563eb;
 text-decoration: none;
-font-size: 14px;
+padding: 6px 8px;
+border-radius: 8px;
+transition: background .15s ease, color .15s ease;
 }
+.settings .support-card a:hover { background: rgba(37,99,235,.08); }
 
-.support-card a:hover {
-text-decoration: underline;
-}
+/* Pictos selon le lien */
+.settings .support-card a[href*="/faq"]::before { content: "❓"; }
+.settings .support-card a[href*="/privacy"]::before { content: "🔒"; }
+.settings .support-card a[href^="mailto:"]::before { content: "✉️"; }
 
 /* Déconnexion */
-.logout-card {
-background: #fff5f5;
-border-radius: 12px;
-padding: 15px;
-text-align: center;
-border: 1px solid #fca5a5;
-box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+.settings .logout-card button {
+width: 100%;
+height: 40px;
+border: none;
+border-radius: 10px;
+background: #e11d48;
+color: #fff;
+font-weight: 700;
+letter-spacing: .2px;
+cursor: pointer;
+transition: filter .15s ease, transform .05s ease;
+}
+.settings .logout-card button:hover { filter: brightness(.95); }
+.settings .logout-card button:active { transform: translateY(1px); }
+
+/* Messages */
+.settings .alert {
+margin-top: 10px;
+padding: 10px 12px;
+border-radius: 10px;
+font-size: .95rem;
+background: #ecfdf5;
+color: #065f46;
+border: 1px solid #a7f3d0;
+}
+.settings .alert.error {
+background: #fef2f2;
+color: #991b1b;
+border: 1px solid #fecaca;
 }
 
-.logout-card button {
-background: #dc2626;
-color: white;
-}
+/* Responsive */
+@media (max-width: 520px) {
+.settings .profile-card,
+.settings .support-card,
+.settings .logout-card { padding: 12px; }
 
-.logout-card button:hover {
-background: #b91c1c;
+.settings .row {
+grid-template-columns: 1fr;
+}
 }

@@ -104,72 +104,64 @@ return (
 }
 
 return (
-<div className="settings-container">
+<div className="settings">
 <h1>Paramètres</h1>
-<p>Personnalisez votre expérience</p>
+<p className="subtitle">Personnalisez votre expérience</p>
 
-<div className="profile-card">
-<div style={{ marginBottom: 12, color: '#555', fontWeight: 600 }}>Profil</div>
+{/* Carte Profil */}
+<div className="profile-card card">
+<label className="block-label">Profil</label>
 
 <input
 type="email"
-value={email}
+value={email || ""}
 readOnly
-placeholder="Adresse e-mail"
 aria-label="Adresse e-mail"
 />
 
+<div className="row">
 <input
 type="text"
-value={displayName}
-onChange={(e) => setDisplayName(e.target.value)}
 placeholder="Ex. Grégoire"
-aria-label="Nom à afficher"
+value={name || ""}
+onChange={(e) => setName(e.target.value)}
+aria-label="Votre prénom"
 />
 
-<div className="actions">
-<button onClick={handleSave} disabled={saving}>
-{saving ? 'Sauvegarde…' : 'Enregistrer'}
-</button>
-<button className="secondary" type="button" onClick={handleChangePassword}>
+<button
+type="button"
+className="btn-ghost"
+onClick={handleChangePassword}
+>
 Modifier le mot de passe
 </button>
 </div>
 
-{msg ? (
-<div
-style={{
-marginTop: 10,
-fontSize: 13,
-color:
-msg.startsWith('✅') || msg.startsWith('📨') ? '#065f46' : '#b91c1c',
-}}
->
-{msg}
-</div>
-) : null}
+<div className="actions">
+<button type="button" className="btn-primary" onClick={handleSave}>
+Enregistrer
+</button>
 </div>
 
-<div className="support-card">
-<div style={{ marginBottom: 8, color: '#555', fontWeight: 600 }}>Support</div>
-<a href="settings/faq">Aide et FAQ</a>
-<a href="settings/privacy">Confidentialité</a>
+{msg ? <div className={`alert ${msg.type === 'error' ? 'error' : ''}`}>{msg.text}</div> : null}
+</div>
+
+{/* Carte Support */}
+<div className="support-card card">
+<label className="block-label">Support</label>
+<div className="links">
+<a href="/settings/faq">Aide et FAQ</a>
+<a href="/settings/privacy">Confidentialité</a>
 <a href="mailto:contact@monfrigo.app">Nous contacter</a>
 </div>
-
-<div className="logout-card">
-<button type="button" onClick={handleLogout}>Se déconnecter</button>
 </div>
 
-{/* Onglets bas */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
-</Link>
-</nav>
+{/* Déconnexion */}
+<div className="logout-card card">
+<button type="button" onClick={handleLogout}>
+Se déconnecter
+</button>
+</div>
 </div>
 );
 }
