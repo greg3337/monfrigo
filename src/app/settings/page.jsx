@@ -1,154 +1,143 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+// Chemin correct vers ta config Firebase
 import { auth, db } from "../firebase/firebase-config";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged, sendPasswordResetEmail, signOut } from "firebase/auth";
+
+import {
+signOut,
+sendPasswordResetEmail,
+onAuthStateChanged,
+updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+
 import "./settings.css";
 
 export default function SettingsPage() {
-// ----- state -----
-const [user, setUser] = useState(null);
-const [name, setName] = useState("");
-const [msg, setMsg] = useState("");
 const pathname = usePathname();
 
-// ----- auth + chargement profil -----
-useEffect(() => {
-const unsub = onAuthStateChanged(auth, async (u) => {
-setUser(u || null);
-setMsg("");
-if (!u) return;
+const [user, setUser] = useState(null);
+const [name, setName] = useState("");
+const [saving, setSaving] = useState(false);
+const [msg, setMsg] = useState("");
 
-try {
-const userRef = doc(db, "users", u.uid);
-const snap = await getDoc(userRef);
-const currentName =
-(snap.exists() && snap.data()?.name) ||
-(typeof u.displayName === "string" ? u.displayName : "");
-setName(currentName || "");
-} catch (e) {
-console.warn("Chargement profil erreur:", e);
-}
+useEffect(() => {
+const unsub = onAuthStateChanged(auth, (u) => {
+setUser(u || null);
+setName(u?.displayName || "");
 });
 return () => unsub();
 }, []);
 
-// ----- actions -----
-const handleSave = async (e) => {
+async function handleSave(e) {
 e.preventDefault();
 if (!user) return;
-try {
-await setDoc(
-doc(db, "users", user.uid),
-{ name: name.trim() },
-{ merge: true }
-);
-setMsg("Profil enregistré ✅");
-setTimeout(() => setMsg(""), 2500);
-} catch (e) {
-console.warn("Enregistrement profil erreur:", e);
-setMsg("Erreur d’enregistrement.");
-}
-};
+setSaving(true);
+setMsg("");
 
-const handlePassword = async () => {
+try {
+await updateProfile(user, { displayName: name });
+await setDoc(doc(db, "users", user.uid), { name }, { merge: true });
+setMsg("✅ Profil enregistré.");
+} catch (err) {
+console.warn(err);
+setMsg("❌ Impossible d’enregistrer.");
+} finally {
+setSaving(false);
+setTimeout(() => setMsg(""), 2500);
+}
+}
+
+async function handleResetPassword() {
 if (!user?.email) return;
 try {
 await sendPasswordResetEmail(auth, user.email);
-setMsg("Email de réinitialisation envoyé 📧");
+setMsg("📧 Email de réinitialisation envoyé.");
+} catch (err) {
+console.warn(err);
+setMsg("❌ Impossible d’envoyer l’email.");
+} finally {
 setTimeout(() => setMsg(""), 2500);
-} catch (e) {
-console.warn("Reset password erreur:", e);
-setMsg("Impossible d’envoyer l’email.");
 }
-};
+}
 
-const handleLogout = async () => {
+async function handleLogout() {
 try {
 await signOut(auth);
-// Next redirigera via ta logique globale d’auth
-} catch (e) {
-console.warn("Logout erreur:", e);
+window.location.href = "/login";
+} catch (err) {
+console.warn(err);
 }
-};
+}
 
 return (
-<>
-{/* Contenu principal */}
-<div className="settings-wrap">
-<h1 className="pageTitle">Paramètres</h1>
-<p className="pageSub">Personnalisez votre expérience</p>
+<div className="settings-page">
+<h1>Paramètres</h1>
+<p className="subtitle">Personnalisez votre expérience</p>
 
 <form className="card" onSubmit={handleSave}>
 <div className="row">
 <label>Profil</label>
-<input
-type="email"
-value={user?.email || ""}
-disabled
-className="input"
-/>
+<input type="email" value={user?.email || ""} disabled />
 </div>
 
 <div className="row">
 <input
 type="text"
+placeholder="Ex. Grégoire"
 value={name}
 onChange={(e) => setName(e.target.value)}
-placeholder="Ex. Grégoire"
-className="input"
 />
-<button type="button" className="btn ghost" onClick={handlePassword}>
-Modifier 
+<button type="button" className="outline" onClick={handleResetPassword}>
+Modifier le mot de passe
 </button>
 </div>
 
 <div className="actions">
-<button type="submit" className="btn primary">
-Enregistrer
+<button className="primary" type="submit" disabled={saving}>
+{saving ? "Enregistrement..." : "Enregistrer"}
 </button>
 </div>
 
-{msg ? <div className="hint">{msg}</div> : null}
+{msg ? <div className="flash">{msg}</div> : null}
 </form>
 
 <div className="card support-card">
-<div className="support-title">Support</div>
+<h3>Support</h3>
 <div className="links">
-<a href="/settings/faq">Aide et FAQ</a>
-<a href="/settings/privacy">Confidentialité</a>
+<Link href="/settings/faq">Aide et FAQ</Link>
+<Link href="/settings/privacy">Confidentialité</Link>
 <a href="mailto:contact@monfrigo.app">Nous contacter</a>
 </div>
 </div>
 
-<div className="card">
-<button type="button" className="btn danger full" onClick={handleLogout}>
+<div className="card logout-card">
+<button type="button" className="danger" onClick={handleLogout}>
 Se déconnecter
 </button>
 </div>
-</div>
 
-{/* --- TABBAR en bas --- */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
+{/* --- Onglets en bas --- */}
+<nav className="tabbar" role="navigation" aria-label="navigation principale">
 <Link
 href="/fridge"
-className={`tab ${pathname?.startsWith("/fridge") ? "is-active" : ""}`}
+className={`tab ${pathname.includes("/fridge") ? "is-active" : ""}`}
 >
-<span className="tab__icon">🧊</span>
+<span className="tab__icon" />
 <span className="tab__label">Frigo</span>
 </Link>
-
 <Link
 href="/settings"
-className={`tab ${pathname?.startsWith("/settings") ? "is-active" : ""}`}
+className={`tab ${pathname.includes("/settings") ? "is-active" : ""}`}
 >
-<span className="tab__icon">⚙️</span>
+<span className="tab__icon" />
 <span className="tab__label">Paramètres</span>
 </Link>
 </nav>
-</>
+</div>
 );
 }
