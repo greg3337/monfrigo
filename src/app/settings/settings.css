@@ -1,102 +1,96 @@
-/* Base */
-* { box-sizing: border-box; }
-:root {
---bg: #f5f7fb;
---card: #ffffff;
---text: #222;
---sub: #667085;
---primary: #0d6efd;
---primary-hover: #0a58ca;
---ghost: #eef2f7;
---danger: #dc3545;
---danger-hover: #b02a37;
---border: #e4e7ed;
---shadow: 0 6px 20px rgba(0,0,0,.08);
-}
-
 .settings-container {
-max-width: 920px;
-margin: 20px auto 96px; /* espace pour la tabbar */
-padding: 8px 16px;
-background: var(--bg);
-border-radius: 12px;
+max-width: 600px;
+margin: 40px auto;
+padding: 20px;
+font-family: Arial, sans-serif;
+color: #333;
 }
 
-.settings-header {
-display: flex; align-items: center; gap: 12px;
-margin: 8px 0 16px;
-}
-.settings-header .icon { font-size: 28px; }
-.settings-header h1 { font-size: 22px; color: var(--text); }
-.settings-header p { color: var(--sub); }
-
-/* Cartes */
-.settings-section {
-background: var(--card);
-border-radius: 14px;
-padding: 16px;
-box-shadow: var(--shadow);
-border: 1px solid var(--border);
-margin-bottom: 16px;
-}
-.settings-section h2 {
-font-size: 16px;
-margin-bottom: 12px;
+/* Titre */
+.settings-container h1 {
+font-size: 26px;
+margin-bottom: 5px;
 }
 
-/* Lignes / champs */
-.row { display: flex; gap: 12px; align-items: center; }
-.row.between { justify-content: space-between; }
+.settings-container p {
+color: #666;
+margin-bottom: 20px;
+}
 
-.userName { font-weight: 700; }
-.userEmail { color: var(--sub); }
-
-.field { margin-bottom: 12px; }
-.field label { display: block; margin-bottom: 6px; color: var(--text); }
-.field select {
-width: 100%;
-padding: 10px 12px;
-border-radius: 10px;
-border: 1px solid var(--border);
+/* Les cartes (sections Profil, Support, etc.) */
+.card {
 background: #fff;
+border-radius: 10px;
+padding: 20px;
+margin-bottom: 20px;
+box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* Switch lignes */
-.switchRow {
-display: flex; gap: 10px; align-items: center;
-padding: 10px 0;
-border-top: 1px dashed var(--border);
+/* Labels */
+.card label {
+display: block;
+font-weight: bold;
+margin-bottom: 8px;
 }
-.switchRow:first-of-type { border-top: none; }
-.switchRow input { transform: scale(1.2); }
-.switchRow .label { font-weight: 600; }
-.switchRow .sub { color: var(--sub); font-size: .92rem; }
+
+/* Inputs */
+.card input {
+width: 100%;
+padding: 10px;
+border: 1px solid #ddd;
+border-radius: 6px;
+margin-bottom: 12px;
+font-size: 14px;
+}
 
 /* Boutons */
-.btn {
+.card button {
+background: #2563eb;
+color: white;
 border: none;
-border-radius: 10px;
-padding: 10px 14px;
+padding: 10px 18px;
+border-radius: 6px;
 cursor: pointer;
-font-weight: 700;
+font-size: 14px;
+margin-right: 10px;
+transition: background 0.2s;
 }
-.btn.primary { background: var(--primary); color: #fff; }
-.btn.primary:hover { background: var(--primary-hover); }
-.btn.ghost { background: var(--ghost); color: var(--text); }
-.btn.danger { background: var(--danger); color: #fff; width: 100%; margin-top: 10px; }
-.btn.danger:hover { background: var(--danger-hover); }
 
-/* Liens support */
-.links { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.links a { color: var(--primary); text-decoration: none; }
-.links a:hover { text-decoration: underline; }
+.card button:hover {
+background: #1d4ed8;
+}
 
-/* Encadré danger */
-.dangerBox { border: 1px solid #fee2e2; background: #fff5f5; }
+.card button.secondary {
+background: #e5e7eb;
+color: #333;
+}
 
-/* Tabbar (tu as déjà tabbar.css, ceci ne fait que garantir l'espace) */
-body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+.card button.secondary:hover {
+background: #d1d5db;
+}
 
-@media (max-width: 480px) {
-.settings-container { padding: 8px; }
+/* Liens Support */
+.support-links a {
+display: inline-block;
+margin-right: 15px;
+color: #2563eb;
+text-decoration: none;
+font-size: 14px;
+}
+
+.support-links a:hover {
+text-decoration: underline;
+}
+
+/* Bouton "Se déconnecter" */
+.logout {
+display: inline-block;
+margin-top: 10px;
+color: #dc2626;
+font-weight: bold;
+cursor: pointer;
+}
+
+.logout:hover {
+text-decoration: underline;
 }
