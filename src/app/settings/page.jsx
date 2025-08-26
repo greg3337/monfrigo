@@ -1,154 +1,122 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-onAuthStateChanged,
-updateProfile,
-sendPasswordResetEmail,
-signOut,
-} from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase/firebase-config';
-import './settings.css';
-import '../styles/tabbar.css'; // <-- styles des onglets
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { auth, db } from "../firebase-config";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged, sendPasswordResetEmail, signOut } from "firebase/auth";
+import "./settings.css";
 
 export default function SettingsPage() {
+// ----- state -----
+const [user, setUser] = useState(null);
+const [name, setName] = useState("");
+const [msg, setMsg] = useState("");
 const pathname = usePathname();
 
-const [user, setUser] = useState(null);
-const [displayName, setDisplayName] = useState('');
-const [email, setEmail] = useState('');
-const [saving, setSaving] = useState(false);
-const [msg, setMsg] = useState('');
-
-// Charge l’utilisateur + son doc Firestore
+// ----- auth + chargement profil -----
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
-setMsg('');
+setMsg("");
 if (!u) return;
 
-setEmail(u.email || '');
 try {
-const snap = await getDoc(doc(db, 'users', u.uid));
-const nameFromDb = snap.exists() ? snap.data().name : '';
-setDisplayName(nameFromDb || u.displayName || '');
-} catch {
-setDisplayName(u.displayName || '');
+const userRef = doc(db, "users", u.uid);
+const snap = await getDoc(userRef);
+const currentName =
+(snap.exists() && snap.data()?.name) ||
+(typeof u.displayName === "string" ? u.displayName : "");
+setName(currentName || "");
+} catch (e) {
+console.warn("Chargement profil erreur:", e);
 }
 });
 return () => unsub();
 }, []);
 
-const handleSave = async () => {
+// ----- actions -----
+const handleSave = async (e) => {
+e.preventDefault();
 if (!user) return;
-setSaving(true);
-setMsg('');
 try {
-await updateProfile(user, { displayName: displayName || '' });
 await setDoc(
-doc(db, 'users', user.uid),
-{ name: displayName || '' },
+doc(db, "users", user.uid),
+{ name: name.trim() },
 { merge: true }
 );
-setMsg('✅ Modifications enregistrées.');
+setMsg("Profil enregistré ✅");
+setTimeout(() => setMsg(""), 2500);
 } catch (e) {
-setMsg("❌ Impossible d'enregistrer. Réessaie.");
-console.warn(e);
-} finally {
-setSaving(false);
-setTimeout(() => setMsg(''), 3000);
+console.warn("Enregistrement profil erreur:", e);
+setMsg("Erreur d’enregistrement.");
 }
 };
 
-const handleChangePassword = async () => {
-if (!email) return;
+const handlePassword = async () => {
+if (!user?.email) return;
 try {
-await sendPasswordResetEmail(auth, email);
-setMsg('📨 Email de réinitialisation envoyé.');
+await sendPasswordResetEmail(auth, user.email);
+setMsg("Email de réinitialisation envoyé 📧");
+setTimeout(() => setMsg(""), 2500);
 } catch (e) {
-setMsg("❌ Envoi impossible. Vérifie l’email.");
-console.warn(e);
-} finally {
-setTimeout(() => setMsg(''), 3500);
+console.warn("Reset password erreur:", e);
+setMsg("Impossible d’envoyer l’email.");
 }
 };
 
 const handleLogout = async () => {
 try {
 await signOut(auth);
+// Next redirigera via ta logique globale d’auth
 } catch (e) {
-console.warn(e);
+console.warn("Logout erreur:", e);
 }
 };
 
-if (!user) {
 return (
-<div className="settings-container">
-<h1>Paramètres</h1>
-<p>Connecte-toi pour gérer ton profil.</p>
+<>
+{/* Contenu principal */}
+<div className="settings-wrap">
+<h1 className="pageTitle">Paramètres</h1>
+<p className="pageSub">Personnalisez votre expérience</p>
 
-{/* Onglets bas */}
-<nav className="tabbar" role="navigation" aria-label="Navigation principale">
-<Link href="/fridge" className={`tab ${pathname?.startsWith('/fridge') ? 'is-active' : ''}`}>
-<span className="tab__icon">🧊</span><span className="tab__label">Frigo</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname?.startsWith('/settings') ? 'is-active' : ''}`}>
-<span className="tab__icon">⚙️</span><span className="tab__label">Paramètres</span>
-</Link>
-</nav>
-</div>
-);
-}
-
-return (
-<div className="settings">
-<h1>Paramètres</h1>
-<p className="subtitle">Personnalisez votre expérience</p>
-
-{/* Carte Profil */}
-<div className="profile-card card">
-<label className="block-label">Profil</label>
-
+<form className="card" onSubmit={handleSave}>
+<div className="row">
+<label>Profil</label>
 <input
 type="email"
-value={email || ""}
-readOnly
-aria-label="Adresse e-mail"
+value={user?.email || ""}
+disabled
+className="input"
 />
+</div>
 
 <div className="row">
 <input
 type="text"
-placeholder="Ex. Grégoire"
-value={name || ""}
+value={name}
 onChange={(e) => setName(e.target.value)}
-aria-label="Votre prénom"
+placeholder="Ex. Grégoire"
+className="input"
 />
-
-<button
-type="button"
-className="btn-ghost"
-onClick={handleChangePassword}
->
-Modifier le mot de passe
+<button type="button" className="btn ghost" onClick={handlePassword}>
+Modifier 
 </button>
 </div>
 
 <div className="actions">
-<button type="button" className="btn-primary" onClick={handleSave}>
+<button type="submit" className="btn primary">
 Enregistrer
 </button>
 </div>
 
-{msg ? <div className={`alert ${msg.type === 'error' ? 'error' : ''}`}>{msg.text}</div> : null}
-</div>
+{msg ? <div className="hint">{msg}</div> : null}
+</form>
 
-{/* Carte Support */}
-<div className="support-card card">
-<label className="block-label">Support</label>
+<div className="card support-card">
+<div className="support-title">Support</div>
 <div className="links">
 <a href="/settings/faq">Aide et FAQ</a>
 <a href="/settings/privacy">Confidentialité</a>
@@ -156,12 +124,31 @@ Enregistrer
 </div>
 </div>
 
-{/* Déconnexion */}
-<div className="logout-card card">
-<button type="button" onClick={handleLogout}>
+<div className="card">
+<button type="button" className="btn danger full" onClick={handleLogout}>
 Se déconnecter
 </button>
 </div>
 </div>
+
+{/* --- TABBAR en bas --- */}
+<nav className="tabbar" role="navigation" aria-label="Navigation principale">
+<Link
+href="/fridge"
+className={`tab ${pathname?.startsWith("/fridge") ? "is-active" : ""}`}
+>
+<span className="tab__icon">🧊</span>
+<span className="tab__label">Frigo</span>
+</Link>
+
+<Link
+href="/settings"
+className={`tab ${pathname?.startsWith("/settings") ? "is-active" : ""}`}
+>
+<span className="tab__icon">⚙️</span>
+<span className="tab__label">Paramètres</span>
+</Link>
+</nav>
+</>
 );
 }
