@@ -207,7 +207,7 @@ Modifier
 {/* Support */}
 <div className="card support-card">
 <h3>Support</h3>
-<div className="links">
+<div className="support-links">
 <Link href="/settings/faq">Aide et FAQ</Link>
 <Link href="/settings/privacy">Confidentialité</Link>
 <a href="mailto:contact@monfrigo.app">Nous contacter</a>
