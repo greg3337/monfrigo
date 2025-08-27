@@ -191,7 +191,7 @@ value={name}
 onChange={(e) => setName(e.target.value)}
 />
 <button type="button" className="outline" onClick={handleResetPassword}>
-Modifier le mot de passe
+Modifier
 </button>
 </div>
 
