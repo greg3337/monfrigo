@@ -3,32 +3,48 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import AddProductModal from "./AddProductModal.jsx";
 
-// Auth + config Firebase
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db, app } from "../firebase/firebase-config";
+import {
+collection,
+deleteDoc,
+doc,
+getDoc,
+onSnapshot,
+orderBy,
+query,
+} from "firebase/firestore";
 
-// Firestore
-import {collection,deleteDoc,doc,getDoc,onSnapshot,orderBy,query,setDoc,arrayUnion,} from "firebase/firestore";
+// ⚠️ adapte ce chemin si besoin (../firebase-config ou ../firebase/firebase-config)
+import { auth, db } from "../firebase-config";
 
-// FCM (Web push)
-import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
-
-// Style onglets bas
 import "../styles/tabbar.css";
 
+/* ---------- Statut visuel (fallback si p.status absent) ---------- */
+function computeStatus(p) {
+if (p?.status) return p.status;
+if (!p?.expirationDate) return "ok";
+try {
+const today = new Date();
+const d = new Date(p.expirationDate);
+d.setHours(0, 0, 0, 0);
+today.setHours(0, 0, 0, 0);
+const diffDays = Math.round((d - today) / 86400000);
+if (diffDays < 0) return "expired";
+if (diffDays <= 2) return "urgent";
+return "ok";
+} catch {
+return "ok";
+}
+}
+
 export default function FridgePage() {
-// --- Auth + doc user ---
 const [user, setUser] = useState(null);
 const [userDoc, setUserDoc] = useState(null);
 const [loading, setLoading] = useState(true);
-
-// --- Données produits ---
 const [products, setProducts] = useState([]);
 
-// --- UI ---
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [q, setQ] = useState("");
 const [category, setCategory] = useState("all");
@@ -36,143 +52,79 @@ const [place, setPlace] = useState("all");
 
 const pathname = usePathname();
 
-// ========== 1) Chargement Auth + Firestore ==========
 useEffect(() => {
-const unsub = onAuthStateChanged(auth, async (u) => {
+const unsubAuth = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
-
 if (!u) {
 setUserDoc(null);
 setProducts([]);
 setLoading(false);
 return;
 }
-
 try {
-// doc utilisateur
 const userRef = doc(db, "users", u.uid);
 const snap = await getDoc(userRef);
 if (snap.exists()) setUserDoc(snap.data());
 
-// collection produits ordonnée par expiration
 const qRef = query(
 collection(db, "users", u.uid, "products"),
 orderBy("expirationDate")
 );
-
-const off = onSnapshot(qRef, (s) => {
+const unsubProd = onSnapshot(qRef, (s) => {
 const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
 setProducts(list);
-});
-
 setLoading(false);
-return () => off();
+});
+return () => unsubProd();
 } catch (e) {
 console.error("Firestore error:", e);
 setLoading(false);
 }
 });
 
-return () => unsub();
+return () => unsubAuth();
 }, []);
 
-// ========== 2) Notifications push Web (FCM) ==========
-useEffect(() => {
-(async () => {
-try {
-if (typeof window === "undefined") return;
-if (!user) return;
-
-// FCM support ?
-const supported = await isSupported().catch(() => false);
-if (!supported) return;
-
-// Permission
-if (!("Notification" in window)) return;
-let permission = Notification.permission;
-if (permission === "default") {
-permission = await Notification.requestPermission();
-}
-if (permission !== "granted") return;
-
-// Enregistrer le service worker (doit être SERVI depuis /public)
-const swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-
-// Récupérer un token FCM
-const messaging = getMessaging(app);
-const token = await getToken(messaging, {
-vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY,
-serviceWorkerRegistration: swReg,
-});
-if (!token) return;
-
-// Stocker le token côté user (pour envoi futur de push)
-const userRef = doc(db, "users", user.uid);
-await setDoc(userRef, { fcmTokens: arrayUnion(token) }, { merge: true });
-
-// Écoute des messages quand l’app est AU PREMIER PLAN
-const offMessage = onMessage(messaging, (payload) => {
-const title = payload?.notification?.title || "Mon Frigo 🥶 Rappel";
-const body =
-payload?.notification?.body || "Un produit arrive à expiration.";
-
-// Petite notif locale (facultative — le SW gère déjà les notifs en bg)
-if (Notification.permission === "granted") {
-new Notification(title, { body, icon: "/favicon.ico" });
-}
-});
-
-return () => offMessage();
-} catch (err) {
-console.warn("FCM error:", err);
-}
-})();
-}, [user]);
-
-// ========== Actions ==========
 const deleteProduct = async (id) => {
 if (!user) return;
 await deleteDoc(doc(db, "users", user.uid, "products", id));
 };
 
-// ========== Sélecteur d’affichage ==========
 const visible = useMemo(() => {
+const qlc = q.trim().toLowerCase();
 return products.filter((p) => {
-const okQ =
-q.trim() === "" ||
-(p?.name || "").toString().toLowerCase().includes(q.toLowerCase());
-const okCat = category === "all" || (p?.category || "autre") === category;
-const okPlace = place === "all" || (p?.place || "frigo") === place;
-return okQ && okCat && okPlace;
+const nameOk = !qlc || String(p.name || "").toLowerCase().includes(qlc);
+const catOk = category === "all" || (p.category || "") === category;
+const placeOk = place === "all" || (p.place || "") === place;
+return nameOk && catOk && placeOk;
 });
 }, [products, q, category, place]);
 
-// ========== Compteurs ==========
-const total = products.length;
-const urgent = products.filter((p) => p.status === "urgent").length;
-const expired = products.filter((p) => p.status === "expiré" || p.status === "expire").length;
-
-// Nom affiché (Auth > Firestore > fallback)
-const greetingName =
-(typeof user?.displayName === "string" && user.displayName.trim()) ||
-(typeof userDoc?.name === "string" && userDoc.name.trim()) ||
-"";
+const total = visible.length;
+const urgentCount = visible.filter((p) => computeStatus(p) === "urgent").length;
+const expiredCount = visible.filter((p) => computeStatus(p) === "expired").length;
 
 if (loading) return <p>Chargement…</p>;
 
 return (
+<>
 <div className="wrap">
 {/* Header */}
 <div className="header">
 <div className="brand">
 <div className="brandTitle">Mon Frigo</div>
 <div className="brandSub">
-Salut{greetingName ? `, ${greetingName}` : ""} 👋
+Salut,{" "}
+{typeof user?.displayName === "string" && user.displayName.trim()
+? user.displayName
+: typeof userDoc?.name === "string" && userDoc.name.trim()
+? userDoc.name
+: "👋"}
 </div>
 </div>
 </div>
 
-{/* Cartes stats */}
+{/* Stats */}
 <div className="stats">
 <div className="card green">
 <div className="cardLabel">Total</div>
@@ -180,65 +132,61 @@ Salut{greetingName ? `, ${greetingName}` : ""} 👋
 </div>
 <div className="card orange">
 <div className="cardLabel">Urgent</div>
-<div className="cardValue">{urgent}</div>
+<div className="cardValue">{urgentCount}</div>
 </div>
 <div className="card red">
 <div className="cardLabel">Expirés</div>
-<div className="cardValue">{expired}</div>
+<div className="cardValue">{expiredCount}</div>
 </div>
 </div>
 
-{/* Barre d’actions */}
-<div className="actions">
+{/* Toolbar */}
+<div className="toolbar">
 <input
-className="search"
+className="input"
 placeholder="Rechercher un produit…"
 value={q}
 onChange={(e) => setQ(e.target.value)}
 />
-<select value={category} onChange={(e) => setCategory(e.target.value)}>
-<option value="all">Toutes les catégories</option>
-<option value="viande">Viande</option>
-<option value="poisson">Poisson</option>
-<option value="legume">Légume</option>
-<option value="laitier">Laitier</option>
-<option value="autre">Autre</option>
-</select>
-<select value={place} onChange={(e) => setPlace(e.target.value)}>
-<option value="all">Tous les lieux</option>
-<option value="frigo">Frigo</option>
-<option value="congelo">Congélô</option>
-<option value="placard">Placard</option>
-</select>
-
+{/* garde/branche tes selects si besoin */}
 <button className="primary" onClick={() => setIsModalOpen(true)}>
 + Ajouter un produit
 </button>
 </div>
 
-{/* Liste produits */}
-<div className="content">
-<ul className="grid">
-{visible.map((p) => (
+{/* Liste */}
+<ul className="list">
+{visible.map((p) => {
+const status = computeStatus(p);
+return (
 <li key={p.id} className="item">
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
+
+{status === "urgent" && (
+<span className="tag tag-urgent">Urgent</span>
+)}
+{status === "expired" && (
+<span className="tag tag-expired">Expiré</span>
+)}
+
+{p.expirationDate && (
 <span className="pill">{p.expirationDate}</span>
+)}
 </div>
+
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
 Supprimer
 </button>
 </li>
-))}
+);
+})}
 </ul>
-</div>
 
-{/* État vide */}
-{products.length === 0 && (
+{visible.length === 0 && (
 <div className="empty">
-<div className="emptyIcon" />
 <div className="emptyTitle">Votre frigo est vide</div>
-<div className="emptyText">
+<div className="emptySub">
 Ajoutez vos premiers produits pour commencer.
 </div>
 <button className="primary" onClick={() => setIsModalOpen(true)}>
@@ -247,20 +195,38 @@ Ajouter un produit
 </div>
 )}
 
-{/* Modal d’ajout */}
-{isModalOpen && <AddProductModal closeModal={() => setIsModalOpen(false)} />}
-
-{/* Tabbar */}
-<nav className="tabbar" role="navigation" aria-label="navigation principale">
-<Link href="/fridge" className={`tab ${pathname.includes("/fridge") ? "is-active" : ""}`}>
-<span className="tab__icon">🧊</span>
-<span className="tab__label">Frigo</span>
-</Link>
-<Link href="/settings" className={`tab ${pathname.includes("/settings") ? "is-active" : ""}`}>
-<span className="tab__icon">⚙️</span>
-<span className="tab__label">Paramètres</span>
-</Link>
-</nav>
+{isModalOpen && (
+<AddProductModal onClose={() => setIsModalOpen(false)} user={user} />
+)}
 </div>
+
+{/* --------- Onglets bas de page --------- */}
+<footer className="tabbar">
+<Link
+href="/fridge"
+className={`tabbarItem ${pathname?.startsWith("/fridge") ? "active" : ""}`}
+>
+<img src="/file.svg" alt="" width="22" height="22" />
+<span>Frigo</span>
+</Link>
+
+{/* Optionnel : un onglet “Rechercher”
+<Link
+href="/search"
+className={`tabbarItem ${pathname?.startsWith("/search") ? "active" : ""}`}
+>
+<img src="/globe.svg" alt="" width="22" height="22" />
+<span>Rechercher</span>
+</Link> */}
+
+<Link
+href="/settings"
+className={`tabbarItem ${pathname?.startsWith("/settings") ? "active" : ""}`}
+>
+<img src="/window.svg" alt="" width="22" height="22" />
+<span>Paramètres</span>
+</Link>
+</footer>
+</>
 );
 }
