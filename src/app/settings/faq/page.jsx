@@ -100,7 +100,7 @@ Dans <Link href="/settings">Paramètres</Link> &rarr; <em>Supprimer mon compte</
 </section>
 
 <div className="faqFooterNote">
-Besoin d’autre chose ? <a href="mailto:smonfrigo@gmail.com">Contacte-nous</a>, on répond vite 👋
+Besoin d’autre chose ? <a href="mailto:smonfrigo@gmail.com">Contactez-nous</a>, on répond vite 👋
 </div>
 </main>
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Chemin correct vers ta config Firebase
+
 import { auth, db } from "../firebase/firebase-config";
 
 import {
@@ -93,7 +93,7 @@ value={name}
 onChange={(e) => setName(e.target.value)}
 />
 <button type="button" className="outline" onClick={handleResetPassword}>
-Modifier le mot de passe
+modifier
 </button>
 </div>
 
