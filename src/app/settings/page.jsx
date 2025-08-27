@@ -123,18 +123,12 @@ Se déconnecter
 
 {/* --- Onglets en bas --- */}
 <nav className="tabbar" role="navigation" aria-label="navigation principale">
-<Link
-href="/fridge"
-className={`tab ${pathname.includes("/fridge") ? "is-active" : ""}`}
->
-<span className="tab__icon" />
+<Link href="/fridge" className={`tab ${pathname.includes("/fridge") ? "is-active" : ""}`}>
+<span className="tab__icon">🧊</span>
 <span className="tab__label">Frigo</span>
 </Link>
-<Link
-href="/settings"
-className={`tab ${pathname.includes("/settings") ? "is-active" : ""}`}
->
-<span className="tab__icon" />
+<Link href="/settings" className={`tab ${pathname.includes("/settings") ? "is-active" : ""}`}>
+<span className="tab__icon">⚙️</span>
 <span className="tab__label">Paramètres</span>
 </Link>
 </nav>
