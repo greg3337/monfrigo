@@ -219,17 +219,42 @@ onChange={(e) => setQ(e.target.value)}
 {/* Liste produits */}
 <div className="content">
 <ul className="grid">
-{visible.map((p) => (
-<li key={p.id} className="item">
+{visible.map((p) => {
+// calcul du statut du produit
+const status = (() => {
+if (!p.expirationDate) return "ok";
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(p.expirationDate); d.setHours(0,0,0,0);
+const diff = Math.round((d - today) / 86400000);
+return diff < 0 ? "expired" : diff <= 2 ? "urgent" : "ok";
+})();
+
+return (
+<li
+key={p.id}
+className={`item ${status==='urgent' ? 'item--urgent' : ''} ${status==='expired' ? 'item--expired' : ''}`}
+>
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
+
+{/* badge visuel si urgent ou expiré */}
+{status === "urgent" && (
+<span className="tag tag-urgent">⚠ Urgent</span>
+)}
+{status === "expired" && (
+<span className="tag tag-expired">⛔ Expiré</span>
+)}
+
 <span className="pill">{p.expirationDate}</span>
 </div>
+
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
 Supprimer
 </button>
 </li>
-))}
+);
+})}
+
 </ul>
 </div>
 

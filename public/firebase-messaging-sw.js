@@ -21,7 +21,7 @@ messaging.onBackgroundMessage((payload) => {
   const title = n.title || "Mon Frigo";
   const options = {
     body: n.body || "Nouvelle notification",
-    icon: "/file.svg",   // tu peux mettre ton favicon ou autre icône
+    icon: "/file.svg",   
     badge: "/file.svg",
     data: payload.data || {},
   };
