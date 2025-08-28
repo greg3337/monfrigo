@@ -130,26 +130,34 @@ transition: background .15s ease;
 .product-list li .date { margin-left: auto; font-size: 12px; opacity: .7; }
 @media (max-width: 480px) { .productListWrap { max-height: 50vh; } }
 
+.tagWrapper {
+display: flex;
+flex-direction: column; /* empile badge + date */
+align-items: flex-start; /* aligne à gauche */
+gap: 4px; /* petit espace entre badge et date */
+}
+
 .tag {
-display: inline-flex;
-align-items: center;
-gap: 4px;
+font-weight: bold;
 padding: 4px 10px;
-border-radius: 20px; /* plus arrondi */
-font-size: 13px;
-font-weight: 600;
-margin-left: 8px;
-box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* petite ombre */
+border-radius: 6px;
+display: inline-block;
+margin-bottom: 2px;
 }
 
 .tag-urgent {
-background: linear-gradient(135deg, #ff9800, #ff6f00);
+background-color: #ff6b00;
 color: white;
 }
 
 .tag-expired {
-background: linear-gradient(135deg, #e53935, #b71c1c);
+background-color: #d9534f;
 color: white;
+}
+
+.pill {
+font-size: 0.85rem;
+color: #666; /* gris clair */
 }
 
 
