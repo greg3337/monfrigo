@@ -86,7 +86,7 @@ return (
 <label>Lieu</label>
 <select value={place} onChange={e=>setPlace(e.target.value)}>
 <option value="frigo">Frigo</option>
-<option value="congélo">Congélo</option>
+<option value="congélo">Congélateur</option>
 <option value="placard">Placard</option>
 </select>
 

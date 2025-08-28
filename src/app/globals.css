@@ -160,29 +160,15 @@ font-size: 0.85rem;
 color: #666; /* gris clair */
 }
 
-.notifications {
-margin: 10px 0;
-}
-
+.notifications { margin: 10px 0 16px; display: grid; gap: 8px; }
 .notif {
-padding: 8px 12px;
+padding: 10px 12px;
 border-radius: 6px;
-margin-bottom: 6px;
-font-size: 0.9rem;
-font-weight: 500;
+font-weight: 600;
+box-shadow: 0 2px 6px rgba(0,0,0,.1);
 }
-
-.notif-urgent {
-background: #fff4e5;
-color: #d35400;
-border: 1px solid #f39c12;
-}
-
-.notif-expired {
-background: #ffe5e5;
-color: #c0392b;
-border: 1px solid #e74c3c;
-}
+.notif-urgent { background:#ff9800; color:#fff; }
+.notif-expired { background:#e53935; color:#fff; }
 
 
 

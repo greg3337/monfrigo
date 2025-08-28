@@ -217,37 +217,49 @@ onChange={(e) => setQ(e.target.value)}
 </div>
 
 {/* Notifications internes */}
-{products.some(p => {
-if (!p.expirationDate) return false;
-const today = new Date(); today.setHours(0,0,0,0);
-const d = new Date(p.expirationDate); d.setHours(0,0,0,0);
-const diff = Math.round((d - today) / 86400000);
-return diff < 0 || diff <= 2;
-}) && (
-<div className="notifications">
-{products.map(p => {
+{(() => {
+const notices = products
+.map((p) => {
 if (!p.expirationDate) return null;
+
 const today = new Date(); today.setHours(0,0,0,0);
 const d = new Date(p.expirationDate); d.setHours(0,0,0,0);
 const diff = Math.round((d - today) / 86400000);
 
 if (diff < 0) {
-return (
-<div key={p.id} className="notif notif-expired">
-⛔ {p.name} est expiré depuis le {d.toLocaleDateString("fr-FR")}
-</div>
-);
-} else if (diff <= 2) {
-return (
-<div key={p.id} className="notif notif-urgent">
-⚠️ {p.name} expire bientôt (le {d.toLocaleDateString("fr-FR")})
-</div>
-);
+return {
+id: p.id,
+type: "expired",
+text: `${p.name} est expiré depuis le ${d.toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}`,
+};
+}
+if (diff <= 2) {
+return {
+id: p.id,
+type: "urgent",
+text: `${p.name} expire bientôt (le ${d.toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })})`,
+};
 }
 return null;
-})}
+})
+.filter(Boolean);
+
+if (notices.length === 0) return null;
+
+return (
+<div className="notifications" aria-live="polite">
+{notices.map((n) => (
+<div
+key={n.id}
+className={`notif ${n.type === "expired" ? "notif-expired" : "notif-urgent"}`}
+>
+{n.type === "expired" ? "⛔ " : "⚠️ "}
+{n.text}
 </div>
-)}
+))}
+</div>
+);
+})()}
 
 {/* Liste produits */}
 <div className="content">
