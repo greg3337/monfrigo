@@ -245,7 +245,15 @@ className={`item ${status==='urgent' ? 'item--urgent' : ''} ${status==='expired'
 <span className="tag tag-expired">⛔ Expiré</span>
 )}
 
-<span className="pill">{p.expirationDate}</span>
+<span className="pill">
+{p.expirationDate
+? new Date(p.expirationDate + "T00:00:00").toLocaleDateString("fr-FR", {
+day: "2-digit",
+month: "long",
+year: "numeric",
+})
+: ""}
+</span>
 </div>
 
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
