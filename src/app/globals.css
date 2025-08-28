@@ -131,21 +131,24 @@ transition: background .15s ease;
 @media (max-width: 480px) { .productListWrap { max-height: 50vh; } }
 
 .tag {
-display: inline-block;
-padding: 2px 8px;
-border-radius: 6px;
-font-size: 12px;
-font-weight: bold;
+display: inline-flex;
+align-items: center;
+gap: 4px;
+padding: 4px 10px;
+border-radius: 20px; /* plus arrondi */
+font-size: 13px;
+font-weight: 600;
 margin-left: 8px;
+box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* petite ombre */
 }
 
 .tag-urgent {
-background-color: #ff9800;
+background: linear-gradient(135deg, #ff9800, #ff6f00);
 color: white;
 }
 
 .tag-expired {
-background-color: #e53935;
+background: linear-gradient(135deg, #e53935, #b71c1c);
 color: white;
 }
 
