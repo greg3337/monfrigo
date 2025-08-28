@@ -210,7 +210,13 @@ Modifier
 <div className="support-links">
 <Link href="/settings/faq">Aide et FAQ</Link>
 <Link href="/settings/privacy">Confidentialité</Link>
-<a href="mailto:gregpeli@yahoo.fr" className="btn-contact"> Nous contacter</a>
+<button
+type="button"
+className="link"
+onClick={() => navigator.clipboard?.writeText("smonfrigo@gmail.com")}
+>
+Copier l’adresse mail
+</button>
 </div>
 </div>
 
