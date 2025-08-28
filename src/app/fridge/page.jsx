@@ -216,6 +216,39 @@ onChange={(e) => setQ(e.target.value)}
 </button>
 </div>
 
+{/* Notifications internes */}
+{products.some(p => {
+if (!p.expirationDate) return false;
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(p.expirationDate); d.setHours(0,0,0,0);
+const diff = Math.round((d - today) / 86400000);
+return diff < 0 || diff <= 2;
+}) && (
+<div className="notifications">
+{products.map(p => {
+if (!p.expirationDate) return null;
+const today = new Date(); today.setHours(0,0,0,0);
+const d = new Date(p.expirationDate); d.setHours(0,0,0,0);
+const diff = Math.round((d - today) / 86400000);
+
+if (diff < 0) {
+return (
+<div key={p.id} className="notif notif-expired">
+⛔ {p.name} est expiré depuis le {d.toLocaleDateString("fr-FR")}
+</div>
+);
+} else if (diff <= 2) {
+return (
+<div key={p.id} className="notif notif-urgent">
+⚠️ {p.name} expire bientôt (le {d.toLocaleDateString("fr-FR")})
+</div>
+);
+}
+return null;
+})}
+</div>
+)}
+
 {/* Liste produits */}
 <div className="content">
 <ul className="grid">

@@ -160,6 +160,31 @@ font-size: 0.85rem;
 color: #666; /* gris clair */
 }
 
+.notifications {
+margin: 10px 0;
+}
+
+.notif {
+padding: 8px 12px;
+border-radius: 6px;
+margin-bottom: 6px;
+font-size: 0.9rem;
+font-weight: 500;
+}
+
+.notif-urgent {
+background: #fff4e5;
+color: #d35400;
+border: 1px solid #f39c12;
+}
+
+.notif-expired {
+background: #ffe5e5;
+color: #c0392b;
+border: 1px solid #e74c3c;
+}
+
+
 
 
 
