@@ -210,7 +210,7 @@ Modifier
 <div className="support-links">
 <Link href="/settings/faq">Aide et FAQ</Link>
 <Link href="/settings/privacy">Confidentialité</Link>
-<a href="mailto:contact@monfrigo.app" className="btn-contact"> Nous contacter</a>
+<a href="mailto:gregpeli@yahoo.fr" className="btn-contact"> Nous contacter</a>
 </div>
 </div>
 
