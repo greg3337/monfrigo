@@ -232,28 +232,48 @@ return diff < 0 ? "expired" : diff <= 2 ? "urgent" : "ok";
 return (
 <li
 key={p.id}
-className={`item ${status==='urgent' ? 'item--urgent' : ''} ${status==='expired' ? 'item--expired' : ''}`}
+className={`item ${status === "urgent" ? "item--urgent" : ""} ${
+status === "expired" ? "item--expired" : ""
+}`}
 >
 <div className="itemMeta">
 <span className="itemName">{p.name}</span>
 
 {/* badge visuel si urgent ou expiré */}
 {status === "urgent" && (
+<div className="tagWrapper">
 <span className="tag tag-urgent">⚠ Urgent</span>
+<span className="pill">
+{new Date(p.expirationDate + "T00:00:00").toLocaleDateString(
+"fr-FR",
+{ day: "2-digit", month: "long", year: "numeric" }
 )}
-{status === "expired" && (
-<span className="tag tag-expired">⛔ Expiré</span>
+</span>
+</div>
 )}
 
+{status === "expired" && (
+<div className="tagWrapper">
+<span className="tag tag-expired">⛔ Expiré</span>
 <span className="pill">
-{p.expirationDate
-? new Date(p.expirationDate + "T00:00:00").toLocaleDateString("fr-FR", {
+{new Date(p.expirationDate + "T00:00:00").toLocaleDateString(
+"fr-FR",
+{ day: "2-digit", month: "long", year: "numeric" }
+)}
+</span>
+</div>
+)}
+
+{/* si produit normal */}
+{status === "ok" && (
+<span className="pill">
+{new Date(p.expirationDate + "T00:00:00").toLocaleDateString("fr-FR", {
 day: "2-digit",
 month: "long",
 year: "numeric",
-})
-: ""}
+})}
 </span>
+)}
 </div>
 
 <button className="deleteBtn" onClick={() => deleteProduct(p.id)}>
