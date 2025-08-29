@@ -167,7 +167,7 @@ return (
 <div className="brand">
 <div className="brandTitle">Mon Frigo</div>
 <div className="brandSub">
-Salut {greetingName ? `, ${greetingName} 👋` : ""}
+{greetingName ? `Salut ${greetingName} 👋` : "Salut 👋"}
 </div>
 </div>
 </div>
