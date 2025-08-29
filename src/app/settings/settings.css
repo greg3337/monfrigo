@@ -81,45 +81,6 @@ transition: background .15s, color .15s, border-color .15s, transform .05s;
 background:#eef2ff; color:#1e40af; border-color:#dbeafe; transform: translateY(-1px);
 }
 
-/* Section export */
-.export-card {
-display: flex;
-flex-direction: column;
-align-items: center;
-margin: 20px 0;
-padding: 15px;
-background: #fff;
-border-radius: 8px;
-box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.export-card p {
-margin-bottom: 15px;
-color: #444;
-font-size: 14px;
-}
-
-/* Boutons export alignés */
-.export-buttons {
-display: flex;
-gap: 12px; /* espace entre les boutons */
-}
-
-.export-buttons button {
-flex: 1;
-padding: 10px 16px;
-border: none;
-border-radius: 6px;
-background: #2563eb; /* bleu */
-color: #fff;
-font-weight: 500;
-cursor: pointer;
-transition: background 0.2s;
-}
-
-.export-buttons button:hover {
-background: #1e4fd1; /* bleu un peu plus foncé au hover */
-}
 
 
 /* Danger zone (déconnexion / supprimer compte) */
