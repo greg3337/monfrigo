@@ -21,9 +21,9 @@ return (
 {/* Deux cartes */}
 <section className="cards">
 <div className="card cardBlue">
-<div className="cardIcon">🤖</div>
-<div className="cardTitle">IA intégrée</div>
-<div className="cardText">Chef 3.0 vous conseille</div>
+<div className="cardIcon">🥗</div>
+<div className="cardTitle">Anti-gaspillage</div>
+<div className="cardText">Recevez des alertes avant péremption</div>
 </div>
 
 <div className="card cardGreen">

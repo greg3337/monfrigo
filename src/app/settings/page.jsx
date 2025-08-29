@@ -5,22 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { auth, db } from "../firebase/firebase-config";
-import {
-onAuthStateChanged,
-updateProfile,
-sendPasswordResetEmail,
-signOut,
-deleteUser,
-} from "firebase/auth";
-import {
-doc,
-getDoc,
-setDoc,
-collection,
-getDocs,
-deleteDoc,
-} from "firebase/firestore";
-
+import {onAuthStateChanged,updateProfile,sendPasswordResetEmail,signOut,deleteUser,} from "firebase/auth";
+import {doc,getDoc,setDoc,collection,getDocs,deleteDoc,} from "firebase/firestore";
 import "./settings.css";
 
 export default function SettingsPage() {
