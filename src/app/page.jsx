@@ -13,7 +13,7 @@ return (
 {/* Logo + titre */}
 <header className="hero">
 <div className="logo">
-    <img src="/frigo.png" alt="logo mon frigo" width={80} height={80} />
+    <img src="/frigo.png" alt="logo mon frigo" width={60} height={60} />
 </div>
 <h1 className="title">Mon Frigo</h1>
 <p className="subtitle">Votre assistant intelligent</p>
