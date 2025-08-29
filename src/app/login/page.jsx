@@ -1,24 +1,27 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
 
-// Firebase
-import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { app } from "../firebase/firebase-config"; // adapte le chemin si besoin
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "../firebase/firebase-config";
+import {signInWithEmailAndPassword,setPersistence,browserLocalPersistence,} from "firebase/auth";
+
+import "./login.css";
 
 export default function LoginPage() {
-const auth = getAuth(app);
-
+const router = useRouter();
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
-const [rememberEmail, setRememberEmail] = useState(true); // coche par défaut
-const [showPwd, setShowPwd] = useState(false);
+const [showPw, setShowPw] = useState(false);
+const [rememberEmail, setRememberEmail] = useState(true);
 const [err, setErr] = useState("");
 
-// Pré-remplir l'email si on l'a déjà sauvegardé
+// Prefill email si mémorisé
 useEffect(() => {
-const saved = localStorage.getItem("mf_email");
-if (saved) setEmail(saved);
+const saved = localStorage.getItem("mf_login_email");
+if (saved) {
+setEmail(saved);
+setRememberEmail(true);
+}
 }, []);
 
 const onSubmit = async (e) => {
@@ -26,63 +29,62 @@ e.preventDefault();
 setErr("");
 
 try {
-// 1) Persistance de session (reste connecté)
+// Persistance de session de l’auth (reste connecté) + mémoire e-mail
 await setPersistence(auth, browserLocalPersistence);
 
-// 2) Connexion
+if (rememberEmail) {
+localStorage.setItem("mf_login_email", email);
+} else {
+localStorage.removeItem("mf_login_email");
+}
+
 await signInWithEmailAndPassword(auth, email, password);
-
-// 3) Souvenir de l’email (jamais du mot de passe)
-if (rememberEmail) localStorage.setItem("mf_email", email);
-else localStorage.removeItem("mf_email");
-
-// redirige où tu veux (ex: /fridge)
-window.location.href = "/fridge";
-} catch (e) {
-setErr("Identifiants invalides.");
+router.push("/fridge");
+} catch (error) {
+setErr("Identifiants invalides ou compte introuvable.");
+console.error(error);
 }
 };
 
 return (
-<main className="loginWrap">
-<form className="loginCard" onSubmit={onSubmit}>
+<div className="loginWrap">
+<div className="loginCard">
 <h1 className="loginTitle">Ravi de vous revoir 👋</h1>
 
-<label className="loginLabel">Email</label>
+<form onSubmit={onSubmit} className="loginForm">
+<label className="fieldLabel">Email</label>
 <input
 type="email"
-name="email"
+inputMode="email"
+autoComplete="username"
 placeholder="nom@exemple.com"
-className="loginInput"
+className="textInput"
 value={email}
 onChange={(e) => setEmail(e.target.value)}
-autoComplete="email"
 required
 />
 
-<label className="loginLabel">Mot de passe</label>
-<div className="pwdRow">
+<label className="fieldLabel">Mot de passe</label>
+<div className="pwRow">
 <input
-type={showPwd ? "text" : "password"}
-name="password"
+type={showPw ? "text" : "password"}
+autoComplete="current-password"
 placeholder="••••••••"
-className="loginInput"
+className="textInput"
 value={password}
 onChange={(e) => setPassword(e.target.value)}
-autoComplete="current-password"
 required
 />
 <button
 type="button"
-className="pwdToggle"
-onClick={() => setShowPwd((s) => !s)}
-aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+className="pwToggle"
+onClick={() => setShowPw((s) => !s)}
+aria-label={showPw ? "Masquer le mot de passe" : "Afficher le mot de passe"}
 >
-{showPwd ? "Masquer" : "Afficher"}
+{showPw ? "Masquer" : "Afficher"}
 </button>
 </div>
 
-{/* Se souvenir de moi (email) */}
 <label className="rememberRow">
 <input
 type="checkbox"
@@ -92,14 +94,16 @@ onChange={(e) => setRememberEmail(e.target.checked)}
 <span>Se souvenir de mon email</span>
 </label>
 
-{err && <p className="loginError">{err}</p>}
+{err && <p className="error">{err}</p>}
 
-<button type="submit" className="loginBtn">Se connecter</button>
+<button type="submit" className="primaryBtn">Se connecter</button>
 
-<p className="loginAlt">
-Pas encore de compte ? <Link href="/signup">Créer un compte</Link>
+<p className="bottomNote">
+Pas encore de compte ?{" "}
+<a className="link" href="/signup">Créer un compte</a>
 </p>
 </form>
-</main>
+</div>
+</div>
 );
 }
