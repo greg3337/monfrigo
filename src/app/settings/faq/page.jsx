@@ -98,10 +98,6 @@ Dans <Link href="/settings">Paramètres</Link> &rarr; <em>Supprimer mon compte</
 Écris-nous à <a href="mailto:smonfrigo@gmail.com">smonfrigo@gmail.com</a> — réponse sous 48 h max.
 </QA>
 </section>
-
-<div className="faqFooterNote">
-Besoin d’autre chose ? <a href="mailto:smonfrigo@gmail.com">Contactez-nous</a>, on répond vite 👋
-</div>
 </main>
 
 {/* ===== Tabbar ===== */}
