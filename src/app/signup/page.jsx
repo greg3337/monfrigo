@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-// chemin depuis app/signup → app/firebase
 import { auth, db } from '../firebase/firebase-config';
 import './signup.css';
 

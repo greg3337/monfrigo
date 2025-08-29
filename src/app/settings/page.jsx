@@ -2,15 +2,25 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { auth, db } from "../firebase/firebase-config";
-import {onAuthStateChanged,updateProfile,sendPasswordResetEmail,signOut,deleteUser,} from "firebase/auth";
-import {doc,getDoc,setDoc,collection,getDocs,deleteDoc,} from "firebase/firestore";
+import {onAuthStateChanged,updateProfile,sendPasswordResetEmail,signOut, // <— gardé UNE seule foisdeleteUser,
+} from "firebase/auth";
+import {
+doc,
+getDoc,
+setDoc,
+collection,
+getDocs,
+deleteDoc,
+} from "firebase/firestore";
+
 import "./settings.css";
 
 export default function SettingsPage() {
 const pathname = usePathname();
+const router = useRouter(); // <— pour rediriger après logout
 
 const [user, setUser] = useState(null);
 const [email, setEmail] = useState("");
@@ -75,14 +85,14 @@ setTimeout(() => setMsg(""), 3000);
 }
 }
 
-// Déconnexion
+// Déconnexion + redirection vers /login
 async function handleLogout() {
 try {
-await signOut(auth);
-// redirection si tu as une page /login
-// window.location.href = "/login";
+await signOut(auth); // déconnexion Firebase
+router.replace("/login"); // redirection immédiate
 } catch (e) {
 console.warn("Logout:", e);
+alert("Erreur lors de la déconnexion");
 }
 }
 
@@ -115,7 +125,7 @@ await deleteAllProducts(current.uid); // 1) produits
 await deleteDoc(doc(db, "users", current.uid)); // 2) doc user
 await deleteUser(current); // 3) compte Auth
 setMsg("✅ Compte supprimé. Au revoir !");
-// window.location.href = "/login";
+router.replace("/login"); // retour à /login
 } catch (e) {
 console.warn("Delete account:", e);
 if (e?.code === "auth/requires-recent-login") {
@@ -135,6 +145,7 @@ return (
 <div className="settings-page">
 <h1>Paramètres</h1>
 <p>Connectez-vous pour gérer votre profil.</p>
+
 {/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link
@@ -209,7 +220,6 @@ Copier l’adresse mail
 </button>
 </div>
 </div>
-
 
 {/* Déconnexion + suppression */}
 <div className="card logout-card">
