@@ -4,8 +4,14 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+// Firebase
 import { auth, db } from "../firebase/firebase-config";
-import {onAuthStateChanged,updateProfile,sendPasswordResetEmail,signOut, // <— gardé UNE seule foisdeleteUser,
+import {
+onAuthStateChanged,
+updateProfile,
+sendPasswordResetEmail,
+signOut,
+deleteUser,
 } from "firebase/auth";
 import {
 doc,
@@ -20,7 +26,7 @@ import "./settings.css";
 
 export default function SettingsPage() {
 const pathname = usePathname();
-const router = useRouter(); // <— pour rediriger après logout
+const router = useRouter();
 
 const [user, setUser] = useState(null);
 const [email, setEmail] = useState("");
@@ -28,12 +34,13 @@ const [name, setName] = useState("");
 const [saving, setSaving] = useState(false);
 const [msg, setMsg] = useState("");
 
-// Charger l'utilisateur + nom depuis Firestore (si dispo)
+// === Auth + chargement nom depuis Firestore ===
 useEffect(() => {
 const unsub = onAuthStateChanged(auth, async (u) => {
 setUser(u || null);
 setMsg("");
 if (!u) return;
+
 setEmail(u.email || "");
 try {
 const snap = await getDoc(doc(db, "users", u.uid));
@@ -46,21 +53,25 @@ setName(u.displayName || "");
 return () => unsub();
 }, []);
 
-// Enregistrer le nom
+// === Enregistrer le nom ===
 async function handleSave(e) {
 e.preventDefault();
 if (!user) return;
 setSaving(true);
 setMsg("");
+
 try {
-if ((user.displayName || "") !== name) {
+// met à jour displayName si nécessaire
+if ((user.displayName || "") !== (name || "")) {
 await updateProfile(user, { displayName: name || "" });
 }
+// sauvegarde aussi dans /users/{uid}
 await setDoc(
 doc(db, "users", user.uid),
 { name: name || "" },
 { merge: true }
 );
+
 setMsg("✅ Profil enregistré.");
 } catch (err) {
 console.warn("Enregistrement profil:", err);
@@ -71,7 +82,7 @@ setTimeout(() => setMsg(""), 3000);
 }
 }
 
-// Email de réinitialisation mot de passe
+// === Email de réinitialisation du mot de passe ===
 async function handleResetPassword() {
 if (!email) return;
 try {
@@ -85,18 +96,18 @@ setTimeout(() => setMsg(""), 3000);
 }
 }
 
-// Déconnexion + redirection vers /login
-async function handleLogout() {
+// === Déconnexion ===
+const handleLogout = async () => {
 try {
-await signOut(auth); // déconnexion Firebase
-router.replace("/login"); // redirection immédiate
-} catch (e) {
-console.warn("Logout:", e);
+await signOut(auth);
+router.replace("/login");
+} catch (err) {
+console.error(err);
 alert("Erreur lors de la déconnexion");
 }
-}
+};
 
-// Supprime tous les produits de l'utilisateur
+// === Suppression des produits de l'utilisateur ===
 async function deleteAllProducts(uid) {
 const productsRef = collection(db, "users", uid, "products");
 const snap = await getDocs(productsRef);
@@ -107,7 +118,7 @@ jobs.push(deleteDoc(doc(db, "users", uid, "products", d.id)))
 await Promise.all(jobs);
 }
 
-// Supprimer le compte (et les données)
+// === Suppression complète du compte ===
 async function handleDeleteAccount() {
 const current = auth.currentUser;
 if (!current) return;
@@ -121,11 +132,11 @@ if (!ok2) return;
 
 setMsg("⏳ Suppression en cours…");
 try {
-await deleteAllProducts(current.uid); // 1) produits
-await deleteDoc(doc(db, "users", current.uid)); // 2) doc user
-await deleteUser(current); // 3) compte Auth
+await deleteAllProducts(current.uid);
+await deleteDoc(doc(db, "users", current.uid));
+await deleteUser(current);
 setMsg("✅ Compte supprimé. Au revoir !");
-router.replace("/login"); // retour à /login
+router.replace("/login");
 } catch (e) {
 console.warn("Delete account:", e);
 if (e?.code === "auth/requires-recent-login") {
@@ -139,6 +150,8 @@ setMsg("❌ Erreur lors de la suppression. Réessaie plus tard.");
 setTimeout(() => setMsg(""), 4000);
 }
 }
+
+// ===== RENDER =====
 
 if (!user) {
 return (
@@ -188,7 +201,7 @@ value={name}
 onChange={(e) => setName(e.target.value)}
 />
 <button type="button" className="outline" onClick={handleResetPassword}>
-Modifier
+Changer mon mot de passe
 </button>
 </div>
 
@@ -210,7 +223,7 @@ Modifier
 
 <button
 type="button"
-className="link"
+className="support-btn"
 onClick={() => {
 navigator.clipboard.writeText("smonfrigo@gmail.com");
 alert("✅ Adresse copiée dans le presse-papier !");
@@ -237,7 +250,7 @@ Supprimer mon compte
 </div>
 </div>
 
-{/* Tabbar en bas */}
+{/* Tabbar */}
 <nav className="tabbar" role="navigation" aria-label="Navigation principale">
 <Link
 href="/fridge"
