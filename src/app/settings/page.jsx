@@ -333,14 +333,6 @@ Copier l’adresse mail
 </div>
 </div>
 
-{/* Exporter les données */}
-<div className="card export-card">
-<p>Vous pouvez exporter une copie de vos données (profil et produits) :</p>
-<div className="export-buttons">
-<button onClick={handleExportCSV}>Exporter en CSV</button>
-<button onClick={handleExportJSON}>Exporter en JSON</button>
-</div>
-</div>
 
 {/* Déconnexion + suppression */}
 <div className="card logout-card">
