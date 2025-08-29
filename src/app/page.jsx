@@ -12,7 +12,9 @@ return (
 <div className="page">
 {/* Logo + titre */}
 <header className="hero">
-<div className="logo">🧊</div>
+<div className="logo">
+    <img src="/frigo.png" alt="logo mon frigo" width={80} height={80} />
+</div>
 <h1 className="title">Mon Frigo</h1>
 <p className="subtitle">Votre assistant intelligent</p>
 <p className="subtitle2">pour une alimentation sans gaspillage</p>
