@@ -151,6 +151,105 @@ setTimeout(() => setMsg(""), 4000);
 }
 }
 
+// ========= RGPD : Export CSV / JSON =========
+
+// Utils: CSV pour Excel FR (séparateur ; + BOM)
+function toCsv(rows) {
+if (!rows?.length) return "\ufeff"; // BOM
+const headers = Object.keys(rows[0]);
+const escape = (v) => {
+if (v === null || v === undefined) return "";
+const s = String(v).replace(/"/g, '""');
+return `"${s}"`;
+};
+const head = headers.map(escape).join(";");
+const body = rows
+.map((r) => headers.map((h) => escape(r[h])).join(";"))
+.join("\n");
+return "\ufeff" + head + "\n" + body; // BOM + contenu
+}
+
+async function handleExportCsv() {
+if (!user) return;
+
+const productsSnap = await getDocs(
+collection(db, "users", user.uid, "products")
+);
+const rows = [];
+productsSnap.forEach((docu) => {
+const p = docu.data() || {};
+rows.push({
+id: docu.id,
+nom: p.name || "",
+categorie: p.category || "",
+lieu: p.place || "",
+date_peremption: p.expirationDate
+? new Date(p.expirationDate + "T00:00:00").toLocaleDateString(
+"fr-FR"
+)
+: "",
+statut: p.status || "",
+cree_le: p.createdAt
+? new Date(p.createdAt).toLocaleString("fr-FR")
+: "",
+});
+});
+
+// Ajouter en 1ère ligne les infos profil
+const profil = {
+id: "profil",
+nom: (name || user.displayName || "").trim(),
+categorie: "",
+lieu: "",
+date_peremption: "",
+statut: `email: ${user.email || ""}`,
+cree_le: "",
+};
+const csv = toCsv([profil, ...rows]);
+
+const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = "mes-donnees-mon-frigo.csv";
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
+}
+
+async function handleExportJson() {
+if (!user) return;
+
+const productsSnap = await getDocs(
+collection(db, "users", user.uid, "products")
+);
+const products = [];
+productsSnap.forEach((d) => products.push({ id: d.id, ...d.data() }));
+
+const payload = {
+utilisateur: {
+uid: user.uid,
+email: user.email || "",
+nom: (name || user.displayName || "").trim(),
+},
+produits: products,
+export_le: new Date().toISOString(),
+};
+
+const blob = new Blob([JSON.stringify(payload, null, 2)], {
+type: "application/json;charset=utf-8",
+});
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = "mes-donnees-mon-frigo.json";
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
+}
+
 // ===== RENDER =====
 
 if (!user) {
@@ -230,6 +329,22 @@ alert("✅ Adresse copiée dans le presse-papier !");
 }}
 >
 Copier l’adresse mail
+</button>
+</div>
+</div>
+
+{/* Mes données (RGPD) */}
+<div className="card">
+<h3>Mes données</h3>
+<p className="subtitle" style={{ marginTop: 6 }}>
+Vous pouvez exporter une copie de vos données (profil et produits) pour les conserver.
+</p>
+<div className="actions">
+<button type="button" className="outline" onClick={handleExportCsv}>
+Exporter en CSV
+</button>
+<button type="button" className="outline" onClick={handleExportJson}>
+Exporter en JSON
 </button>
 </div>
 </div>
