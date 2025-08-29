@@ -1,79 +1,145 @@
-root{
---bg:#f6f7fb;
---panel:#ffffff;
---border:#e6ebf5;
---text:#0f172a;
---muted:#667189;
---blue:#1e63ff;
---blue-d:#1249c9;
---shadow:0 10px 25px rgba(16, 24, 40, .06);
+:root {
+--bg: #f6f7fb;
+--panel: #ffffff;
+--border: #e6ebf5;
+--text: #0f172a;
+--muted: #667189;
+--blue: #1e63ff;
+--blue-d: #1249c9;
+--green: #10b981;
+--shadow: 0 8px 20px rgba(16, 24, 40, 0.08);
 }
 
-.loginWrap{
-min-height:100vh;
-display:grid;
-place-items:center;
-background:radial-gradient(1200px 400px at 50% -200px, #e9f1ff 0%, rgba(233,241,255,0) 70%) var(--bg);
-padding:24px;
+/* 🌈 Fond avec un dégradé */
+.loginWrap {
+min-height: 100vh;
+display: grid;
+place-items: center;
+background: linear-gradient(135deg, #e3f2fd 0%, #f6f7fb 100%);
+padding: 24px;
 }
 
-.loginCard{
-width:100%;
-max-width:420px;
-background:var(--panel);
-border:1px solid var(--border);
-border-radius:16px;
-box-shadow:var(--shadow);
-padding:22px;
+/* 💳 Carte */
+.loginCard {
+width: 100%;
+max-width: 420px;
+background: var(--panel);
+border: 1px solid var(--border);
+border-radius: 16px;
+box-shadow: var(--shadow);
+padding: 28px;
+animation: fadeIn 0.5s ease;
 }
 
-.loginTitle{
-font-size:1.25rem;
-font-weight:700;
-color:var(--text);
-text-align:center;
-margin:4px 0 18px;
+/* Titre */
+.loginTitle {
+font-size: 1.5rem;
+font-weight: 700;
+color: var(--text);
+text-align: center;
+margin-bottom: 20px;
 }
 
-.loginForm{ display:flex; flex-direction:column; gap:12px; }
-
-.fieldLabel{
-font-size:.85rem;
-color:var(--muted);
+/* Formulaire */
+.loginForm {
+display: flex;
+flex-direction: column;
+gap: 16px;
 }
 
-.textInput{
-width:100%;
-padding:12px 14px;
-border:1px solid var(--border);
-border-radius:12px;
-outline:none;
-background:#fff;
-color:var(--text);
-}
-.textInput:focus{ border-color:#c9d6ff; box-shadow:0 0 0 3px rgba(30,99,255,.12); }
-
-.pwRow{ position:relative; }
-.pwToggle{
-position:absolute; right:8px; top:50%; transform:translateY(-50%);
-font-size:.85rem; border:none; background:transparent; color:var(--blue); cursor:pointer;
+.fieldLabel {
+font-size: 0.9rem;
+font-weight: 600;
+color: var(--muted);
+margin-bottom: 4px;
 }
 
-.rememberRow{ display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); }
-
-.error{
-background:#fee2e2; color:#991b1b;
-border:1px solid #fecaca; border-radius:10px;
-padding:10px 12px; font-size:.9rem;
+/* Champs */
+.textInput {
+width: 100%;
+padding: 12px 14px;
+border: 1px solid var(--border);
+border-radius: 12px;
+outline: none;
+background: #fff;
+color: var(--text);
+transition: border 0.2s, box-shadow 0.2s;
+}
+.textInput:focus {
+border-color: var(--blue);
+box-shadow: 0 0 0 3px rgba(30, 99, 255, 0.12);
 }
 
-.primaryBtn{
-width:100%; padding:12px 14px;
-background:var(--blue); color:#fff; font-weight:700;
-border:none; border-radius:12px; cursor:pointer;
+/* Mot de passe + bouton afficher */
+.pwRow {
+position: relative;
 }
-.primaryBtn:hover{ background:var(--blue-d); }
+.pwToggle {
+position: absolute;
+right: 10px;
+top: 50%;
+transform: translateY(-50%);
+font-size: 0.9rem;
+border: none;
+background: transparent;
+color: var(--blue);
+cursor: pointer;
+font-weight: 600;
+}
 
-.bottomNote{ text-align:center; color:var(--muted); margin-top:6px; }
-.link{ color:var(--blue); text-decoration:underline; }
-.link:hover{ text-decoration:none; }
+/* Checkbox */
+.rememberRow {
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 0.9rem;
+color: var(--muted);
+}
+
+/* Erreurs */
+.error {
+background: #fee2e2;
+color: #991b1b;
+border: 1px solid #fecaca;
+border-radius: 10px;
+padding: 10px 12px;
+font-size: 0.9rem;
+}
+
+/* 🎨 Bouton principal */
+.primaryBtn {
+width: 100%;
+padding: 14px;
+background: var(--blue);
+color: #fff;
+font-weight: 700;
+border: none;
+border-radius: 12px;
+cursor: pointer;
+transition: background 0.3s, transform 0.2s;
+}
+.primaryBtn:hover {
+background: var(--blue-d);
+transform: translateY(-2px);
+}
+
+/* Note en bas */
+.bottomNote {
+text-align: center;
+color: var(--muted);
+margin-top: 12px;
+}
+.link {
+color: var(--green);
+font-weight: 600;
+text-decoration: underline;
+}
+.link:hover {
+text-decoration: none;
+}
+
+/* Animation */
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
