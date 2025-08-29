@@ -52,6 +52,10 @@ return (
 <span className="spacer" />
 <span className="dot" /> Sans engagement
 </div>
+
+<p className="loginText">
+Déjà inscrit ? <a href="/login">Se connecter</a>
+</p>
 </section>
 
 <style jsx>{`
