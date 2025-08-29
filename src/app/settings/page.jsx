@@ -333,21 +333,15 @@ Copier l’adresse mail
 </div>
 </div>
 
-{/* Mes données (RGPD) */}
-<div className="card">
-<h3>Mes données</h3>
-<p className="subtitle" style={{ marginTop: 6 }}>
-Vous pouvez exporter une copie de vos données (profil et produits) pour les conserver.
-</p>
-<div className="actions">
-<button type="button" className="outline" onClick={handleExportCsv}>
-Exporter en CSV
-</button>
-<button type="button" className="outline" onClick={handleExportJson}>
-Exporter en JSON
-</button>
+{/* Exporter les données */}
+<div className="card export-card">
+<p>Vous pouvez exporter une copie de vos données (profil et produits) :</p>
+<div className="export-buttons">
+<button onClick={handleExportCSV}>Exporter en CSV</button>
+<button onClick={handleExportJSON}>Exporter en JSON</button>
 </div>
 </div>
+
 
 {/* Déconnexion + suppression */}
 <div className="card logout-card">
