@@ -210,15 +210,20 @@ Modifier
 <div className="support-links">
 <Link href="/settings/faq">Aide et FAQ</Link>
 <Link href="/settings/privacy">Confidentialité</Link>
+
 <button
 type="button"
 className="link"
-onClick={() => navigator.clipboard?.writeText("smonfrigo@gmail.com")}
+onClick={() => {
+navigator.clipboard.writeText("smonfrigo@gmail.com");
+alert("✅ Adresse copiée dans le presse-papier !");
+}}
 >
 Copier l’adresse mail
 </button>
 </div>
 </div>
+
 
 {/* Déconnexion + suppression */}
 <div className="card logout-card">
