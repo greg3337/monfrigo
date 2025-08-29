@@ -1,64 +1,76 @@
 "use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import "./login.css";
+
+// Firebase
+import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { app } from "../firebase/firebase-config"; // adapte le chemin si besoin
 
 export default function LoginPage() {
-const router = useRouter();
+const auth = getAuth(app);
+
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
+const [rememberEmail, setRememberEmail] = useState(true); // coche par défaut
 const [showPwd, setShowPwd] = useState(false);
-const [loading, setLoading] = useState(false);
 const [err, setErr] = useState("");
 
-async function handleLogin(e) {
+// Pré-remplir l'email si on l'a déjà sauvegardé
+useEffect(() => {
+const saved = localStorage.getItem("mf_email");
+if (saved) setEmail(saved);
+}, []);
+
+const onSubmit = async (e) => {
 e.preventDefault();
 setErr("");
-setLoading(true);
+
 try {
-const auth = getAuth();
+// 1) Persistance de session (reste connecté)
+await setPersistence(auth, browserLocalPersistence);
+
+// 2) Connexion
 await signInWithEmailAndPassword(auth, email, password);
-router.push("/fridge");
-} catch {
-setErr("Adresse e-mail ou mot de passe incorrect.");
-} finally {
-setLoading(false);
+
+// 3) Souvenir de l’email (jamais du mot de passe)
+if (rememberEmail) localStorage.setItem("mf_email", email);
+else localStorage.removeItem("mf_email");
+
+// redirige où tu veux (ex: /fridge)
+window.location.href = "/fridge";
+} catch (e) {
+setErr("Identifiants invalides.");
 }
-}
+};
 
 return (
 <main className="loginWrap">
-<section className="card">
-<h1 className="title">Connexion</h1>
-<p className="subtitle">Ravi de vous revoir 👋</p>
+<form className="loginCard" onSubmit={onSubmit}>
+<h1 className="loginTitle">Ravi de vous revoir 👋</h1>
 
-{err && <div className="alert">{err}</div>}
-
-<form onSubmit={handleLogin} className="form">
-<label className="label">Email</label>
+<label className="loginLabel">Email</label>
 <input
-className="input"
 type="email"
+name="email"
 placeholder="nom@exemple.com"
+className="loginInput"
 value={email}
 onChange={(e) => setEmail(e.target.value)}
-required
 autoComplete="email"
+required
 />
 
-<label className="label">Mot de passe</label>
+<label className="loginLabel">Mot de passe</label>
 <div className="pwdRow">
 <input
-className="input"
 type={showPwd ? "text" : "password"}
+name="password"
 placeholder="••••••••"
+className="loginInput"
 value={password}
 onChange={(e) => setPassword(e.target.value)}
-required
 autoComplete="current-password"
+required
 />
 <button
 type="button"
@@ -70,18 +82,24 @@ aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
 </button>
 </div>
 
-<button className="btn" type="submit" disabled={loading}>
-{loading ? "Connexion..." : "Se connecter"}
-</button>
-</form>
+{/* Se souvenir de moi (email) */}
+<label className="rememberRow">
+<input
+type="checkbox"
+checked={rememberEmail}
+onChange={(e) => setRememberEmail(e.target.checked)}
+/>
+<span>Se souvenir de mon email</span>
+</label>
 
-<p className="hint">
-Pas encore de compte ?{" "}
-<Link className="link" href="/signup">
-Créer un compte
-</Link>
+{err && <p className="loginError">{err}</p>}
+
+<button type="submit" className="loginBtn">Se connecter</button>
+
+<p className="loginAlt">
+Pas encore de compte ? <Link href="/signup">Créer un compte</Link>
 </p>
-</section>
+</form>
 </main>
 );
 }
