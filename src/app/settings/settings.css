@@ -92,38 +92,56 @@ background: var(--danger); color:#fff; border:none;
 .logout-card .danger:hover{ background: var(--danger-600); }
 
 
+
+
+/* Carte d’installation */
 .install-card {
-text-align: center; /* centre tout le bloc */
-margin: 30px auto;
-max-width: 600px;
+text-align: center;
+padding: 20px;
+background: #fff;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+margin: 20px auto;
+max-width: 500px;
 }
 
+/* Titre */
 .install-card h3 {
-margin-bottom: 15px;
+font-size: 1.3rem;
+margin-bottom: 12px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
 }
 
-.install-guide {
-margin-top: 25px;
-}
-
+/* Sous-titres (iPhone / Android) */
 .install-guide h4 {
-margin-bottom: 10px;
 font-size: 1.1rem;
+margin: 15px 0 10px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
 color: #333;
 }
 
+/* Liste des étapes */
 .install-guide ol {
-list-style-position: inside; /* garde les numéros alignés */
-padding-left: 0;
-margin: 0 auto;
-display: inline-block; /* centre la liste */
-text-align: left; /* garde le texte lisible */
+list-style-position: inside;
+padding: 0;
+margin: 0 auto 15px auto;
+text-align: left;
+display: block;
+max-width: 320px;
 }
 
 .install-guide li {
-margin-bottom: 8px;
-line-height: 1.6;
+margin: 6px 0;
+font-size: 0.95rem;
+line-height: 1.5;
 }
+
 
 
 
