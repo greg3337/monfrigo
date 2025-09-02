@@ -62,7 +62,7 @@ soumis aux tribunaux compétents du ressort de Bordeaux.
 </p>
 
 <p style={{ marginTop: "40px", fontStyle: "italic" }}>
-Pour toute question, vous pouvez contacter : contact@gregodev.com
+Pour toute question, vous pouvez contacter : contact@gregdev.com
 </p>
 </main>
 );
