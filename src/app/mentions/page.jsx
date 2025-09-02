@@ -46,7 +46,7 @@ Pour toute question, écrivez-nous à <a href="mailto:contact@gregdev.co">contac
 </section>
 
 <p style={{marginTop: 24}}>
-<Link href="/privacy">Lire la politique de confidentialité →</Link>
+<Link href="/priva">Lire la politique de confidentialité →</Link>
 </p>
 </main>
 );
