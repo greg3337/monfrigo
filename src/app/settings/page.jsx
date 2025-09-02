@@ -219,6 +219,7 @@ Réinitialiser mot de passe
 <Link href="settings/privacy">Confidentialité</Link>
 <Link href="/mentions">Mentions légales</Link>
 <Link href="/priva">Politique de confidentialité</Link>
+<Link href="/cgu">Condition d'utilisation</Link>
 
 <button
 type="button"

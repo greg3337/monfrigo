@@ -14,7 +14,7 @@ return (
 <section style={{marginBottom: 28}}>
 <h2 style={{fontSize: "1.25rem", marginBottom: 8}}>Éditeur</h2>
 <p>
-<strong>MonFrigo.dev</strong> est un service édité par <strong>GregDev</strong> (entreprise individuelle).<br />
+<strong>MonFrigo.dev</strong> est un service édité par <strong>GregoDev</strong> (entreprise individuelle).<br />
 <strong>Adresse :</strong> 108 bis cours Saint-Louis, Appartement 4, Bâtiment G1, 33300 Bordeaux, France<br />
 <strong>SIRET :</strong> 989 527 809 00010<br />
 <strong>Téléphone :</strong> 06 58 93 67 88<br />

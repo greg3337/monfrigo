@@ -14,7 +14,7 @@ return (
 
 <section style={{marginBottom: 24}}>
 <p>
-Cette politique explique comment <strong>MonFrigo.dev</strong> (édité par <strong>GregDev</strong>)
+Cette politique explique comment <strong>MonFrigo.dev</strong> (édité par <strong>GregoDev</strong>)
 collecte, utilise et protège vos données personnelles conformément au RGPD.
 </p>
 </section>
