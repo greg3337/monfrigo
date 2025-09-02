@@ -217,6 +217,9 @@ Réinitialiser mot de passe
 <div className="support-links">
 <Link href="/settings/faq">Aide et FAQ</Link>
 <Link href="/settings/privacy">Confidentialité</Link>
+<Link href="/settings/mentions">Mentions légales</Link>
+<Link href="/settings/privacy">Politique de confidentialité</Link>
+
 
 <button
 type="button"
