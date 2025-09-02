@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { auth, db } from "../../firebase/firebase-config";
+import { auth, db } from "../firebase/firebase-config";
 import {
 onAuthStateChanged,
 updateProfile,
