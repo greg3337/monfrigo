@@ -91,6 +91,35 @@ background: var(--danger); color:#fff; border:none;
 }
 .logout-card .danger:hover{ background: var(--danger-600); }
 
+.install-card {
+margin-top: 1.5rem;
+padding: 1.2rem;
+border-radius: 8px;
+background: #f9fafb;
+box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.install-card h3 {
+font-size: 1.1rem;
+margin-bottom: 0.8rem;
+}
+
+.install-card h4 {
+margin-top: 1rem;
+font-size: 1rem;
+color: #2563eb;
+}
+
+.install-card ol {
+margin: 0.5rem 0 1rem 1.2rem;
+padding: 0;
+}
+
+.install-card li {
+margin-bottom: 0.4rem;
+}
+
+
 /* responsive */
 @media (min-width: 560px){
 /* email + bouton reset mdp sur la même ligne */
