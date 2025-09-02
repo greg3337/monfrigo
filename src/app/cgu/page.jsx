@@ -46,7 +46,7 @@ sont précisées au moment de la souscription.
 <h2>6. Données personnelles</h2>
 <p>
 Les données collectées sont traitées conformément à la
-<a href="/politique-confidentialite"> Politique de confidentialité</a>.
+<a href="/priva"> Politique de confidentialité</a>.
 </p>
 
 <h2>7. Résiliation</h2>
