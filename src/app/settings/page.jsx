@@ -233,23 +233,27 @@ Copier l’adresse mail
 
 {/* Installer l’application */}
 <div className="card install-card">
-<h3>📱 Installer l’application</h3>
-<p>Ajoutez <strong>MonFrigo.dev</strong> directement sur votre écran d’accueil :</p>
+<h3>📲 Installer l’application</h3>
+<p>
+Ajoutez <strong>MonFrigo.dev</strong> directement sur votre écran d’accueil :
+</p>
 
+{/* Guide iPhone */}
 <div className="install-guide">
-<h4>🍏 Sur iPhone (Safari)</h4>
+<h4>📱 Sur iPhone (Safari)</h4>
 <ol>
 <li>Ouvrez <strong>MonFrigo.dev</strong> dans Safari.</li>
-<li>Appuyez sur <strong>Partager</strong> (carré + flèche).</li>
+<li>Appuyez sur le bouton <strong>Partager</strong> (carré + flèche).</li>
 <li>Sélectionnez <strong>Ajouter à l’écran d’accueil</strong>.</li>
 </ol>
 </div>
 
+{/* Guide Android */}
 <div className="install-guide">
-<h4>🤖 Sur Android (Chrome)</h4>
+<h4>📱 Sur Android (Chrome)</h4>
 <ol>
 <li>Ouvrez <strong>MonFrigo.dev</strong> dans Chrome.</li>
-<li>Appuyez sur les <strong>3 points ⋮</strong> en haut à droite.</li>
+<li>Appuyez sur les <strong>3 points</strong> en haut à droite.</li>
 <li>Sélectionnez <strong>Ajouter à l’écran d’accueil</strong>.</li>
 </ol>
 </div>

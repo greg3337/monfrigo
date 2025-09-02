@@ -91,25 +91,60 @@ background: var(--danger); color:#fff; border:none;
 }
 .logout-card .danger:hover{ background: var(--danger-600); }
 
+
+/* Carte d'installation */
+.install-card {
+background: #ffffff; /* fond blanc */
+border-radius: 10px; /* coins arrondis */
+padding: 20px; /* marges internes */
+margin: 20px 0; /* marges externes */
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* légère ombre */
+}
+
+/* Titre principal */
+.install-card h3 {
+font-size: 1.4rem;
+color: #222;
+margin-bottom: 10px;
+display: flex;
+align-items: center;
+gap: 8px; /* espace entre emoji 📲 et texte */
+}
+
+/* Texte explicatif */
+.install-card p {
+font-size: 1rem;
+color: #555;
+margin-bottom: 20px;
+}
+
+/* Guides (iPhone / Android) */
 .install-guide {
-margin-top: 15px;
+margin-bottom: 20px;
 }
 
+/* Sous-titres */
 .install-guide h4 {
-margin-bottom: 8px;
-color: #333;
+font-size: 1.2rem;
+color: #0073e6; /* bleu clair moderne */
+margin-bottom: 10px;
+display: flex;
+align-items: center;
+gap: 6px;
 }
 
+/* Liste ordonnée */
 .install-guide ol {
-padding-left: 18px;
 margin: 0;
+padding-left: 20px;
+color: #444;
 }
 
 .install-guide li {
-margin: 4px 0;
-font-size: 14px;
-color: #444;
+margin-bottom: 8px;
+line-height: 1.5;
 }
+
 
 
 
