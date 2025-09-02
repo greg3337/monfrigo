@@ -220,7 +220,6 @@ Réinitialiser mot de passe
 <Link href="/mentions">Mentions légales</Link>
 <Link href="/settings/privacy">Politique de confidentialité</Link>
 
-
 <button
 type="button"
 className="link"
