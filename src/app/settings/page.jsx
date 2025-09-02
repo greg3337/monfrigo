@@ -228,7 +228,7 @@ navigator.clipboard.writeText("smonfrigo@gmail.com");
 alert("✅ Adresse copiée dans le presse-papier !");
 }}
 >
-Copier l’adresse mail
+Contacter le support
 </button>
 </div>
 </div>

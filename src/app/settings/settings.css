@@ -176,3 +176,10 @@ align-items: center;
 .settings-page{ padding-bottom: 96px; }
 button{ width: 100%; }
 }
+
+@media (max-width: 768px) {
+.install-card {
+max-width: 90%;
+padding: 15px;
+}
+}
