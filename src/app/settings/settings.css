@@ -144,6 +144,21 @@ line-height: 1.5;
 color: #333;
 }
 
+/* Encadré conseil installation */
+.install-tip {
+text-align: center;
+background: #e6f3ff; /* Bleu clair */
+border: 1px solid #b3d9ff; /* Bordure bleue douce */
+padding: 10px 15px;
+margin-bottom: 15px;
+border-radius: 6px;
+font-size: 0.95rem;
+color: #333;
+max-width: 480px;
+margin-left: auto;
+margin-right: auto;
+}
+
 
 
 

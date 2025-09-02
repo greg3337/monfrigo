@@ -233,7 +233,7 @@ Copier l’adresse mail
 
 {/* Installer l’application */}
 <div className="card install-card">
-<p style={{ textAlign: "center", marginBottom: "15px", fontSize: "1rem" }}>
+<p className="install-tip">
 💡 Installez <strong>MonFrigo.dev</strong> sur votre téléphone pour y accéder comme une vraie application, directement depuis votre écran d’accueil.
 </p>
 
