@@ -103,6 +103,7 @@ border-radius: 8px;
 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 margin: 20px auto;
 max-width: 500px;
+color: #333;
 }
 
 /* Titre */
@@ -140,6 +141,7 @@ max-width: 320px;
 margin: 6px 0;
 font-size: 0.95rem;
 line-height: 1.5;
+color: #333;
 }
 
 
