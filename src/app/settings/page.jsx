@@ -238,9 +238,8 @@ Copier l’adresse mail
 Ajoutez <strong>MonFrigo.dev</strong> directement sur votre écran d’accueil :
 </p>
 
-{/* Guide iPhone */}
 <div className="install-guide">
-<h4>📱 Sur iPhone (Safari)</h4>
+<h4>🍏 Sur iPhone (Safari)</h4>
 <ol>
 <li>Ouvrez <strong>MonFrigo.dev</strong> dans Safari.</li>
 <li>Appuyez sur le bouton <strong>Partager</strong> (carré + flèche).</li>
@@ -248,9 +247,8 @@ Ajoutez <strong>MonFrigo.dev</strong> directement sur votre écran d’accueil :
 </ol>
 </div>
 
-{/* Guide Android */}
 <div className="install-guide">
-<h4>📱 Sur Android (Chrome)</h4>
+<h4>🤖 Sur Android (Chrome)</h4>
 <ol>
 <li>Ouvrez <strong>MonFrigo.dev</strong> dans Chrome.</li>
 <li>Appuyez sur les <strong>3 points</strong> en haut à droite.</li>
