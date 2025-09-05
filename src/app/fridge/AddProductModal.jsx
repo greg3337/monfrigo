@@ -24,8 +24,11 @@ function computeStatus(dateStr) {
 if (!dateStr) return "ok";
 const today = new Date();
 const d = new Date(dateStr);
+today.setHours(0, 0, 0, 0);
+d.setHours(0, 0, 0, 0);
+
 const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
-if (diffDays < 0) return "expiré";
+if (diffDays < 0) return "expired";
 if (diffDays <= 2) return "urgent";
 return "ok";
 }
@@ -53,7 +56,7 @@ setSaving(true);
 try {
 await addDoc(collection(db, "users", user.uid, "products"), {
 name: name.trim(),
-expirationDate: isoDate,
+expirationDate: isoDate, // toujours YYYY-MM-DD
 category,
 place,
 status,
@@ -79,38 +82,25 @@ return (
 <div className="modal">
 <h3>Ajouter un produit</h3>
 <form onSubmit={onSubmit}>
-<div className="form-grid">
-<div className="field">
-<label htmlFor="name">Nom</label>
+<label>Nom</label>
 <input
-id="name"
 type="text"
 value={name}
 onChange={(e) => setName(e.target.value)}
 placeholder="ex : Poulet"
 required
 />
-</div>
 
-<div className="field">
-<label htmlFor="exp">Date d'expiration</label>
+<label>Date d'expiration</label>
 <input
-id="exp"
 type="date"
 value={expirationDate}
 onChange={(e) => setExpirationDate(e.target.value)}
-aria-describedby="exp-help"
 required
 />
-</div>
 
-<div className="field">
-<label htmlFor="category">Catégorie</label>
-<select
-id="category"
-value={category}
-onChange={(e) => setCategory(e.target.value)}
->
+<label>Catégorie</label>
+<select value={category} onChange={(e) => setCategory(e.target.value)}>
 <option value="viande">Viande</option>
 <option value="poisson">Poisson</option>
 <option value="légume">Légume</option>
@@ -118,36 +108,20 @@ onChange={(e) => setCategory(e.target.value)}
 <option value="laitier">Laitier</option>
 <option value="autre">Autre</option>
 </select>
-</div>
 
-<div className="field">
-<label htmlFor="place">Lieu</label>
-<select
-id="place"
-value={place}
-onChange={(e) => setPlace(e.target.value)}
->
+<label>Lieu</label>
+<select value={place} onChange={(e) => setPlace(e.target.value)}>
 <option value="frigo">Frigo</option>
 <option value="congelo">Congélateur</option>
 <option value="placard">Placard</option>
 </select>
-</div>
-</div>
 
 <div className="modal-actions">
-<button
-type="button"
-className="ghostBtn"
-onClick={closeModal}
->
+<button type="button" className="ghostBtn" onClick={closeModal}>
 Annuler
 </button>
-<button
-className="primary"
-type="submit"
-disabled={saving}
->
-{saving ? "Ajout…" : "Ajouter"}
+<button className="primary" type="submit" disabled={saving}>
+{saving ? "Ajout..." : "Ajouter"}
 </button>
 </div>
 </form>
