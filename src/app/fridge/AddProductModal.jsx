@@ -102,9 +102,6 @@ onChange={(e) => setExpirationDate(e.target.value)}
 aria-describedby="exp-help"
 required
 />
-<small id="exp-help" className="help-text">
-Choisissez une date dans le calendrier
-</small>
 </div>
 
 <div className="field">
