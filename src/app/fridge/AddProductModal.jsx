@@ -1,62 +1,74 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { auth, db } from '../firebase/firebase-config';
-import { addDoc, collection } from 'firebase/firestore';
+import React, { useState } from "react";
+import { auth, db } from "../firebase/firebase-config";
+import { addDoc, collection } from "firebase/firestore";
 
 export default function AddProductModal({ closeModal }) {
-const [name, setName] = useState('');
-const [expirationDate, setExpirationDate] = useState(''); // input type="date" => YYYY-MM-DD
-const [category, setCategory] = useState('autre');
-const [place, setPlace] = useState('frigo');
+const [name, setName] = useState("");
+const [expirationDate, setExpirationDate] = useState("");
+const [category, setCategory] = useState("autre");
+const [place, setPlace] = useState("frigo");
 const [saving, setSaving] = useState(false);
 
 function normalizeDate(d) {
-// Accepte "YYYY-MM-DD" ou "DD/MM/YYYY" et renvoie "YYYY-MM-DD"
-if (!d) return '';
-if (d.includes('/')) {
-const [dd, mm, yyyy] = d.split('/');
-return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+if (!d) return "";
+if (d.includes("/")) {
+const [dd, mm, yyyy] = d.split("/");
+return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
 }
 return d;
 }
 
 function computeStatus(dateStr) {
-if (!dateStr) return 'ok';
-const today = new Date(); today.setHours(0,0,0,0);
-const d = new Date(dateStr); d.setHours(0,0,0,0);
-const diffDays = Math.ceil((d - today) / (1000*60*60*24));
-if (diffDays < 0) return 'expired';
-if (diffDays <= 2) return 'urgent';
-return 'ok';
+if (!dateStr) return "ok";
+const today = new Date();
+const d = new Date(dateStr);
+const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+if (diffDays < 0) return "expiré";
+if (diffDays <= 2) return "urgent";
+return "ok";
 }
 
 async function onSubmit(e) {
 e.preventDefault();
 const user = auth.currentUser;
-if (!user) { alert("Tu n'es pas connecté."); return; }
-if (!name.trim()) { alert('Nom obligatoire'); return; }
-if (!expirationDate) { alert("Date d'expiration obligatoire"); return; }
+if (!user) {
+alert("Tu n'es pas connecté.");
+return;
+}
+if (!name.trim()) {
+alert("Nom obligatoire");
+return;
+}
+if (!expirationDate) {
+alert("Date d'expiration obligatoire");
+return;
+}
 
 const isoDate = normalizeDate(expirationDate);
 const status = computeStatus(isoDate);
 
 setSaving(true);
 try {
-await addDoc(collection(db, 'users', user.uid, 'products'), {
+await addDoc(collection(db, "users", user.uid, "products"), {
 name: name.trim(),
-expirationDate: isoDate, // toujours YYYY-MM-DD
+expirationDate: isoDate,
 category,
 place,
 status,
 createdAt: new Date().toISOString(),
 });
+
 // reset + fermer
-setName(''); setExpirationDate(''); setCategory('autre'); setPlace('frigo');
+setName("");
+setExpirationDate("");
+setCategory("autre");
+setPlace("frigo");
 closeModal();
 } catch (err) {
-console.error('addDoc error:', err); // <= vois la vraie erreur dans la console
-alert(`Erreur lors de l'ajout du produit: ${err.code || ''} ${err.message || ''}`); // <= message utile
+console.error("addDoc error:", err);
+alert(`Erreur lors de l'ajout du produit: ${err.code || ""} ${err.message || ""}`);
 } finally {
 setSaving(false);
 }
@@ -67,14 +79,41 @@ return (
 <div className="modal">
 <h3>Ajouter un produit</h3>
 <form onSubmit={onSubmit}>
-<label>Nom</label>
-<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="ex : Poulet" />
+<div className="form-grid">
+<div className="field">
+<label htmlFor="name">Nom</label>
+<input
+id="name"
+type="text"
+value={name}
+onChange={(e) => setName(e.target.value)}
+placeholder="ex : Poulet"
+required
+/>
+</div>
 
-<label>Date d'expiration</label>
-<input type="date" value={expirationDate} onChange={e=>setExpirationDate(e.target.value)} />
+<div className="field">
+<label htmlFor="exp">Date d'expiration</label>
+<input
+id="exp"
+type="date"
+value={expirationDate}
+onChange={(e) => setExpirationDate(e.target.value)}
+aria-describedby="exp-help"
+required
+/>
+<small id="exp-help" className="help-text">
+Choisissez une date dans le calendrier
+</small>
+</div>
 
-<label>Catégorie</label>
-<select value={category} onChange={e=>setCategory(e.target.value)}>
+<div className="field">
+<label htmlFor="category">Catégorie</label>
+<select
+id="category"
+value={category}
+onChange={(e) => setCategory(e.target.value)}
+>
 <option value="viande">Viande</option>
 <option value="poisson">Poisson</option>
 <option value="légume">Légume</option>
@@ -82,17 +121,37 @@ return (
 <option value="laitier">Laitier</option>
 <option value="autre">Autre</option>
 </select>
+</div>
 
-<label>Lieu</label>
-<select value={place} onChange={e=>setPlace(e.target.value)}>
+<div className="field">
+<label htmlFor="place">Lieu</label>
+<select
+id="place"
+value={place}
+onChange={(e) => setPlace(e.target.value)}
+>
 <option value="frigo">Frigo</option>
-<option value="congélo">Congélateur</option>
+<option value="congelo">Congélateur</option>
 <option value="placard">Placard</option>
 </select>
+</div>
+</div>
 
 <div className="modal-actions">
-<button type="button" className="ghostBtn" onClick={closeModal}>Annuler</button>
-<button className="primary" type="submit" disabled={saving}>{saving ? 'Ajout…' : 'Ajouter'}</button>
+<button
+type="button"
+className="ghostBtn"
+onClick={closeModal}
+>
+Annuler
+</button>
+<button
+className="primary"
+type="submit"
+disabled={saving}
+>
+{saving ? "Ajout…" : "Ajouter"}
+</button>
 </div>
 </form>
 </div>
