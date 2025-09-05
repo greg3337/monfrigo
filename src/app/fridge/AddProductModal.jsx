@@ -71,7 +71,13 @@ return (
 <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="ex : Poulet" />
 
 <label>Date d'expiration</label>
-<input type="date" value={expirationDate} onChange={e=>setExpirationDate(e.target.value)} />
+<input
+type="date"
+value={expirationDate}
+onChange={(e) => setExpirationDate(e.target.value)}
+required
+/>
+<small>Sélectionnez une date dans le calendrier</small>
 
 <label>Catégorie</label>
 <select value={category} onChange={e=>setCategory(e.target.value)}>
