@@ -267,6 +267,22 @@ transform: translateY(0);
 }
 
 
+.modal-backdrop {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.5);
+z-index: 9999;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+padding-top: 4rem;
+}
+
+.modal { background:#fff; padding:1.5rem; border-radius:10px; max-width:420px; width:92%; }
+
+/* ta tabbar doit avoir la classe .tabbar */
+.modal-open .tabbar { transform: translateY(100%); }
+.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:1000; transition:transform .2s; }
 
 
 

@@ -1,16 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase/firebase-config";
 import { addDoc, collection } from "firebase/firestore";
 
 export default function AddProductModal({ closeModal }) {
+// Cache la tabbar pendant la modale
+useEffect(() => {
+document.body.classList.add("modal-open");
+return () => document.body.classList.remove("modal-open");
+}, []);
+
 const [name, setName] = useState("");
 const [expirationDate, setExpirationDate] = useState("");
 const [category, setCategory] = useState("autre");
 const [place, setPlace] = useState("frigo");
 const [saving, setSaving] = useState(false);
 
+// Accepte "YYYY-MM-DD" ou "DD/MM/YYYY" et renvoie "YYYY-MM-DD"
 function normalizeDate(d) {
 if (!d) return "";
 if (d.includes("/")) {
@@ -36,18 +43,10 @@ return "ok";
 async function onSubmit(e) {
 e.preventDefault();
 const user = auth.currentUser;
-if (!user) {
-alert("Tu n'es pas connecté.");
-return;
-}
-if (!name.trim()) {
-alert("Nom obligatoire");
-return;
-}
-if (!expirationDate) {
-alert("Date d'expiration obligatoire");
-return;
-}
+
+if (!user) return alert("Tu n'es pas connecté.");
+if (!name.trim()) return alert("Nom obligatoire");
+if (!expirationDate) return alert("Date d'expiration obligatoire");
 
 const isoDate = normalizeDate(expirationDate);
 const status = computeStatus(isoDate);
@@ -56,7 +55,7 @@ setSaving(true);
 try {
 await addDoc(collection(db, "users", user.uid, "products"), {
 name: name.trim(),
-expirationDate: isoDate, // toujours YYYY-MM-DD
+expirationDate: isoDate, // format YYYY-MM-DD
 category,
 place,
 status,
@@ -82,8 +81,9 @@ return (
 <div className="modal">
 <h3>Ajouter un produit</h3>
 <form onSubmit={onSubmit}>
-<label>Nom</label>
+<label htmlFor="name">Nom</label>
 <input
+id="name"
 type="text"
 value={name}
 onChange={(e) => setName(e.target.value)}
@@ -91,16 +91,21 @@ placeholder="ex : Poulet"
 required
 />
 
-<label>Date d'expiration</label>
+<label htmlFor="expirationDate">Date d'expiration</label>
 <input
+id="expirationDate"
 type="date"
 value={expirationDate}
 onChange={(e) => setExpirationDate(e.target.value)}
 required
 />
 
-<label>Catégorie</label>
-<select value={category} onChange={(e) => setCategory(e.target.value)}>
+<label htmlFor="category">Catégorie</label>
+<select
+id="category"
+value={category}
+onChange={(e) => setCategory(e.target.value)}
+>
 <option value="viande">Viande</option>
 <option value="poisson">Poisson</option>
 <option value="légume">Légume</option>
@@ -109,8 +114,12 @@ required
 <option value="autre">Autre</option>
 </select>
 
-<label>Lieu</label>
-<select value={place} onChange={(e) => setPlace(e.target.value)}>
+<label htmlFor="place">Lieu</label>
+<select
+id="place"
+value={place}
+onChange={(e) => setPlace(e.target.value)}
+>
 <option value="frigo">Frigo</option>
 <option value="congelo">Congélateur</option>
 <option value="placard">Placard</option>
@@ -121,7 +130,7 @@ required
 Annuler
 </button>
 <button className="primary" type="submit" disabled={saving}>
-{saving ? "Ajout..." : "Ajouter"}
+{saving ? "Ajout…" : "Ajouter"}
 </button>
 </div>
 </form>
