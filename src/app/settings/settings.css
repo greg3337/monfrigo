@@ -148,8 +148,8 @@ color: #333;
 /* Encadré conseil installation */
 .install-tip {
 text-align: center;
-background: #e6f3ff; /* Bleu clair */
-border: 1px solid #b3d9ff; /* Bordure bleue douce */
+background: #e6f3ff; 
+border: 1px solid #b3d9ff;
 padding: 10px 15px;
 margin-bottom: 15px;
 border-radius: 6px;
