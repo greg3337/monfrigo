@@ -16,7 +16,7 @@ subsets: ["latin"],
 
 export const metadata: Metadata = {
 title: "Mon Frigo",
-description: "Application pour gérer son frigo",
+description: "Mon Frigo : une application simple et intelligente pour gérer vos aliments, éviter le gaspillage et économiser de l’argent.",
 manifest: "/manifest.json",
 themeColor: "#2196f3",
 icons: {
