@@ -30,7 +30,7 @@ url: "https://monfrigo.dev",
 siteName: "Mon Frigo",
 images: [
 {
-url: "/frigo.png", // mets une image carrée ou rectangulaire (1200x630 conseillé)
+url: "/og-image.png",
 width: 1200,
 height: 630,
 alt: "Mon Frigo - application anti-gaspillage",
