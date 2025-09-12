@@ -16,13 +16,29 @@ subsets: ["latin"],
 
 export const metadata: Metadata = {
 title: "Mon Frigo",
-description: "Mon Frigo : une application simple et intelligente pour gérer vos aliments, éviter le gaspillage et économiser de l’argent.",
+description: "Application intelligente pour gérer votre frigo, éviter le gaspillage alimentaire et économiser du temps et de l’argent.",
 manifest: "/manifest.json",
 themeColor: "#2196f3",
 icons: {
 icon: "/frigo.png",
-apple: "/frigo.png"
-}
+apple: "/frigo.png",
+},
+openGraph: {
+title: "Mon Frigo - Votre assistant anti-gaspillage",
+description: "Recevez des alertes intelligentes avant la date de péremption et simplifiez la gestion de vos aliments.",
+url: "https://monfrigo.dev",
+siteName: "Mon Frigo",
+images: [
+{
+url: "/frigo.png", // mets une image carrée ou rectangulaire (1200x630 conseillé)
+width: 1200,
+height: 630,
+alt: "Mon Frigo - application anti-gaspillage",
+},
+],
+locale: "fr_FR",
+type: "website",
+},
 };
 
 export default function RootLayout({
