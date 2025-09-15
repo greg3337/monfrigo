@@ -1,6 +1,6 @@
 "use client";
 import { getToken, onMessage } from "firebase/messaging";
-import { messagingPromise } from "./lib/firebaseClient";
+import { messagingPromise } from "../lib/firebaseClient";
 
 export async function requestFcmToken() {
 const messaging = await messagingPromise;
