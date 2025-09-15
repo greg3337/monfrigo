@@ -41,7 +41,6 @@ break;
 case "customer.subscription.deleted": {
 const sub = event.data.object;
 console.log("🧹 customer.subscription.deleted", sub.id);
-// TODO: mettre isSubscribed: false en DB ici si tu veux
 break;
 }
 default:
