@@ -1,76 +1,47 @@
-import { isSupported, getMessaging, getToken, onMessage } from "firebase/messaging";
-import { doc, setDoc, arrayUnion } from "firebase/firestore";
-import { auth, db, app } from "./firebase-config";
+// src/app/firebase/messaging.js
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
-export async function requestFcmToken() {
-try {
-if (typeof window === "undefined") return null;
-const supported = await isSupported().catch(() => false);
-if (!supported) return null;
-
-// Permission navigateur
-let permission = (typeof Notification !== "undefined" && Notification.permission) || "default";
-if (permission === "default" && typeof Notification !== "undefined") {
-permission = await Notification.requestPermission();
-}
-if (permission !== "granted") return null;
-
-// Enregistrer le Service Worker (au cas où)
-const swReg = await navigator.serviceWorker
-.register("/firebase-messaging-sw.js")
-.catch((e) => {
-console.warn("SW register in messaging.js failed:", e);
-return undefined;
-});
-
-const messaging = getMessaging(app);
-const token = await getToken(messaging, {
-vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY,
-serviceWorkerRegistration: swReg,
-}).catch((e) => {
-console.warn("getToken error:", e);
-return null;
-});
-
-// Sauver le token dans Firestore (si connecté)
-const user = auth.currentUser;
-if (token && user) {
-const userRef = doc(db, "users", user.uid);
-await setDoc(userRef, { fcmTokens: arrayUnion(token) }, { merge: true }).catch((e) =>
-console.warn("save token error:", e)
-);
-}
-
-return token || null;
-} catch (e) {
-console.warn("requestFcmToken error:", e);
-return null;
-}
-}
-
-export function onForegroundMessage(callback) {
-if (typeof window === "undefined") return () => {};
-let unsub = () => {};
-
-isSupported()
-.then((ok) => {
-if (!ok) return;
-const messaging = getMessaging(app);
-unsub = onMessage(messaging, (payload) => {
-try {
-if (typeof callback === "function") callback(payload);
-} catch (e) {
-console.warn("callback FCM error:", e);
-}
-});
-})
-.catch((e) => console.warn("isSupported() error:", e));
-
-return () => {
-try {
-unsub && unsub();
-} catch (e) {
-console.warn("unsub FCM error:", e);
-}
+/* Même config que dans le SW (et que dans ton firebase-config.ts) */
+const firebaseConfig = {
+apiKey: "AIzaSyBjyN4XJDyFvt-QUd1BESDepOJqw1X1lxk",
+authDomain: "monfrigo-3ae11.firebaseapp.com",
+projectId: "monfrigo-3ae11",
+storageBucket: "monfrigo-3ae11.appspot.com",
+messagingSenderId: "1045422730422",
+appId: "1:1045422730422:web:5e66f2268869f842d30a17",
 };
+
+const app = initializeApp(firebaseConfig);
+
+/* Messaging peut être indisponible (ex: Safari sans PWA). On garde un guard. */
+const messagingPromise = isSupported().then((ok) => (ok ? getMessaging(app) : null));
+
+/** Demande la permission + récupère le token FCM (avec la VAPID key) */
+export async function requestFcmToken() {
+const messaging = await messagingPromise;
+if (!messaging) {
+console.warn("FCM non supporté par ce navigateur.");
+return null;
+}
+
+// important: utiliser le SW déjà prêt
+const registration = await navigator.serviceWorker.ready;
+
+const token = await getToken(messaging, {
+vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY, // ⚠️ à définir dans .env
+serviceWorkerRegistration: registration,
+});
+
+console.log("FCM token:", token);
+// TODO : si tu veux lier à un compte, envoie-le à ton API ici.
+return token;
+}
+
+/** Ecoute les messages quand l’onglet est ouvert (foreground) */
+export function onForegroundMessage(cb) {
+messagingPromise.then((messaging) => {
+if (!messaging) return;
+onMessage(messaging, (payload) => cb(payload));
+});
 }
