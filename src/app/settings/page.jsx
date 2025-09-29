@@ -198,7 +198,7 @@ type="button"
 className="outline"
 onClick={handleResetPassword}
 >
-Réinitialiser mot de passe
+Modifier Nom
 </button>
 </div>
 
