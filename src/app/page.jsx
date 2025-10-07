@@ -2,9 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
+import { useState } from "react";
 
 export default function Home() {
 const router = useRouter();
+
+const [partnerCode, setPartnerCode] = useState("");
+
+const handlePartnerAccess = () => {
+const expected = process.env.NEXT_PUBLIC_PARTNER_CODE_CCAS;
+if (partnerCode.trim() && partnerCode.trim() === expected) {
+router.push("/app"); // accès gratuit
+} else {
+window.location.href = process.env.NEXT_PUBLIC_STRIPE_PAYMENT; // redirection vers Stripe
+}
+};
+
 
 const goSignup = () => router.push("/signup");
 
@@ -47,6 +60,23 @@ return (
 <button className="ctaBtn" onClick={goSignup}>
 ⚡ Commencer l’essai gratuit
 </button>
+
+<div className="partnerBox">
+<input
+className="partnerInput"
+type="text"
+value={partnerCode}
+onChange={(e) => setPartnerCode(e.target.value)}
+placeholder="Code partenaire (optionnel)"
+/>
+<button className="partnerBtn" onClick={handlePartnerAccess}>
+Continuer
+</button>
+<p className="hint">
+Exemple : <code>CCAS-TESTEDEBUCH-2025</code>
+</p>
+</div>
+
 <div className="ctaBadges">
 <span className="dot" /> Données chiffrées
 <span className="spacer" />
@@ -79,6 +109,39 @@ radial-gradient(1200px 600px at 20% -10%, #eaf0ff 0, #f6f7fb 60%, #f6f7fb 100%),
 #f6f7fb;
 color: var(--text);
 font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.partnerBox {
+margin-top: 12px;
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 8px;
+align-items: center;
+max-width: 420px;
+}
+.partnerInput {
+padding: 10px 12px;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+font-size: 14px;
+}
+.partnerBtn {
+padding: 10px 14px;
+border: none;
+border-radius: 8px;
+background: #0f62fe;
+color: #fff;
+cursor: pointer;
+white-space: nowrap;
+}
+.partnerBtn:hover {
+filter: brightness(0.95);
+}
+.hint {
+grid-column: 1 / -1;
+margin: 0;
+font-size: 12px;
+color: #6b7280;
 }
 
 .hero {
