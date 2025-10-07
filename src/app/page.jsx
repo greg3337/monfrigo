@@ -73,7 +73,7 @@ placeholder="Code partenaire (optionnel)"
 Continuer
 </button>
 <p className="hint">
-Exemple : <code>CCAS-TESTEDEBUCH-2025</code>
+Exemple : <code></code>
 </p>
 </div>
 
